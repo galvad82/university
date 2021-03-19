@@ -1,20 +1,17 @@
 package ua.com.foxminded.galvad.university.model;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 
 public class Classroom {
 
-	private static List<Classroom> listOfClassrooms = new ArrayList<>();
-
-	private int id;
+	private Integer id;
 	private String name;
 
-	public Classroom(int id, String name) {
-		if ((id >= 0) && (!name.isEmpty())) {
+	public Classroom(Integer id, String name) {
+		if ((id != null) && (id >= 0) && (!StringUtils.isEmpty(name))) {
 			this.id = id;
 			this.name = name;
-			listOfClassrooms.add(this);
+		} else {
+			throw new IllegalArgumentException("Cannot create a Classroom because of illegal arguments");
 		}
 	}
 
@@ -24,10 +21,6 @@ public class Classroom {
 
 	public void setName(String name) {
 		this.name = name;
-	}
-
-	public static List<Classroom> getListOfClassrooms() {
-		return listOfClassrooms;
 	}
 
 	public int getId() {

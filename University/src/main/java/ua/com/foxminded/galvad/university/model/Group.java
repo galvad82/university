@@ -3,18 +3,20 @@ package ua.com.foxminded.galvad.university.model;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Group {
-	private static List<Group> listOfGroups = new ArrayList<>();
+import org.apache.commons.lang3.StringUtils;
 
-	private int id;
+public class Group {
+
+	private Integer id;
 	private String name;
 	private List<Student> listOfStudent = new ArrayList<>();
 
-	public Group(int id, String name) {
-		if ((!name.isEmpty()) && (id >= 0)) {
+	public Group(Integer id, String name) {
+		if ((id != null) && (id >= 0) && (!StringUtils.isEmpty(name))) {
 			this.id = id;
 			this.name = name;
-			listOfGroups.add(this);
+		} else {
+			throw new IllegalArgumentException("Cannot create a Group because of illegal arguments");
 		}
 	}
 
@@ -38,7 +40,4 @@ public class Group {
 		this.listOfStudent = listOfStudent;
 	}
 
-	public static List<Group> getListOfGroups() {
-		return listOfGroups;
-	}
 }

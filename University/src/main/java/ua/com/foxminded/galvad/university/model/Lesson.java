@@ -1,29 +1,23 @@
 package ua.com.foxminded.galvad.university.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class Lesson {
 
-	private static List<Lesson> listOfLessons = new ArrayList<>();
-
-	private int id;
+	private Integer id;
 	private Group group;
 	private Course course;
 	private Classroom classroom;
-	private long startTime;
-	private long duration;
+	private Long startTime;
+	private Long duration;
 
-	public Lesson(int id, Group group, Course course, Classroom classroom, long startTime, long duration) {
-		if ((id >= 0) && (startTime > 0) && (duration > 0) && (group != null) && (course != null)
-				&& (classroom != null)) {
+	public Lesson(Integer id, Group group, Course course, Classroom classroom, Long startTime, Long duration) {
+		if ((id != null) && (id >= 0) && (startTime != null) && (startTime > 0) && (duration != null) && (duration > 0)
+				&& (group != null) && (course != null) && (classroom != null)) {
 			this.id = id;
 			this.group = group;
 			this.course = course;
 			this.classroom = classroom;
 			this.startTime = startTime;
 			this.duration = duration;
-			listOfLessons.add(this);
 		}
 	}
 
@@ -65,10 +59,6 @@ public class Lesson {
 
 	public void setDuration(long duration) {
 		this.duration = duration;
-	}
-
-	public static List<Lesson> getListOfLessons() {
-		return listOfLessons;
 	}
 
 	public int getId() {
