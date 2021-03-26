@@ -6,17 +6,23 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import ua.com.foxminded.galvad.university.dao.DAO;
 import ua.com.foxminded.galvad.university.dao.impl.mappers.TeacherMapper;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
-@Component
+@Repository
 public class TeacherDAO implements DAO<Integer, Teacher> {
 
 	private JdbcTemplate jdbcTemplate;
 	private TeacherMapper mapper;
+
+	private static final String CREATE = "INSERT INTO teachers (firstname, lastname) VALUES (?, ?)";
+	private static final String RETRIEVE = "SELECT * FROM teachers WHERE id=?";
+	private static final String UPDATE = "UPDATE teachers SET firstname=?,lastname=? WHERE id=?";
+	private static final String DELETE = "DELETE FROM teachers WHERE id=?";
+	private static final String FIND_ALL = "SELECT * FROM teachers";
 
 	@Autowired
 	public void setDataSource(DataSource ds) {
@@ -25,7 +31,7 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 
 	@Autowired
 	public void setMapper(TeacherMapper mapper) {
-		if (mapper!=null) {
+		if (mapper != null) {
 			this.mapper = mapper;
 		} else {
 			throw new IllegalArgumentException("Mapper cannot be null!");
@@ -33,28 +39,23 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 	}
 
 	public void create(Teacher teacher) {
-		String query = "INSERT INTO teachers (firstname, lastname) VALUES (?, ?)";
-		jdbcTemplate.update(query, teacher.getFirstName(), teacher.getLastName());
+		jdbcTemplate.update(CREATE, teacher.getFirstName(), teacher.getLastName());
 	}
 
 	public Teacher retrieve(Integer id) {
-		String query = "SELECT * FROM teachers WHERE id=" + id;
-		List<Teacher> listOfTeachers = jdbcTemplate.query(query, mapper);
-		if (!listOfTeachers.isEmpty()) {
-			return listOfTeachers.get(0);
-		} else {
+		try {
+			return jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
+		} catch (IndexOutOfBoundsException e) {
 			return null;
 		}
 	}
 
 	public void update(Teacher teacher) {
-		String query = "UPDATE teachers SET firstname=?,lastname=? WHERE id=?";
-		jdbcTemplate.update(query, teacher.getFirstName(), teacher.getLastName(), teacher.getId());
+		jdbcTemplate.update(UPDATE, teacher.getFirstName(), teacher.getLastName(), teacher.getId());
 	}
 
 	public void delete(Integer id) {
-		String query = "DELETE FROM teachers WHERE id=" + id;
-		jdbcTemplate.execute(query);
+		jdbcTemplate.update(DELETE, id);
 	}
 
 	public void delete(Teacher teacher) {
@@ -62,8 +63,7 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 	}
 
 	public List<Teacher> findAll() {
-		String query = "SELECT * FROM teachers";
-		return jdbcTemplate.query(query, mapper);
+		return jdbcTemplate.query(FIND_ALL, mapper);
 	}
 
 }

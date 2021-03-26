@@ -6,17 +6,24 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import ua.com.foxminded.galvad.university.dao.DAO;
 import ua.com.foxminded.galvad.university.dao.impl.mappers.StudentMapper;
 import ua.com.foxminded.galvad.university.model.Student;
 
-@Component
+@Repository
 public class StudentDAO implements DAO<Integer, Student> {
 
 	private JdbcTemplate jdbcTemplate;
 	private StudentMapper mapper;
+
+	private static final String CREATE = "INSERT INTO students (firstname, lastname) VALUES (?, ?)";
+	private static final String RETRIEVE = "SELECT * FROM students WHERE id=?";
+	private static final String UPDATE = "UPDATE students SET firstname=?,lastname=? WHERE id=?";
+	private static final String DELETE = "DELETE FROM students WHERE id=?";
+	private static final String FIND_ALL = "SELECT * FROM students";
+	private static final String REMOVE_STUDENT_FROM_GROUPS = "DELETE FROM groups_students WHERE student_id=?";
 
 	@Autowired
 	public void setMapper(StudentMapper mapper) {
@@ -33,28 +40,24 @@ public class StudentDAO implements DAO<Integer, Student> {
 	}
 
 	public void create(Student student) {
-		String query = "INSERT INTO students (firstname, lastname) VALUES (?, ?)";
-		jdbcTemplate.update(query, student.getFirstName(), student.getLastName());
+		jdbcTemplate.update(CREATE, student.getFirstName(), student.getLastName());
 	}
 
 	public Student retrieve(Integer id) {
-		String query = "SELECT * FROM students WHERE id=" + id;
-		if (!jdbcTemplate.query(query, new StudentMapper()).isEmpty()) {
-			return jdbcTemplate.query(query, mapper).get(0);
-		} else {
+		try {
+			return jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
+		} catch (IndexOutOfBoundsException e) {
 			return null;
 		}
 	}
 
 	public void update(Student student) {
-		String query = "UPDATE students SET firstname=?,lastname=? WHERE id=?";
-		jdbcTemplate.update(query, student.getFirstName(), student.getLastName(), student.getId());
+		jdbcTemplate.update(UPDATE, student.getFirstName(), student.getLastName(), student.getId());
 	}
 
 	public void delete(Integer id) {
 		removeStudentFromGroups(id);
-		String query = "DELETE FROM students WHERE id=" + id;
-		jdbcTemplate.execute(query);
+		jdbcTemplate.update(DELETE, id);
 
 	}
 
@@ -63,13 +66,11 @@ public class StudentDAO implements DAO<Integer, Student> {
 	}
 
 	public List<Student> findAll() {
-		String query = "SELECT * FROM students";
-		return jdbcTemplate.query(query, mapper);
+		return jdbcTemplate.query(FIND_ALL, mapper);
 	}
 
 	public void removeStudentFromGroups(Integer studentID) {
-		String query = "DELETE FROM groups_students WHERE student_id=?";
-		jdbcTemplate.update(query, studentID);
+		jdbcTemplate.update(REMOVE_STUDENT_FROM_GROUPS, studentID);
 	}
 
 }

@@ -6,21 +6,27 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import ua.com.foxminded.galvad.university.dao.DAO;
 import ua.com.foxminded.galvad.university.dao.impl.mappers.ClassroomMapper;
 import ua.com.foxminded.galvad.university.model.Classroom;
 
-@Component
+@Repository
 public class ClassroomDAO implements DAO<Integer, Classroom> {
 
 	private JdbcTemplate jdbcTemplate;
 	private ClassroomMapper mapper;
-	
+
+	private static final String CREATE = "INSERT INTO classrooms (name) VALUES (?)";
+	private static final String RETRIEVE = "SELECT * FROM classrooms WHERE id=?";
+	private static final String UPDATE = "UPDATE classrooms SET name=? WHERE id=?";
+	private static final String DELETE = "DELETE FROM classrooms WHERE id=?";
+	private static final String FIND_ALL = "SELECT * FROM classrooms";
+
 	@Autowired
 	public void setMapper(ClassroomMapper mapper) {
-		if (mapper!=null) {
+		if (mapper != null) {
 			this.mapper = mapper;
 		} else {
 			throw new IllegalArgumentException("Mapper cannot be null!");
@@ -33,28 +39,23 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 	}
 
 	public void create(Classroom classroom) {
-		String query = "INSERT INTO classrooms (name) VALUES (?)";
-		jdbcTemplate.update(query, classroom.getName());
+		jdbcTemplate.update(CREATE, classroom.getName());
 	}
 
 	public Classroom retrieve(Integer id) {
-		String query = "SELECT * FROM classrooms WHERE id=" + id;
-		List<Classroom> listOfClassrooms = jdbcTemplate.query(query, mapper);
-		if (!listOfClassrooms.isEmpty()) {
-			return listOfClassrooms.get(0);
-		} else {
+		try {
+			return jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
+		} catch (IndexOutOfBoundsException e) {
 			return null;
 		}
 	}
 
 	public void update(Classroom classroom) {
-		String query = "UPDATE classrooms SET name=? WHERE id=?";
-		jdbcTemplate.update(query, classroom.getName(), classroom.getId());
+		jdbcTemplate.update(UPDATE, classroom.getName(), classroom.getId());
 	}
 
 	public void delete(Integer id) {
-		String query = "DELETE FROM classrooms WHERE id=" + id;
-		jdbcTemplate.execute(query);
+		jdbcTemplate.update(DELETE, id);
 	}
 
 	public void delete(Classroom classroom) {
@@ -62,8 +63,7 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 	}
 
 	public List<Classroom> findAll() {
-		String query = "SELECT * FROM classrooms";
-		return jdbcTemplate.query(query, mapper);
+		return jdbcTemplate.query(FIND_ALL, mapper);
 	}
-	
+
 }

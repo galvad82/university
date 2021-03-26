@@ -6,22 +6,33 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import ua.com.foxminded.galvad.university.dao.DAO;
 import ua.com.foxminded.galvad.university.dao.impl.mappers.GroupMapper;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
 
-@Component
+@Repository
 public class GroupDAO implements DAO<Integer, Group> {
 
 	private JdbcTemplate jdbcTemplate;
 	private GroupMapper mapper;
 
+	private static final String CREATE = "INSERT INTO groups (name) VALUES (?)";
+	private static final String RETRIEVE = "SELECT * FROM groups WHERE id=?";
+	private static final String UPDATE = "UPDATE groups SET name=? WHERE id=?";
+	private static final String DELETE = "DELETE FROM groups WHERE id=?";
+	private static final String FIND_ALL = "SELECT * FROM groups";
+	private static final String ADD_STUDENTS_TO_GROUP = "INSERT INTO groups_students (group_id,student_id) VALUES(?,?)";
+	private static final String REMOVE_ALL_STUDENTS_FROM_GROUP = "DELETE FROM groups_students WHERE group_id=?";
+	private static final String FIND_ALL_STUDENTS_FOR_GROUP = "SELECT students.id,students.firstname,students.lastname "
+			+ "FROM students LEFT JOIN groups_students ON (groups_students.student_id=students.id) "
+			+ "WHERE groups_students.group_id=?";
+
 	@Autowired
 	public void setMapper(GroupMapper mapper) {
-		if (mapper!=null) {
+		if (mapper != null) {
 			this.mapper = mapper;
 		} else {
 			throw new IllegalArgumentException("Mapper cannot be null!");
@@ -34,33 +45,28 @@ public class GroupDAO implements DAO<Integer, Group> {
 	}
 
 	public void create(Group group) {
-		String query = "INSERT INTO groups (name) VALUES (?)";
-		jdbcTemplate.update(query, group.getName());
+		jdbcTemplate.update(CREATE, group.getName());
 		addStudentsToGroup(group.getListOfStudent(), group.getId());
 	}
 
 	public Group retrieve(Integer id) {
-		String query = "SELECT * FROM groups WHERE id=" + id;
-		List<Group> listOfGroups = jdbcTemplate.query(query, mapper);
-		if (!listOfGroups.isEmpty()) {
-			Group resultGroup = listOfGroups.get(0);
+		try {
+			Group resultGroup = jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
 			resultGroup.setListOfStudent(findAllStudentsForGroup(resultGroup.getId()));
 			return resultGroup;
-		} else {
+		} catch (IndexOutOfBoundsException e) {
 			return null;
 		}
 	}
 
 	public void update(Group group) {
-		String query = "UPDATE groups SET name=? WHERE id=?";
-		jdbcTemplate.update(query, group.getName(), group.getId());
+		jdbcTemplate.update(UPDATE, group.getName(), group.getId());
 		removeAllStudentsFromGroup(group.getId());
 		addStudentsToGroup(group.getListOfStudent(), group.getId());
 	}
 
 	public void delete(Integer id) {
-		String query = "DELETE FROM groups WHERE id=" + id;
-		jdbcTemplate.execute(query);
+		jdbcTemplate.update(DELETE, id);
 	}
 
 	public void delete(Group group) {
@@ -68,8 +74,7 @@ public class GroupDAO implements DAO<Integer, Group> {
 	}
 
 	public List<Group> findAll() {
-		String query = "SELECT * FROM groups";
-		List<Group> resultList = jdbcTemplate.query(query, mapper);
+		List<Group> resultList = jdbcTemplate.query(FIND_ALL, mapper);
 		for (Group group : resultList) {
 			List<Student> list = findAllStudentsForGroup(group.getId());
 			group.setListOfStudent(list);
@@ -79,23 +84,19 @@ public class GroupDAO implements DAO<Integer, Group> {
 
 	public void addStudentsToGroup(List<Student> listOfStudents, Integer groupID) {
 		listOfStudents.stream().forEach(student -> {
-			String query = "INSERT INTO groups_students (group_id,student_id) VALUES(?,?)";
-			jdbcTemplate.update(query, groupID, student.getId());
+			jdbcTemplate.update(ADD_STUDENTS_TO_GROUP, groupID, student.getId());
 		});
 	}
 
 	public void removeAllStudentsFromGroup(Integer groupID) {
-		String query = "DELETE FROM groups_students WHERE group_id=?";
-		jdbcTemplate.update(query, groupID);
+		jdbcTemplate.update(REMOVE_ALL_STUDENTS_FROM_GROUP, groupID);
 
 	}
 
 	public List<Student> findAllStudentsForGroup(Integer groupID) {
-		String query = "SELECT students.id,students.firstname,students.lastname FROM students "
-				+ "LEFT JOIN groups_students ON (groups_students.student_id=students.id) "
-				+ "WHERE groups_students.group_id=" + groupID;
-		return jdbcTemplate.query(query,
-				(rs, rowNum) -> new Student(rs.getInt("id"), rs.getString("firstname"), rs.getString("lastname")));
+		return jdbcTemplate.query(FIND_ALL_STUDENTS_FOR_GROUP,
+				(rs, rowNum) -> new Student(rs.getInt("id"), rs.getString("firstname"), rs.getString("lastname")),
+				groupID);
 
 	}
 }
