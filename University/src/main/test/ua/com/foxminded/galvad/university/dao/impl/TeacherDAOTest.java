@@ -20,8 +20,8 @@ import ua.com.foxminded.galvad.university.model.Teacher;
 
 class TeacherDAOTest {
 
-	DataSource dataSource;
-	TeacherDAO teacherDAO = new TeacherDAO();
+	private DataSource dataSource;
+	private TeacherDAO teacherDAO = new TeacherDAO();
 	
 	
 	@BeforeEach
@@ -43,6 +43,22 @@ class TeacherDAOTest {
 		assertEquals("TestLastName", resultTeacher.getLastName());
 	}
 
+	@Test
+	void testGetId_shouldReturnCorrectIdForEntity() {
+		Teacher teacher = new Teacher();
+		teacher.setFirstName("Jennie");
+		teacher.setLastName("Crigler");
+		assertEquals(1,teacherDAO.getId(teacher));
+	}
+	
+	@Test
+	void testGetId_shouldReturnNullIfEntityNotFound() {
+		Teacher teacher = new Teacher();
+		teacher.setFirstName("None");
+		teacher.setLastName("None");
+		assertNull(teacherDAO.getId(teacher));	
+	}
+	
 	@Test
 	void testRetrieve_shouldReturnCorrectData() {
 	    assertEquals(1, teacherDAO.retrieve(1).getId());  

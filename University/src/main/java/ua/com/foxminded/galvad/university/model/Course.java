@@ -25,6 +25,10 @@ public class Course {
 		}
 	}
 
+	public Course() {
+	
+	}
+	
 	public String getName() {
 		return name;
 	}
@@ -43,6 +47,10 @@ public class Course {
 
 	public int getId() {
 		return id;
+	}
+	
+	public void setId(Integer id) {
+		this.id = id;
 	}
 
 	@Override

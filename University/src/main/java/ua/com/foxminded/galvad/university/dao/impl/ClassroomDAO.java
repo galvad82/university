@@ -23,7 +23,8 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 	private static final String UPDATE = "UPDATE classrooms SET name=? WHERE id=?";
 	private static final String DELETE = "DELETE FROM classrooms WHERE id=?";
 	private static final String FIND_ALL = "SELECT * FROM classrooms";
-
+	private static final String FIND_BY_NAME = "SELECT * FROM classrooms WHERE name=?";
+	
 	@Autowired
 	public void setMapper(ClassroomMapper mapper) {
 		if (mapper != null) {
@@ -45,6 +46,13 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 	public Classroom retrieve(Integer id) {
 		try {
 			return jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
+		} catch (IndexOutOfBoundsException e) {
+			return null;
+		}
+	}
+	public Integer getId(Classroom classroom) {
+		try {
+			return jdbcTemplate.query(FIND_BY_NAME, mapper, classroom.getName()).get(0).getId();
 		} catch (IndexOutOfBoundsException e) {
 			return null;
 		}

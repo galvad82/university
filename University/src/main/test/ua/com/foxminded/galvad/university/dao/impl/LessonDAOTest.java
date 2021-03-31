@@ -43,6 +43,23 @@ class LessonDAOTest {
 		Lesson retrievedLesson = lessonDAO.retrieve(3);
 		assertEquals(lesson, retrievedLesson);
 	}
+	@Test
+	void testGetId_shouldReturnCorrectIdForEntity() {
+		Group group = new Group(1);
+		Course course = new Course(1);
+		Classroom classroom = new Classroom(1);
+		Lesson lesson = new Lesson(group,course,classroom,1616510000000L,2700000L);
+		assertEquals(1, lessonDAO.getId(lesson));		
+	}
+	
+	@Test
+	void testGetId_shouldReturnNullIfEntityNotFound() {
+		Group group = new Group(5);
+		Course course = new Course(5);
+		Classroom classroom = new Classroom(5);
+		Lesson lesson = new Lesson(group,course,classroom,0L,0L);
+		assertNull(lessonDAO.getId(lesson));
+	}
 	
 	@Test
 	void testRetrieve_shouldReturnCorrectData() {

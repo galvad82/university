@@ -28,8 +28,16 @@ public class Group {
 		}
 	}
 
+	public Group() {
+
+	}
+
 	public int getId() {
 		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
 	}
 
 	public String getName() {
@@ -85,5 +93,4 @@ public class Group {
 		return true;
 	}
 
-	
 }

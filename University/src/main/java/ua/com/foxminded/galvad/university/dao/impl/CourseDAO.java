@@ -23,7 +23,8 @@ public class CourseDAO implements DAO<Integer, Course> {
 	private static final String UPDATE = "UPDATE courses SET name=?,teacher=? WHERE id=?";
 	private static final String DELETE = "DELETE FROM courses WHERE id=?";
 	private static final String FIND_ALL = "SELECT * FROM courses";
-
+	private static final String FIND_ID = "SELECT * FROM courses WHERE name=? AND teacher=?";
+	
 	@Autowired
 	public void setMapper(CourseMapper mapper) {
 		if (mapper != null) {
@@ -48,9 +49,16 @@ public class CourseDAO implements DAO<Integer, Course> {
 		} catch (IndexOutOfBoundsException e) {
 			return null;
 		}
-
 	}
 
+	public Integer getId (Course course) {
+		try {
+			return jdbcTemplate.query(FIND_ID, mapper, course.getName(),course.getTeacher().getId()).get(0).getId();
+		} catch (Exception e) {
+			return null;
+		}
+	}
+	
 	public void update(Course course) {
 		jdbcTemplate.update(UPDATE, course.getName(), course.getTeacher().getId(), course.getId());
 	}
