@@ -1,58 +1,34 @@
-package ua.com.foxminded.galvad.university.model;
+package ua.com.foxminded.galvad.university.dto;
 
-public class Lesson {
-
-	private Integer id;
-	private Group group;
-	private Course course;
-	private Classroom classroom;
+public class LessonDTO {
+	
+	private GroupDTO group;
+	private CourseDTO course;
+	private ClassroomDTO classroom;
 	private Long startTime;
 	private Long duration;
 
-	public Lesson(Integer id, Group group, Course course, Classroom classroom, Long startTime, Long duration) {
-		if ((id != null) && (id >= 0) && (startTime != null) && (startTime > 0) && (duration != null) && (duration > 0)
-				&& (group != null) && (course != null) && (classroom != null)) {
-			this.id = id;
-			this.group = group;
-			this.course = course;
-			this.classroom = classroom;
-			this.startTime = startTime;
-			this.duration = duration;
-		}
-	}
-
-	public Lesson(Group group, Course course, Classroom classroom, Long startTime, Long duration) {
-		if ((startTime != null) && (startTime > 0) && (duration != null) && (duration > 0)
-				&& (group != null) && (course != null) && (classroom != null)) {
-			this.group = group;
-			this.course = course;
-			this.classroom = classroom;
-			this.startTime = startTime;
-			this.duration = duration;
-		}
-	}
-	
-	public Group getGroup() {
+	public GroupDTO getGroup() {
 		return group;
 	}
 
-	public void setGroup(Group group) {
+	public void setGroup(GroupDTO group) {
 		this.group = group;
 	}
 
-	public Course getCourse() {
+	public CourseDTO getCourse() {
 		return course;
 	}
 
-	public void setCourse(Course course) {
+	public void setCourse(CourseDTO course) {
 		this.course = course;
 	}
 
-	public Classroom getClassroom() {
+	public ClassroomDTO getClassroom() {
 		return classroom;
 	}
 
-	public void setClassroom(Classroom classroom) {
+	public void setClassroom(ClassroomDTO classroom) {
 		this.classroom = classroom;
 	}
 
@@ -72,14 +48,6 @@ public class Lesson {
 		this.duration = duration;
 	}
 
-	public int getId() {
-		return id;
-	}
-
-	public void setId(Integer id) {
-		this.id = id;
-	}
-
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -88,7 +56,6 @@ public class Lesson {
 		result = prime * result + ((course == null) ? 0 : course.hashCode());
 		result = prime * result + ((duration == null) ? 0 : duration.hashCode());
 		result = prime * result + ((group == null) ? 0 : group.hashCode());
-		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((startTime == null) ? 0 : startTime.hashCode());
 		return result;
 	}
@@ -101,7 +68,7 @@ public class Lesson {
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		Lesson other = (Lesson) obj;
+		LessonDTO other = (LessonDTO) obj;
 		if (classroom == null) {
 			if (other.classroom != null)
 				return false;
@@ -122,11 +89,6 @@ public class Lesson {
 				return false;
 		} else if (!group.equals(other.group))
 			return false;
-		if (id == null) {
-			if (other.id != null)
-				return false;
-		} else if (!id.equals(other.id))
-			return false;
 		if (startTime == null) {
 			if (other.startTime != null)
 				return false;
@@ -134,5 +96,5 @@ public class Lesson {
 			return false;
 		return true;
 	}
-
+	
 }

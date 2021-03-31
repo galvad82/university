@@ -20,8 +20,8 @@ import ua.com.foxminded.galvad.university.model.Classroom;
 
 class ClassroomDAOTest {
 
-	DataSource dataSource;
-	ClassroomDAO classroomDAO = new ClassroomDAO();
+	private DataSource dataSource;
+	private ClassroomDAO classroomDAO = new ClassroomDAO();
 
 	@BeforeEach
 	void setDataSource() {
@@ -37,6 +37,20 @@ class ClassroomDAOTest {
 		Classroom resultClassroom = classroomDAO.retrieve(3);
 		assertEquals(3, resultClassroom.getId());
 		assertEquals("TestName", resultClassroom.getName());
+	}
+	
+	@Test 
+	void testGetId_shouldReturnCorrectIdForEntity() {
+		Classroom classroom = new Classroom();
+		classroom.setName("ROOM-15");
+		assertEquals(1,classroomDAO.getId(classroom));
+	}
+	
+	@Test 
+	void testGetId_shouldReturnNullIfEntityNotFound() {
+		Classroom classroom = new Classroom();
+		classroom.setName("NONE");
+		assertNull(classroomDAO.getId(classroom));
 	}
 
 	@Test

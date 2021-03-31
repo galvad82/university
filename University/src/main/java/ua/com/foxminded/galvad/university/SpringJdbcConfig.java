@@ -2,6 +2,7 @@ package ua.com.foxminded.galvad.university;
 
 import javax.sql.DataSource;
 
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -33,5 +34,10 @@ public class SpringJdbcConfig {
 			driverManagerDataSource.setDriverClassName(driver);
 		}
 		return driverManagerDataSource;
+	}
+	
+	@Bean
+	public ModelMapper getMapper() {
+	    return new ModelMapper();
 	}
 }

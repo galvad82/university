@@ -24,6 +24,7 @@ public class GroupDAO implements DAO<Integer, Group> {
 	private static final String UPDATE = "UPDATE groups SET name=? WHERE id=?";
 	private static final String DELETE = "DELETE FROM groups WHERE id=?";
 	private static final String FIND_ALL = "SELECT * FROM groups";
+	private static final String FIND_BY_NAME = "SELECT * FROM groups WHERE name=?";
 	private static final String ADD_STUDENTS_TO_GROUP = "INSERT INTO groups_students (group_id,student_id) VALUES(?,?)";
 	private static final String REMOVE_ALL_STUDENTS_FROM_GROUP = "DELETE FROM groups_students WHERE group_id=?";
 	private static final String FIND_ALL_STUDENTS_FOR_GROUP = "SELECT students.id,students.firstname,students.lastname "
@@ -46,7 +47,7 @@ public class GroupDAO implements DAO<Integer, Group> {
 
 	public void create(Group group) {
 		jdbcTemplate.update(CREATE, group.getName());
-		addStudentsToGroup(group.getListOfStudent(), group.getId());
+		addStudentsToGroup(group.getListOfStudent(), getId(group));
 	}
 
 	public Group retrieve(Integer id) {
@@ -54,6 +55,14 @@ public class GroupDAO implements DAO<Integer, Group> {
 			Group resultGroup = jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
 			resultGroup.setListOfStudent(findAllStudentsForGroup(resultGroup.getId()));
 			return resultGroup;
+		} catch (IndexOutOfBoundsException e) {
+			return null;
+		}
+	}
+
+	public Integer getId(Group group) {
+		try {
+			return jdbcTemplate.query(FIND_BY_NAME, mapper, group.getName()).get(0).getId();
 		} catch (IndexOutOfBoundsException e) {
 			return null;
 		}
@@ -83,9 +92,8 @@ public class GroupDAO implements DAO<Integer, Group> {
 	}
 
 	public void addStudentsToGroup(List<Student> listOfStudents, Integer groupID) {
-		listOfStudents.stream().forEach(student -> {
-			jdbcTemplate.update(ADD_STUDENTS_TO_GROUP, groupID, student.getId());
-		});
+		listOfStudents.stream()
+				.forEach(student -> jdbcTemplate.update(ADD_STUDENTS_TO_GROUP, groupID, student.getId()));
 	}
 
 	public void removeAllStudentsFromGroup(Integer groupID) {

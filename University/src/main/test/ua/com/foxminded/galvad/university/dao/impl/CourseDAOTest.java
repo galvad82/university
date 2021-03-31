@@ -44,6 +44,22 @@ class CourseDAOTest {
 	}
 
 	@Test
+	void testGetId_shouldReturnCorrectIdForEntity() {
+		Course course = new Course();
+		course.setName("Science");
+		course.setTeacher(new Teacher(1));
+		assertEquals(1, courseDAO.getId(course));
+	}
+	
+	@Test
+	void testGetId_shouldReturnNullIfEntityNotFound() {
+		Course course = new Course();
+		course.setName("NONE");
+		course.setTeacher(new Teacher(999));
+		assertNull(courseDAO.getId(course));
+	}
+	
+	@Test
 	void testRetrieve_shouldReturnCorrectData() {
 		assertEquals(1, courseDAO.retrieve(1).getId());
 		assertEquals("Science", courseDAO.retrieve(1).getName());

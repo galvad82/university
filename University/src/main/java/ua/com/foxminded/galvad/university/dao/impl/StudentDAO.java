@@ -24,6 +24,7 @@ public class StudentDAO implements DAO<Integer, Student> {
 	private static final String DELETE = "DELETE FROM students WHERE id=?";
 	private static final String FIND_ALL = "SELECT * FROM students";
 	private static final String REMOVE_STUDENT_FROM_GROUPS = "DELETE FROM groups_students WHERE student_id=?";
+	private static final String FIND_BY_NAMES = "SELECT * FROM students WHERE firstname=? AND lastname=?";
 
 	@Autowired
 	public void setMapper(StudentMapper mapper) {
@@ -51,6 +52,14 @@ public class StudentDAO implements DAO<Integer, Student> {
 		}
 	}
 
+	public Integer getId (Student student) {
+		try {
+			return jdbcTemplate.query(FIND_BY_NAMES, mapper, student.getFirstName(),student.getLastName()).get(0).getId();
+		} catch (IndexOutOfBoundsException e) {
+			return null;
+		}
+	}
+	
 	public void update(Student student) {
 		jdbcTemplate.update(UPDATE, student.getFirstName(), student.getLastName(), student.getId());
 	}

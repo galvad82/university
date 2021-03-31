@@ -17,13 +17,14 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 
 	private JdbcTemplate jdbcTemplate;
 	private TeacherMapper mapper;
-
+	
 	private static final String CREATE = "INSERT INTO teachers (firstname, lastname) VALUES (?, ?)";
 	private static final String RETRIEVE = "SELECT * FROM teachers WHERE id=?";
 	private static final String UPDATE = "UPDATE teachers SET firstname=?,lastname=? WHERE id=?";
 	private static final String DELETE = "DELETE FROM teachers WHERE id=?";
 	private static final String FIND_ALL = "SELECT * FROM teachers";
-
+	private static final String FIND_BY_NAMES = "SELECT * FROM teachers WHERE firstname=? AND lastname=?";
+	
 	@Autowired
 	public void setDataSource(DataSource ds) {
 		this.jdbcTemplate = new JdbcTemplate(ds);
@@ -49,7 +50,15 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 			return null;
 		}
 	}
-
+	
+	public Integer getId (Teacher teacher) {
+		try {
+			return jdbcTemplate.query(FIND_BY_NAMES, mapper, teacher.getFirstName(),teacher.getLastName()).get(0).getId();
+		} catch (IndexOutOfBoundsException e) {
+			return null;
+		}
+	}
+	
 	public void update(Teacher teacher) {
 		jdbcTemplate.update(UPDATE, teacher.getFirstName(), teacher.getLastName(), teacher.getId());
 	}

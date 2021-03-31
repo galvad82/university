@@ -45,6 +45,20 @@ class GroupDAOTest {
 	}
 
 	@Test
+	void testGetId_shouldReturnCorrectIdForEntity() {
+		Group group = new Group();
+		group.setName("AB-123");
+		assertEquals(1,groupDAO.getId(group));
+	}
+	
+	@Test
+	void testGetId_shouldReturnNullIfEntityNotFound() {
+		Group group = new Group();
+		group.setName("NONE");
+		assertNull(groupDAO.getId(group));
+	}
+	
+	@Test
 	void testRetrieve_shouldReturnCorrectData() {
 		assertEquals(1, groupDAO.retrieve(1).getId());
 		assertEquals("AB-123", groupDAO.retrieve(1).getName());

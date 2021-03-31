@@ -23,6 +23,7 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 	private static final String UPDATE = "UPDATE lessons SET group_id=?, course=?, classroom=?, starttime=?, duration=? WHERE id=?";
 	private static final String DELETE = "DELETE FROM lessons WHERE id=?";
 	private static final String FIND_ALL = "SELECT * FROM lessons";
+	private static final String FIND_ID = "SELECT * FROM lessons WHERE group_id=? AND course=? AND classroom=? AND starttime=? AND duration=?";
 	private static final String DELETE_BY_CLASSROOM_ID = "DELETE FROM lessons WHERE classroom=?";
 	private static final String DELETE_BY_COURSE_ID = "DELETE FROM lessons WHERE course=?";
 	private static final String DELETE_BY_GROUP_ID = "DELETE FROM lessons WHERE group_id=?";
@@ -50,6 +51,15 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 		try {
 			return jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
 		} catch (IndexOutOfBoundsException e) {
+			return null;
+		}
+	}
+
+	public Integer getId(Lesson lesson) {
+		try {
+			return jdbcTemplate.query(FIND_ID, mapper, lesson.getGroup().getId(), lesson.getCourse().getId(),
+					lesson.getClassroom().getId(), lesson.getStartTime(), lesson.getDuration()).get(0).getId();
+		} catch (Exception e) {
 			return null;
 		}
 	}

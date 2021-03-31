@@ -23,6 +23,10 @@ public class Classroom {
 			throw new IllegalArgumentException("Cannot create a Classroom because of illegal arguments");
 		}
 	}
+	
+	public Classroom() {
+		
+	}
 
 	public String getName() {
 		return name;
@@ -34,6 +38,10 @@ public class Classroom {
 
 	public int getId() {
 		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
 	}
 
 	@Override
