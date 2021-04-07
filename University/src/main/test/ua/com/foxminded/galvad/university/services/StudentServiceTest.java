@@ -19,12 +19,12 @@ import ua.com.foxminded.galvad.university.dto.StudentDTO;
 
 @SpringJUnitConfig(SpringJdbcConfig.class)
 class StudentServiceTest {
-	
+
 	@Autowired
 	private StudentService studentService = new StudentService();
 	@Autowired
 	private StudentDAO studentDAO;
-	
+
 	private DataSource dataSource;
 
 	@BeforeEach
