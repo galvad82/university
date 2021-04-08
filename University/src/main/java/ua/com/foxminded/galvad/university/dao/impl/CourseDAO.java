@@ -51,8 +51,8 @@ public class CourseDAO implements DAO<Integer, Course> {
 			jdbcTemplate.update(CREATE, course.getName(), course.getTeacher().getId());
 			LOGGER.info("Added a course (name={}) to DB", course.getName());
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot add a course (name=" + course.getName() + ") to DB";
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot add a course (name=%s) to DB", course.getName()),
+					e);
 		}
 	}
 
@@ -63,11 +63,9 @@ public class CourseDAO implements DAO<Integer, Course> {
 			LOGGER.info("Retrieved a course (ID={}) from DB", retrievedCourse.getId());
 			return retrievedCourse;
 		} catch (IndexOutOfBoundsException e) {
-			String errorMessage = "A course with ID=" + id + " is not found";
-			throw new DataNotFoundException(errorMessage);
+			throw new DataNotFoundException(String.format("A course with ID=%d is not found", id));
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve a course with ID=" + id;
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException(String.format("Cannot retrieve a course with ID=%d", id), e);
 		}
 	}
 
@@ -81,13 +79,13 @@ public class CourseDAO implements DAO<Integer, Course> {
 					course.getTeacher().getId());
 			return result;
 		} catch (IndexOutOfBoundsException e) {
-			String errorMessage = "A course (name=" + course.getName() + ", teacherID=" + course.getTeacher().getId()
-					+ ") is not found";
-			throw new DataNotFoundException(errorMessage);
+			throw new DataNotFoundException(String.format("A course (name=%s, teacherID=%s) is not found",
+					course.getName(), course.getTeacher().getId()));
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve an ID for a course (name=" + course.getName() + ", teacherID="
-					+ course.getTeacher().getId() + ")";
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException(
+					String.format("Cannot retrieve an ID for a course (name=%s, teacherID=%d) is not found",
+							course.getName(), course.getTeacher().getId()),
+					e);
 		}
 	}
 
@@ -96,15 +94,14 @@ public class CourseDAO implements DAO<Integer, Course> {
 		try {
 			Integer result = jdbcTemplate.update(UPDATE, course.getName(), course.getTeacher().getId(), course.getId());
 			if (result == 0) {
-				String errorMessage = "A course with ID=" + course.getId() + " was not updated";
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(
+						String.format("A course with ID=%d was not updated", course.getId()));
 			} else {
 				LOGGER.info("A course with ID={} was updated, new Name={}, new TeacherID={}", course.getId(),
 						course.getName(), course.getTeacher().getId());
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot update a course with ID=" + course.getId();
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot update a course with ID=%d", course.getId()), e);
 		}
 	}
 
@@ -113,14 +110,12 @@ public class CourseDAO implements DAO<Integer, Course> {
 		try {
 			Integer result = jdbcTemplate.update(DELETE, id);
 			if (result == 0) {
-				String errorMessage = "A course with ID=" + id + " was not deleted";
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(String.format("A course with ID=%d was not deleted", id));
 			} else {
 				LOGGER.info("A course with ID={} was deleted successfully", id);
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot delete a course with ID=" + id;
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot delete a course with ID=%d", id), e);
 		}
 	}
 
@@ -134,15 +129,13 @@ public class CourseDAO implements DAO<Integer, Course> {
 		try {
 			resultList = jdbcTemplate.query(FIND_ALL, mapper);
 			if (resultList.isEmpty()) {
-				String errorMessage = "None of courses was found in DB";
-				throw new DataNotFoundException(errorMessage);
+				throw new DataNotFoundException("None of courses was found in DB");
 			} else {
 				LOGGER.info("Retrieved a list of courses successfully. {} courses were found", resultList.size());
 				return resultList;
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve a list of courses from DB";
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException("Cannot retrieve a list of courses from DB", e);
 		}
 	}
 

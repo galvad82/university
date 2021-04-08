@@ -46,15 +46,8 @@ class GroupDAOTest {
 	@Test
 	void testCreate_shouldThrowDataAreNotUpdatedException() {
 		dropDB();
-		String actualMessage = "";
 		Group group = new Group(1, "TestName");
-		try {
-			groupDAO.create(group);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot add a group (name=TestName) to DB";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> groupDAO.create(group));
 	}
 
 	@Test
@@ -66,30 +59,16 @@ class GroupDAOTest {
 
 	@Test
 	void testGetIdWithNonexistentGroup_shouldThrowDataNotFoundException() {
-		String actualMessage = "";
 		Group group = new Group(100, "TestName");
-		try {
-			groupDAO.getId(group);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A group with name=TestName is not found";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> groupDAO.getId(group));
 	}
 
 	@Test
 	void testGetId_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
 		Group group = new Group();
 		group.setName("TestName");
-		try {
-			groupDAO.getId(group);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot retrieve an ID for a group with name=TestName";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> groupDAO.getId(group));
 	}
 
 	@Test
@@ -100,27 +79,13 @@ class GroupDAOTest {
 
 	@Test
 	void testRetrieveWithNonexistentID_shouldThrowDataNotFoundException() {
-		String actualMessage = "";
-		try {
-			groupDAO.retrieve(100);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A group with ID=100 is not found";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> groupDAO.retrieve(100));
 	}
 
 	@Test
 	void testRetrieve_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
-		try {
-			groupDAO.retrieve(100);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot retrieve a group with ID=100";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> groupDAO.retrieve(100));
 	}
 
 	@Test
@@ -135,28 +100,14 @@ class GroupDAOTest {
 	@Test
 	void testUpdate_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
 		Group group = new Group(1, "TestName");
-		try {
-			groupDAO.update(group);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot update a group with ID=1";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> groupDAO.update(group));
 	}
 
 	@Test
 	void testUpdate_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
-		String actualMessage = "";
 		Group group = new Group(100, "TestName");
-		try {
-			groupDAO.update(group);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A group with ID=100 was not updated";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> groupDAO.update(group));
 	}
 
 	@Test
@@ -169,29 +120,15 @@ class GroupDAOTest {
 
 	@Test
 	void testDeleteByEntity_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
-		String actualMessage = "";
 		Group group = new Group(100, "TestName");
-		try {
-			groupDAO.delete(group);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A group with ID=100 was not deleted";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> groupDAO.delete(group));
 	}
 
 	@Test
 	void testDelete_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
 		Group group = new Group(1, "TestName");
-		try {
-			groupDAO.delete(group);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot delete a group with ID=1";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> groupDAO.delete(group));
 	}
 
 	@Test
@@ -234,14 +171,7 @@ class GroupDAOTest {
 	@Test
 	void testFindAll_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
-		try {
-			groupDAO.findAll();
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot retrieve a list of groups from DB";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> groupDAO.findAll());
 	}
 
 	@Test
@@ -249,14 +179,7 @@ class GroupDAOTest {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 		String query = "DELETE FROM groups";
 		jdbcTemplate.execute(query);
-		String actualMessage = "";
-		try {
-			groupDAO.findAll();
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "None of groups was found in DB";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> groupDAO.findAll());
 	}
 
 	private void dropDB() {

@@ -53,9 +53,8 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 			LOGGER.info("Added a teacher to DB. FirstName=\"{}\", LastName =\"{}\"", teacher.getFirstName(),
 					teacher.getLastName());
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot add a teacher \"" + teacher.getFirstName() + "\" \"" + teacher.getLastName()
-					+ "\" to DB";
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot add a teacher \"%s\" \"%s\" to DB",
+					teacher.getFirstName(), teacher.getLastName()), e);
 		}
 
 	}
@@ -67,11 +66,9 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 			LOGGER.info("Retrieved a teacher with ID={} from DB", id);
 			return retrievedTeacher;
 		} catch (IndexOutOfBoundsException e) {
-			String errorMessage = "A teacher with ID=" + id + " is not found";
-			throw new DataNotFoundException(errorMessage);
+			throw new DataNotFoundException(String.format("A teacher with ID=%d is not found", id));
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve a teacher with ID=" + id;
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException(String.format("Cannot retrieve a teacher with ID=%d", id), e);
 		}
 	}
 
@@ -85,13 +82,14 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 					teacher.getFirstName(), teacher.getLastName(), result);
 			return result;
 		} catch (IndexOutOfBoundsException e) {
-			String errorMessage = "A teacher with FirstName=" + teacher.getFirstName() + " and LastName="
-					+ teacher.getLastName() + " is not found";
-			throw new DataNotFoundException(errorMessage);
+			throw new DataNotFoundException(
+					String.format("A teacher with FirstName=\"%s\" and LastName=\"%s\" is not found",
+							teacher.getFirstName(), teacher.getLastName()));
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve an ID for a teacher with FirstName=" + teacher.getFirstName()
-					+ " and LastName=" + teacher.getLastName();
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException(
+					String.format("Cannot retrieve an ID for a teacher with FirstName=\"%s\" and LastName=\"%s\"",
+							teacher.getFirstName(), teacher.getLastName()),
+					e);
 		}
 	}
 
@@ -101,15 +99,15 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 			Integer result = jdbcTemplate.update(UPDATE, teacher.getFirstName(), teacher.getLastName(),
 					teacher.getId());
 			if (result == 0) {
-				String errorMessage = "A teacher with ID=" + teacher.getId() + " was not updated";
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(
+						String.format("A teacher with ID=%d was not updated", teacher.getId()));
 			} else {
 				LOGGER.info("A teacher with ID={} was updated, new FirstName={}, new LastName={}", teacher.getId(),
 						teacher.getFirstName(), teacher.getLastName());
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot update a teacher with ID=" + teacher.getId();
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot update a teacher with ID=%d", teacher.getId()),
+					e);
 		}
 	}
 
@@ -118,14 +116,12 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 		try {
 			Integer result = jdbcTemplate.update(DELETE, id);
 			if (result == 0) {
-				String errorMessage = "A teacher with ID=" + id + " was not deleted";
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(String.format("A teacher with ID=%d was not deleted", id));
 			} else {
 				LOGGER.info("A teacher with ID={} was deleted successfully", id);
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot delete a teacher with ID=" + id;
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot delete a teacher with ID=%d", id), e);
 		}
 	}
 
@@ -139,15 +135,13 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 		try {
 			resultList = jdbcTemplate.query(FIND_ALL, mapper);
 			if (resultList.isEmpty()) {
-				String errorMessage = "None of teachers was found in DB";
-				throw new DataNotFoundException(errorMessage);
+				throw new DataNotFoundException("None of teachers was found in DB");
 			} else {
 				LOGGER.info("Retrieved a list of teachers successfully. {} teachers were found", resultList.size());
 				return resultList;
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve a list of teachers from DB";
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException("Cannot retrieve a list of teachers from DB", e);
 		}
 	}
 

@@ -54,12 +54,9 @@ public class LessonService {
 		try {
 			Lesson lesson = convertToEntity(lessonDTO);
 			lessonDAO.create(lesson);
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -85,12 +82,9 @@ public class LessonService {
 		try {
 			lessonDAO.update(convertToEntity(oldDTO, newDTO));
 			LOGGER.trace("Updated LessonDTO successfully");
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -98,12 +92,9 @@ public class LessonService {
 		LOGGER.trace("Going to delete LessonDTO");
 		try {
 			lessonDAO.delete(convertToEntity(lessonDTO));
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -132,12 +123,9 @@ public class LessonService {
 			LOGGER.trace("Going to delete LessonDTO by classroom (id={}, name={})", id, classroomDTO.getName());
 			lessonDAO.deleteByClassroomID(id);
 			LOGGER.trace("Deleted LessonDTO by classroom (id={}, name={}) successfully", id, classroomDTO.getName());
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -153,12 +141,9 @@ public class LessonService {
 			LOGGER.trace("Going to delete LessonDTO by course (id={}, name={})", id, courseDTO.getName());
 			lessonDAO.deleteByCourseID(id);
 			LOGGER.trace("Deleted LessonDTO by course (id={}, name={}) successfully", id, courseDTO.getName());
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -174,12 +159,9 @@ public class LessonService {
 			LOGGER.trace("Going to delete LessonDTO by group (id={}, name={})", id, groupDTO.getName());
 			lessonDAO.deleteByGroupID(id);
 			LOGGER.trace("Deleted LessonDTO by group (id={}, name={}) successfully", id, groupDTO.getName());
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 

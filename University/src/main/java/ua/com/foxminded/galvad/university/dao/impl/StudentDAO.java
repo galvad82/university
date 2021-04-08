@@ -53,9 +53,8 @@ public class StudentDAO implements DAO<Integer, Student> {
 			LOGGER.info("Student \"{}\" \"{}\" successfully added to DB.", student.getFirstName(),
 					student.getLastName());
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot add a student \"" + student.getFirstName() + "\" \"" + student.getLastName()
-					+ "\" to DB";
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot add a student \"%s\" \"%s\" to DB",
+					student.getFirstName(), student.getLastName()), e);
 		}
 	}
 
@@ -66,11 +65,9 @@ public class StudentDAO implements DAO<Integer, Student> {
 			LOGGER.info("Retrieved a student with ID={} from DB", id);
 			return retrievedStudent;
 		} catch (IndexOutOfBoundsException e) {
-			String errorMessage = "A student with ID=" + id + " is not found";
-			throw new DataNotFoundException(errorMessage);
+			throw new DataNotFoundException(String.format("A student with ID=%d is not found", id));
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve a student with ID=" + id;
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException(String.format("Cannot retrieve a student with ID=%d", id), e);
 		}
 	}
 
@@ -84,13 +81,13 @@ public class StudentDAO implements DAO<Integer, Student> {
 					student.getFirstName(), student.getLastName(), result);
 			return result;
 		} catch (IndexOutOfBoundsException e) {
-			String errorMessage = "A student with FirstName=" + student.getFirstName() + " and LastName="
-					+ student.getLastName() + " is not found";
-			throw new DataNotFoundException(errorMessage);
+			throw new DataNotFoundException(String.format("A student with FirstName=%s and LastName=%s is not found",
+					student.getFirstName(), student.getLastName()));
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve an ID for a student with FirstName=" + student.getFirstName()
-					+ " and LastName=" + student.getLastName();
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException(
+					String.format("Cannot retrieve an ID for a student with FirstName=%s and LastName=%s",
+							student.getFirstName(), student.getLastName()),
+					e);
 		}
 	}
 
@@ -100,15 +97,15 @@ public class StudentDAO implements DAO<Integer, Student> {
 			Integer result = jdbcTemplate.update(UPDATE, student.getFirstName(), student.getLastName(),
 					student.getId());
 			if (result == 0) {
-				String errorMessage = "A student with ID=" + student.getId() + " was not updated";
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(
+						String.format("A student with ID=%d was not updated", student.getId()));
 			} else {
 				LOGGER.info("A student with ID={} was updated, new FirstName={}, new LastName={}", student.getId(),
 						student.getFirstName(), student.getLastName());
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot update a student with ID=" + student.getId();
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot update a student with ID=%d", student.getId()),
+					e);
 		}
 	}
 
@@ -124,14 +121,12 @@ public class StudentDAO implements DAO<Integer, Student> {
 		try {
 			Integer result = jdbcTemplate.update(DELETE, id);
 			if (result == 0) {
-				String errorMessage = "A student with ID=" + id + " was not deleted";
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(String.format("A student with ID=%d was not deleted", id));
 			} else {
 				LOGGER.info("A student with ID={} was deleted successfully", id);
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot delete a student with ID=" + id;
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot delete a student with ID=%d", id), e);
 		}
 	}
 
@@ -145,15 +140,13 @@ public class StudentDAO implements DAO<Integer, Student> {
 		try {
 			resultList = jdbcTemplate.query(FIND_ALL, mapper);
 			if (resultList.isEmpty()) {
-				String errorMessage = "None of students was found in DB";
-				throw new DataNotFoundException(errorMessage);
+				throw new DataNotFoundException("None of students was found in DB");
 			} else {
 				LOGGER.info("Retrieved a list of students successfully. {} students were found", resultList.size());
 				return resultList;
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve a list of students from DB";
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException("Cannot retrieve a list of students from DB", e);
 		}
 	}
 
@@ -161,14 +154,14 @@ public class StudentDAO implements DAO<Integer, Student> {
 		LOGGER.trace("Going to delete a student (ID={}) from groups", studentID);
 		try {
 			if (jdbcTemplate.update(REMOVE_STUDENT_FROM_GROUPS, studentID) == 0) {
-				String errorMessage = "A student with ID=" + studentID + " was not found in groups_students table";
-				throw new DataNotFoundException(errorMessage);
+				throw new DataNotFoundException(
+						String.format("A student with ID=%d was not found in groups_students table", studentID));
 			} else {
 				LOGGER.info("A student (ID={}) was deleted from groups successfully", studentID);
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot delete a student (ID=" + studentID + ") from groups";
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(
+					String.format("Cannot delete a student (ID=%d) from groups", studentID), e);
 		}
 
 	}

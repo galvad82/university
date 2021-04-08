@@ -77,7 +77,7 @@ public class StudentService {
 		} catch (DataAreNotUpdatedException e) {
 			LOGGER.error(e.getErrorMessage());
 			LOGGER.error(e.getCauseDescription());
-		} 
+		}
 
 	}
 
@@ -95,7 +95,8 @@ public class StudentService {
 	}
 
 	private StudentDTO convertToDTO(Student entity) {
-		LOGGER.trace("Going to convert entity(firstName={}, lastName={}) to DTO", entity.getFirstName(), entity.getLastName());
+		LOGGER.trace("Going to convert entity(firstName={}, lastName={}) to DTO", entity.getFirstName(),
+				entity.getLastName());
 		StudentDTO studentDTO = modelMapper.map(entity, StudentDTO.class);
 		LOGGER.trace("Entity was converted to DTO successfully");
 		return studentDTO;
@@ -120,7 +121,8 @@ public class StudentService {
 	}
 
 	private Student convertToEntity(StudentDTO oldDTO, StudentDTO newDTO) {
-		LOGGER.trace("Going to convert newDTO(firstName={}, lastName={}) to entity", newDTO.getFirstName(), newDTO.getLastName());
+		LOGGER.trace("Going to convert newDTO(firstName={}, lastName={}) to entity", newDTO.getFirstName(),
+				newDTO.getLastName());
 		Student entity = modelMapper.map(newDTO, Student.class);
 		LOGGER.trace("DTO was converted successfully.");
 		try {

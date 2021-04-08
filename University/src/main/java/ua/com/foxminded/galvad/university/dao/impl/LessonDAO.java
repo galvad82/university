@@ -59,8 +59,7 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 					lesson.getGroup().getId(), lesson.getCourse().getId(), lesson.getClassroom().getId(),
 					lesson.getStartTime(), lesson.getDuration());
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot add a lesson to DB";
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException("Cannot add a lesson to DB", e);
 		}
 	}
 
@@ -71,11 +70,9 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 			LOGGER.info("Retrieved a lesson (ID={}) from DB", retrievedLesson.getId());
 			return retrievedLesson;
 		} catch (IndexOutOfBoundsException e) {
-			String errorMessage = "A lesson with ID=" + id + " is not found";
-			throw new DataNotFoundException(errorMessage);
+			throw new DataNotFoundException(String.format("A lesson with ID=%d is not found", id));
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve a lesson with ID=" + id;
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException(String.format("Cannot retrieve a lesson with ID=%d", id), e);
 		}
 	}
 
@@ -93,11 +90,9 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 					lesson.getStartTime(), lesson.getDuration());
 			return result;
 		} catch (IndexOutOfBoundsException e) {
-			String errorMessage = "A lesson is not found";
-			throw new DataNotFoundException(errorMessage);
+			throw new DataNotFoundException("A lesson is not found");
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve an ID for a lesson";
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException("Cannot retrieve an ID for a lesson", e);
 		}
 	}
 
@@ -107,8 +102,8 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 			Integer result = jdbcTemplate.update(UPDATE, lesson.getGroup().getId(), lesson.getCourse().getId(),
 					lesson.getClassroom().getId(), lesson.getStartTime(), lesson.getDuration(), lesson.getId());
 			if (result == 0) {
-				String errorMessage = "A lesson with ID=" + lesson.getId() + " was not updated";
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(
+						String.format("A lesson with ID=%d was not updated", lesson.getId()));
 			} else {
 				LOGGER.info(
 						"A lesson (ID={}) was updated (groupID={}, courseID={},classroomID={}, startTime={}, duration={})  from DB",
@@ -116,8 +111,7 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 						lesson.getClassroom().getId(), lesson.getStartTime(), lesson.getDuration());
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot update a lesson with ID=" + lesson.getId();
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot update a lesson with ID=%d", lesson.getId()), e);
 		}
 	}
 
@@ -126,14 +120,12 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 		try {
 			Integer result = jdbcTemplate.update(DELETE, id);
 			if (result == 0) {
-				String errorMessage = "A lesson with ID=" + id + " was not deleted";
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(String.format("A lesson with ID=%d was not deleted", id));
 			} else {
 				LOGGER.info("A lesson with ID={} was deleted successfully", id);
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot delete a lesson with ID=" + id;
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot delete a lesson with ID=%d", id), e);
 		}
 	}
 
@@ -147,15 +139,13 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 		try {
 			resultList = jdbcTemplate.query(FIND_ALL, mapper);
 			if (resultList.isEmpty()) {
-				String errorMessage = "None of lessons was found in DB";
-				throw new DataNotFoundException(errorMessage);
+				throw new DataNotFoundException("None of lessons was found in DB");
 			} else {
 				LOGGER.info("Retrieved a list of lessons successfully. {} lessons were found", resultList.size());
 				return resultList;
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve a list of lessons from DB";
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException("Cannot retrieve a list of lessons from DB", e);
 		}
 	}
 
@@ -164,14 +154,12 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 		try {
 			Integer result = jdbcTemplate.update(DELETE_BY_CLASSROOM_ID, id);
 			if (result == 0) {
-				String errorMessage = "Didn't find any lesson with classroomID=" + id;
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(String.format("Didn't find any lesson with classroomID=%d", id));
 			} else {
 				LOGGER.info("All lessons with classroomID={} were deleted successfully ({} in total)", id, result);
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot delete a lesson with classroomID=" + id;
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot delete a lesson with classroomID=%d", id), e);
 		}
 	}
 
@@ -180,14 +168,12 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 		try {
 			Integer result = jdbcTemplate.update(DELETE_BY_COURSE_ID, id);
 			if (result == 0) {
-				String errorMessage = "Didn't find any lesson with courseID=" + id;
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(String.format("Didn't find any lesson with courseID=%d", id));
 			} else {
 				LOGGER.info("All lessons with courseID={} were deleted successfully ({} in total)", id, result);
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot delete a lesson with courseID=" + id;
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot delete a lesson with courseID=%d", id), e);
 		}
 	}
 
@@ -196,14 +182,12 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 		try {
 			Integer result = jdbcTemplate.update(DELETE_BY_GROUP_ID, id);
 			if (result == 0) {
-				String errorMessage = "Didn't find any lesson with groupID=" + id;
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(String.format("Didn't find any lesson with groupID=%d", id));
 			} else {
 				LOGGER.info("All lessons with groupID={} were deleted successfully ({} in total)", id, result);
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot delete a lesson with groupID=" + id;
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot delete a lesson with groupID=%d", id), e);
 		}
 	}
 

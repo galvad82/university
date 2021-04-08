@@ -42,14 +42,8 @@ class TeacherDAOTest {
 	@Test
 	void testCreate_shouldThrowDataAreNotUpdatedException() {
 		dropDB();
-		String actualMessage = "";
-		try {
-			teacherDAO.create(new Teacher(1, "FirstName", "LastName"));
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot add a teacher \"FirstName\" \"LastName\" to DB";
-		assertTrue(actualMessage.contains(expectedMessage));
+		Teacher teacher = new Teacher(1, "FirstName", "LastName");
+		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.create(teacher));
 	}
 
 	@Test
@@ -62,34 +56,19 @@ class TeacherDAOTest {
 
 	@Test
 	void testGetIdWithNonexistentName_shouldThrowDataNotFoundException() {
-		String actualMessage = "";
 		Teacher teacher = new Teacher();
 		teacher.setFirstName("NONE");
 		teacher.setLastName("NONE");
-		try {
-			teacherDAO.getId(teacher);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A teacher with FirstName=NONE and LastName=NONE is not found";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> teacherDAO.getId(teacher));
 	}
 
 	@Test
 	void testGetId_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
 		Teacher teacher = new Teacher();
 		teacher.setFirstName("NONE");
 		teacher.setLastName("NONE");
-		try {
-			teacherDAO.getId(teacher);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-
-		}
-		String expectedMessage = "Cannot retrieve an ID for a teacher with FirstName=NONE and LastName=NONE";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> teacherDAO.getId(teacher));
 	}
 
 	@Test
@@ -101,27 +80,13 @@ class TeacherDAOTest {
 
 	@Test
 	void testRetrieveWithNonexistentID_shouldThrowDataNotFoundException() {
-		String actualMessage = "";
-		try {
-			teacherDAO.retrieve(100);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A teacher with ID=100 is not found";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve(100));
 	}
 
 	@Test
 	void testRetrieve_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
-		try {
-			teacherDAO.retrieve(100);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot retrieve a teacher with ID=100";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve(100));
 	}
 
 	@Test
@@ -137,30 +102,16 @@ class TeacherDAOTest {
 	@Test
 	void testUpdate_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
 		Teacher teacher = new Teacher();
 		teacher.setId(1);
-		try {
-			teacherDAO.update(teacher);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot update a teacher with ID=1";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.update(teacher));
 	}
 
 	@Test
 	void testUpdate_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
-		String actualMessage = "";
 		Teacher teacher = new Teacher();
 		teacher.setId(100);
-		try {
-			teacherDAO.update(teacher);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A teacher with ID=100 was not updated";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.update(teacher));
 	}
 
 	@Test
@@ -173,31 +124,17 @@ class TeacherDAOTest {
 
 	@Test
 	void testDeleteByEntity_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
-		String actualMessage = "";
 		Teacher teacher = new Teacher();
 		teacher.setId(100);
-		try {
-			teacherDAO.delete(teacher);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A teacher with ID=100 was not deleted";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.delete(teacher));
 	}
 
 	@Test
 	void testDelete_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
 		Teacher teacher = new Teacher();
 		teacher.setId(1);
-		try {
-			teacherDAO.delete(teacher);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot delete a teacher with ID=1";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.delete(teacher));
 	}
 
 	@Test
@@ -229,14 +166,7 @@ class TeacherDAOTest {
 	@Test
 	void testFindAll_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
-		try {
-			teacherDAO.findAll();
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot retrieve a list of teachers from DB";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> teacherDAO.findAll());
 	}
 
 	@Test
@@ -244,14 +174,7 @@ class TeacherDAOTest {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 		String query = "DELETE FROM teachers";
 		jdbcTemplate.execute(query);
-		String actualMessage = "";
-		try {
-			teacherDAO.findAll();
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "None of teachers was found in DB";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> teacherDAO.findAll());
 	}
 
 	private void dropDB() {

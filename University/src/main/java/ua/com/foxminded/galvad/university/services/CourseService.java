@@ -34,12 +34,9 @@ public class CourseService {
 		try {
 			Course course = convertToEntity(courseDTO);
 			courseDAO.create(course);
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -64,12 +61,9 @@ public class CourseService {
 		try {
 			courseDAO.update(convertToEntity(oldDTO, newDTO));
 			LOGGER.trace("Updated CourseDTO with newName={} ", newDTO.getName());
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -77,12 +71,9 @@ public class CourseService {
 		LOGGER.trace("Going to delete CourseDTO by entity (name={})", courseDTO.getName());
 		try {
 			courseDAO.delete(convertToEntity(courseDTO));
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 

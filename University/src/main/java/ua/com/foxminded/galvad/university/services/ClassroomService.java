@@ -46,12 +46,9 @@ public class ClassroomService {
 		try {
 			Classroom classroom = convertToEntity(classroomDTO);
 			classroomDAO.create(classroom);
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -90,12 +87,9 @@ public class ClassroomService {
 		LOGGER.trace("Going to delete ClassroomDTO (name={})", classroomDTO.getName());
 		try {
 			classroomDAO.delete(convertToEntity(classroomDTO));
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -105,7 +99,7 @@ public class ClassroomService {
 		try {
 			list = classroomDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
 			LOGGER.trace("List of ALL ClassroomDTO retrieved from DB, {} were found", list.size());
-		}	catch (DataNotFoundException e) {
+		} catch (DataNotFoundException e) {
 			LOGGER.error(e.getErrorMessage());
 			LOGGER.error(e.getCauseDescription());
 		}
@@ -128,17 +122,17 @@ public class ClassroomService {
 		return classroomDTO;
 	}
 
-	protected Classroom convertToEntity(ClassroomDTO classroomDTO){
+	protected Classroom convertToEntity(ClassroomDTO classroomDTO) {
 		LOGGER.trace("Going to convert classroomDTO (name={}) to entity", classroomDTO.getName());
 		Classroom entity = modelMapper.map(classroomDTO, Classroom.class);
 		LOGGER.trace("Converted classroomDTO to entity (name={})", entity.getName());
 		LOGGER.trace("Going to set ID for entity classroom (name={})", entity.getName());
-		Integer id=0;
+		Integer id = 0;
 		try {
-		id = classroomDAO.getId(entity);
-		entity.setId(id);
+			id = classroomDAO.getId(entity);
+			entity.setId(id);
 		} catch (DataNotFoundException e) {
-			entity.setId(id);	
+			entity.setId(id);
 		}
 		entity.setId(id);
 		LOGGER.trace("Set ID={} for entity classroom (name={})", id, entity.getName());

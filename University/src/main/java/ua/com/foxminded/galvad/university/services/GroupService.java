@@ -50,12 +50,9 @@ public class GroupService {
 		try {
 			Group group = convertToEntity(groupDTO);
 			groupDAO.create(group);
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 
 	}
@@ -82,12 +79,9 @@ public class GroupService {
 		try {
 			groupDAO.update(convertToEntity(oldDTO, newDTO));
 			LOGGER.trace("Updated GroupDTO with newName={} ", newDTO.getName());
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -95,12 +89,9 @@ public class GroupService {
 		LOGGER.trace("Going to delete GroupDTO (name={})", groupDTO.getName());
 		try {
 			groupDAO.delete(convertToEntity(groupDTO));
-		} catch (DataNotFoundException ex) {
-			LOGGER.error(ex.getErrorMessage());
-			LOGGER.error(ex.getCauseDescription());
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
+		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
+			LOGGER.error(ex.getMessage());
+			LOGGER.error(ex.getCause().toString());
 		}
 	}
 
@@ -172,7 +163,7 @@ public class GroupService {
 		try {
 			newDTO.getListOfStudent().stream().forEach(studentDTO -> {
 				Student student = modelMapper.map(studentDTO, Student.class);
-				student.setId(studentDAO.getId(student));	
+				student.setId(studentDAO.getId(student));
 				listOfStudents.add(student);
 			});
 			entity.setListOfStudent(listOfStudents);

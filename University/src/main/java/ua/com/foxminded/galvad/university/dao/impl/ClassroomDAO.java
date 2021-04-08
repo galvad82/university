@@ -51,8 +51,8 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 			jdbcTemplate.update(CREATE, classroom.getName());
 			LOGGER.info("Classroom with name={} successfully added to DB.", classroom.getName());
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot add a classroom with name=\"" + classroom.getName() + "\" to DB";
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(
+					String.format("Cannot add a classroom with name=%s to DB", classroom.getName()), e);
 		}
 	}
 
@@ -63,11 +63,9 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 			LOGGER.info("Retrieved a classroom with ID={} from DB", id);
 			return retrievedClassroom;
 		} catch (IndexOutOfBoundsException e) {
-			String errorMessage = "A classroom with ID=" + id + " is not found";
-			throw new DataNotFoundException(errorMessage);
+			throw new DataNotFoundException(String.format("A classroom with ID=%d is not found", id));
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve a classroom with ID=" + id;
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException(String.format("Cannot retrieve a classroom with ID=%d", id), e);
 		}
 	}
 
@@ -78,11 +76,11 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 			LOGGER.info("Retrieved an ID for a classroom (name ={}, ID={})", classroom.getName(), result);
 			return result;
 		} catch (IndexOutOfBoundsException e) {
-			String errorMessage = "A classroom with name=" + classroom.getName() + " is not found";
-			throw new DataNotFoundException(errorMessage);
+			throw new DataNotFoundException(
+					String.format("A classroom with name=%s is not found", classroom.getName()));
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve an ID for a classroom with name=" + classroom.getName();
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException(
+					String.format("Cannot retrieve an ID for a classroom with name=%s", classroom.getName()), e);
 		}
 	}
 
@@ -90,14 +88,14 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 		try {
 			Integer result = jdbcTemplate.update(UPDATE, classroom.getName(), classroom.getId());
 			if (result == 0) {
-				String errorMessage = "A classroom with ID=" + classroom.getId() + " was not updated";
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(
+						String.format("A classroom with ID=%d was not updated", classroom.getId()));
 			} else {
 				LOGGER.info("A classroom with ID={} was updated, new Name={}", classroom.getId(), classroom.getName());
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot update a classroom with ID=" + classroom.getId();
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(
+					String.format("Cannot update a classroom with ID=%d", classroom.getId()), e);
 		}
 	}
 
@@ -106,14 +104,12 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 		try {
 			Integer result = jdbcTemplate.update(DELETE, id);
 			if (result == 0) {
-				String errorMessage = "A classroom with ID=" + id + " was not deleted";
-				throw new DataAreNotUpdatedException(errorMessage);
+				throw new DataAreNotUpdatedException(String.format("A classroom with ID=%d was not deleted", id));
 			} else {
 				LOGGER.info("A classroom with ID={} was deleted successfully", id);
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot delete a classroom with ID=" + id;
-			throw new DataAreNotUpdatedException(errorMessage, e);
+			throw new DataAreNotUpdatedException(String.format("Cannot delete a classroom with ID=%d", id), e);
 		}
 	}
 
@@ -127,15 +123,13 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 		try {
 			resultList = jdbcTemplate.query(FIND_ALL, mapper);
 			if (resultList.isEmpty()) {
-				String errorMessage = "None of classrooms was found in DB";
-				throw new DataNotFoundException(errorMessage);
+				throw new DataNotFoundException("None of classrooms was found in DB");
 			} else {
 				LOGGER.info("Retrieved a list of classrooms successfully. {} classrooms were found", resultList.size());
 				return resultList;
 			}
 		} catch (DataAccessException e) {
-			String errorMessage = "Cannot retrieve a list of classrooms from DB";
-			throw new DataNotFoundException(errorMessage, e);
+			throw new DataNotFoundException("Cannot retrieve a list of classrooms from DB", e);
 		}
 	}
 

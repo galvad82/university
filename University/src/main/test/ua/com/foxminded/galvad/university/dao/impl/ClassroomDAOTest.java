@@ -41,14 +41,8 @@ class ClassroomDAOTest {
 	@Test
 	void testCreate_shouldThrowDataAreNotUpdatedException() {
 		dropDB();
-		String actualMessage = "";
-		try {
-			classroomDAO.create(new Classroom(1, "Test Name"));
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot add a classroom with name=\"Test Name\" to DB";
-		assertTrue(actualMessage.contains(expectedMessage));
+		Classroom classroom = new Classroom(1, "Test Name");
+		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.create(classroom));
 	}
 
 	@Test
@@ -60,16 +54,9 @@ class ClassroomDAOTest {
 
 	@Test
 	void testGetIdWithNonexistentName_shouldThrowDataNotFoundException() {
-		String actualMessage = "";
 		Classroom classroom = new Classroom();
 		classroom.setName("NONE");
-		try {
-			classroomDAO.getId(classroom);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A classroom with name=NONE is not found";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.getId(classroom));
 	}
 
 	@Test
@@ -77,14 +64,7 @@ class ClassroomDAOTest {
 		dropDB();
 		Classroom classroom = new Classroom();
 		classroom.setName("NONE");
-		String actualMessage = "";
-		try {
-			classroomDAO.getId(classroom);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot retrieve an ID for a classroom with name=NONE";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.getId(classroom));
 	}
 
 	@Test
@@ -96,26 +76,12 @@ class ClassroomDAOTest {
 	@Test
 	void testRetrieve_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
-		try {
-			classroomDAO.retrieve(1);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot retrieve a classroom with ID=1";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve(1));
 	}
 
 	@Test
 	void testRetrieve_shouldThrowDataNotFoundExceptionForNonexistentID() {
-		String actualMessage = "";
-		try {
-			classroomDAO.retrieve(100);
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A classroom with ID=100 is not found";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve(100));
 	}
 
 	@Test
@@ -130,30 +96,16 @@ class ClassroomDAOTest {
 	@Test
 	void testUpdate_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
 		Classroom classroom = new Classroom();
 		classroom.setId(1);
-		try {
-			classroomDAO.update(classroom);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot update a classroom with ID=1";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.update(classroom));
 	}
 
 	@Test
 	void testUpdate_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
-		String actualMessage = "";
 		Classroom classroom = new Classroom();
 		classroom.setId(100);
-		try {
-			classroomDAO.update(classroom);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A classroom with ID=100 was not updated";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.update(classroom));
 	}
 
 	@Test
@@ -166,31 +118,17 @@ class ClassroomDAOTest {
 
 	@Test
 	void testDeleteByEntity_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
-		String actualMessage = "";
 		Classroom classroom = new Classroom();
 		classroom.setId(100);
-		try {
-			classroomDAO.delete(classroom);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "A classroom with ID=100 was not deleted";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.delete(classroom));
 	}
 
 	@Test
 	void testDelete_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
 		Classroom classroom = new Classroom();
 		classroom.setId(1);
-		try {
-			classroomDAO.delete(classroom);
-		} catch (DataAreNotUpdatedException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot delete a classroom with ID=1";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.delete(classroom));
 	}
 
 	@Test
@@ -223,14 +161,7 @@ class ClassroomDAOTest {
 	@Test
 	void testFindAll_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		String actualMessage = "";
-		try {
-			classroomDAO.findAll();
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "Cannot retrieve a list of classrooms from DB";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.findAll());
 	}
 
 	@Test
@@ -238,14 +169,7 @@ class ClassroomDAOTest {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 		String query = "DELETE FROM classrooms";
 		jdbcTemplate.execute(query);
-		String actualMessage = "";
-		try {
-			classroomDAO.findAll();
-		} catch (DataNotFoundException e) {
-			actualMessage = e.getErrorMessage();
-		}
-		String expectedMessage = "None of classrooms was found in DB";
-		assertTrue(actualMessage.contains(expectedMessage));
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.findAll());
 	}
 
 	private void dropDB() {
