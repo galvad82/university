@@ -10,7 +10,6 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
@@ -45,23 +44,48 @@ class GroupDAOTest {
 	}
 
 	@Test
+	void testCreate_shouldThrowDataAreNotUpdatedException() {
+		dropDB();
+		Group group = new Group(1, "TestName");
+		assertThrows(DataAreNotUpdatedException.class, () -> groupDAO.create(group));
+	}
+
+	@Test
 	void testGetId_shouldReturnCorrectIdForEntity() {
 		Group group = new Group();
 		group.setName("AB-123");
-		assertEquals(1,groupDAO.getId(group));
+		assertEquals(1, groupDAO.getId(group));
 	}
-	
+
 	@Test
-	void testGetId_shouldReturnNullIfEntityNotFound() {
-		Group group = new Group();
-		group.setName("NONE");
-		assertNull(groupDAO.getId(group));
+	void testGetIdWithNonexistentGroup_shouldThrowDataNotFoundException() {
+		Group group = new Group(100, "TestName");
+		assertThrows(DataNotFoundException.class, () -> groupDAO.getId(group));
 	}
-	
+
+	@Test
+	void testGetId_shouldThrowDataNotFoundExceptionAfterDropDB() {
+		dropDB();
+		Group group = new Group();
+		group.setName("TestName");
+		assertThrows(DataNotFoundException.class, () -> groupDAO.getId(group));
+	}
+
 	@Test
 	void testRetrieve_shouldReturnCorrectData() {
 		assertEquals(1, groupDAO.retrieve(1).getId());
 		assertEquals("AB-123", groupDAO.retrieve(1).getName());
+	}
+
+	@Test
+	void testRetrieveWithNonexistentID_shouldThrowDataNotFoundException() {
+		assertThrows(DataNotFoundException.class, () -> groupDAO.retrieve(100));
+	}
+
+	@Test
+	void testRetrieve_shouldThrowDataNotFoundExceptionAfterDropDB() {
+		dropDB();
+		assertThrows(DataNotFoundException.class, () -> groupDAO.retrieve(100));
 	}
 
 	@Test
@@ -74,11 +98,37 @@ class GroupDAOTest {
 	}
 
 	@Test
+	void testUpdate_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		dropDB();
+		Group group = new Group(1, "TestName");
+		assertThrows(DataAreNotUpdatedException.class, () -> groupDAO.update(group));
+	}
+
+	@Test
+	void testUpdate_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
+		Group group = new Group(100, "TestName");
+		assertThrows(DataAreNotUpdatedException.class, () -> groupDAO.update(group));
+	}
+
+	@Test
 	void testDeleteByEntity_shouldReturnCorrectNumberOfEntities() {
 		Group group = groupDAO.retrieve(1);
 		groupDAO.delete(group);
 		int numOfGroupsFromTestData = groupDAO.findAll().size();
 		assertEquals(1, numOfGroupsFromTestData);
+	}
+
+	@Test
+	void testDeleteByEntity_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
+		Group group = new Group(100, "TestName");
+		assertThrows(DataAreNotUpdatedException.class, () -> groupDAO.delete(group));
+	}
+
+	@Test
+	void testDelete_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		dropDB();
+		Group group = new Group(1, "TestName");
+		assertThrows(DataAreNotUpdatedException.class, () -> groupDAO.delete(group));
 	}
 
 	@Test
@@ -89,32 +139,13 @@ class GroupDAOTest {
 	}
 
 	@Test
-	void shouldThrowExceptionAsTableDoesNotExist() {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		String query = "DROP ALL OBJECTS";
-		jdbcTemplate.execute(query);
-		String actualMessage = "";
-		try {
-			Group group = new Group(1, "Test Name");
-			List<Student> listOfStudents = new ArrayList<>();
-			listOfStudents.add(new Student(1));
-			group.setListOfStudent(listOfStudents);
-			groupDAO.create(group);
-		} catch (BadSqlGrammarException e) {
-			actualMessage = e.getMessage();
-		}
-		String expectedMessage = "Table \"GROUPS\" not found";
-		assertTrue(actualMessage.contains(expectedMessage));
-	}
-
-	@Test
 	void shouldThrowIllegalArgumentExceptionWhenDatasourceIsNull() {
 		Assertions.assertThrows(IllegalArgumentException.class, () -> groupDAO.setDataSource(null));
 	}
-	
+
 	@Test
 	void shouldThrowIllegalArgumentExceptionWhenMapperIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, ()->groupDAO.setMapper(null));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> groupDAO.setMapper(null));
 	}
 
 	@Test
@@ -135,5 +166,25 @@ class GroupDAOTest {
 		group2.setListOfStudent(listOfStudents);
 		expectedList.add(group2);
 		assertEquals(expectedList, retrievedList);
+	}
+
+	@Test
+	void testFindAll_shouldThrowDataNotFoundExceptionAfterDropDB() {
+		dropDB();
+		assertThrows(DataNotFoundException.class, () -> groupDAO.findAll());
+	}
+
+	@Test
+	void testFindAll_shouldThrowDataNotFoundExceptionAsNothingFound() {
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		String query = "DELETE FROM groups";
+		jdbcTemplate.execute(query);
+		assertThrows(DataNotFoundException.class, () -> groupDAO.findAll());
+	}
+
+	private void dropDB() {
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		String query = "DROP ALL OBJECTS";
+		jdbcTemplate.execute(query);
 	}
 }

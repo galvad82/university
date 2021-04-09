@@ -10,7 +10,6 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
@@ -38,25 +37,51 @@ class ClassroomDAOTest {
 		assertEquals(3, resultClassroom.getId());
 		assertEquals("TestName", resultClassroom.getName());
 	}
-	
-	@Test 
+
+	@Test
+	void testCreate_shouldThrowDataAreNotUpdatedException() {
+		dropDB();
+		Classroom classroom = new Classroom(1, "Test Name");
+		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.create(classroom));
+	}
+
+	@Test
 	void testGetId_shouldReturnCorrectIdForEntity() {
 		Classroom classroom = new Classroom();
 		classroom.setName("ROOM-15");
-		assertEquals(1,classroomDAO.getId(classroom));
+		assertEquals(1, classroomDAO.getId(classroom));
 	}
-	
-	@Test 
-	void testGetId_shouldReturnNullIfEntityNotFound() {
+
+	@Test
+	void testGetIdWithNonexistentName_shouldThrowDataNotFoundException() {
 		Classroom classroom = new Classroom();
 		classroom.setName("NONE");
-		assertNull(classroomDAO.getId(classroom));
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.getId(classroom));
+	}
+
+	@Test
+	void testGetId_shouldThrowDataNotFoundExceptionAfterDropDB() {
+		dropDB();
+		Classroom classroom = new Classroom();
+		classroom.setName("NONE");
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.getId(classroom));
 	}
 
 	@Test
 	void testRetrieve_shouldReturnCorrectData() {
 		assertEquals(1, classroomDAO.retrieve(1).getId());
 		assertEquals("ROOM-15", classroomDAO.retrieve(1).getName());
+	}
+
+	@Test
+	void testRetrieve_shouldThrowDataNotFoundExceptionAfterDropDB() {
+		dropDB();
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve(1));
+	}
+
+	@Test
+	void testRetrieve_shouldThrowDataNotFoundExceptionForNonexistentID() {
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve(100));
 	}
 
 	@Test
@@ -69,11 +94,41 @@ class ClassroomDAOTest {
 	}
 
 	@Test
+	void testUpdate_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		dropDB();
+		Classroom classroom = new Classroom();
+		classroom.setId(1);
+		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.update(classroom));
+	}
+
+	@Test
+	void testUpdate_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
+		Classroom classroom = new Classroom();
+		classroom.setId(100);
+		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.update(classroom));
+	}
+
+	@Test
 	void testDeleteByEntity_shouldReturnCorrectNumberOfEntities() {
 		Classroom classroom = classroomDAO.retrieve(1);
 		classroomDAO.delete(classroom);
 		int numOfClassroomsFromTestData = classroomDAO.findAll().size();
 		assertEquals(1, numOfClassroomsFromTestData);
+	}
+
+	@Test
+	void testDeleteByEntity_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
+		Classroom classroom = new Classroom();
+		classroom.setId(100);
+		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.delete(classroom));
+	}
+
+	@Test
+	void testDelete_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		dropDB();
+		Classroom classroom = new Classroom();
+		classroom.setId(1);
+		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.delete(classroom));
 	}
 
 	@Test
@@ -85,30 +140,15 @@ class ClassroomDAOTest {
 	}
 
 	@Test
-	void shouldThrowExceptionAsTableDoesNotExist() {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		String query = "DROP ALL OBJECTS";
-		jdbcTemplate.execute(query);
-		String actualMessage = "";
-		try {
-			classroomDAO.create(new Classroom(1, "Test Name"));
-		} catch (BadSqlGrammarException e) {
-			actualMessage = e.getMessage();
-		}
-		String expectedMessage = "Table \"CLASSROOMS\" not found";
-		assertTrue(actualMessage.contains(expectedMessage));
-	}
-
-	@Test
 	void shouldThrowIllegalArgumentExceptionWhenDatasourceIsNull() {
 		Assertions.assertThrows(IllegalArgumentException.class, () -> classroomDAO.setDataSource(null));
 	}
 
 	@Test
 	void shouldThrowIllegalArgumentExceptionWhenMapperIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, ()->classroomDAO.setMapper(null));
+		Assertions.assertThrows(IllegalArgumentException.class, () -> classroomDAO.setMapper(null));
 	}
-	
+
 	@Test
 	void testFindAll_shouldFindTwoEntities() {
 		List<Classroom> retrievedList = classroomDAO.findAll();
@@ -116,5 +156,25 @@ class ClassroomDAOTest {
 		expectedList.add(new Classroom(1, "ROOM-15"));
 		expectedList.add(new Classroom(2, "ROOM-20"));
 		assertEquals(expectedList, retrievedList);
+	}
+
+	@Test
+	void testFindAll_shouldThrowDataNotFoundExceptionAfterDropDB() {
+		dropDB();
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.findAll());
+	}
+
+	@Test
+	void testFindAll_shouldThrowDataNotFoundExceptionAsNothingFound() {
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		String query = "DELETE FROM classrooms";
+		jdbcTemplate.execute(query);
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.findAll());
+	}
+
+	private void dropDB() {
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		String query = "DROP ALL OBJECTS";
+		jdbcTemplate.execute(query);
 	}
 }
