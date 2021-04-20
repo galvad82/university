@@ -1,6 +1,5 @@
 package ua.com.foxminded.galvad.university.services;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,57 +39,36 @@ public class CourseService {
 		}
 	}
 
-	public CourseDTO retrieve(Integer id) {
+	public CourseDTO retrieve(Integer id) throws DataNotFoundException {
 		CourseDTO courseDTO = new CourseDTO();
-		try {
-			LOGGER.trace("Going to retrieve course by ID={}", id);
-			Course course = courseDAO.retrieve(id);
-			LOGGER.trace("Retrieved a course with ID={}", id);
-			LOGGER.trace("Going to retrieve CourseDTO from a course with ID={}", id);
-			courseDTO = convertToDTO(course);
-			LOGGER.trace("Retrieved CourseDTO from a course with ID={}", id);
-		} catch (DataNotFoundException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
-		}
+		LOGGER.trace("Going to retrieve course by ID={}", id);
+		Course course = courseDAO.retrieve(id);
+		LOGGER.trace("Retrieved a course with ID={}", id);
+		LOGGER.trace("Going to retrieve CourseDTO from a course with ID={}", id);
+		courseDTO = convertToDTO(course);
+		LOGGER.trace("Retrieved CourseDTO from a course with ID={}", id);
 		return courseDTO;
 	}
 
-	public void update(CourseDTO oldDTO, CourseDTO newDTO) {
+	public void update(CourseDTO oldDTO, CourseDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update CourseDTO with newName={} ", newDTO.getName());
-		try {
-			courseDAO.update(convertToEntity(oldDTO, newDTO));
-			LOGGER.trace("Updated CourseDTO with newName={} ", newDTO.getName());
-		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
-			LOGGER.error(ex.getMessage());
-			LOGGER.error(ex.getCause().toString());
-		}
+		courseDAO.update(convertToEntity(oldDTO, newDTO));
+		LOGGER.trace("Updated CourseDTO with newName={} ", newDTO.getName());
 	}
 
-	public void delete(CourseDTO courseDTO) {
+	public void delete(CourseDTO courseDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete CourseDTO by entity (name={})", courseDTO.getName());
-		try {
-			courseDAO.delete(convertToEntity(courseDTO));
-		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
-			LOGGER.error(ex.getMessage());
-			LOGGER.error(ex.getCause().toString());
-		}
+		courseDAO.delete(convertToEntity(courseDTO));
 	}
 
-	public List<CourseDTO> findAll() {
+	public List<CourseDTO> findAll() throws DataNotFoundException {
 		LOGGER.trace("Going to get list of ALL CourseDTO from DB");
-		List<CourseDTO> list = new ArrayList<>();
-		try {
-			list = courseDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
-			LOGGER.trace("List of ALL CourseDTO retrieved from DB, {} were found", list.size());
-		} catch (DataNotFoundException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
-		}
+		List<CourseDTO> list = courseDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+		LOGGER.trace("List of ALL CourseDTO retrieved from DB, {} were found", list.size());
 		return list;
 	}
 
-	public Course setId(Course course) {
+	public Course setId(Course course) throws DataNotFoundException {
 		LOGGER.trace("Going to set ID for a course (name={})", course.getName());
 		Integer id = courseDAO.getId(course);
 		course.setId(id);
@@ -98,7 +76,7 @@ public class CourseService {
 		return course;
 	}
 
-	private CourseDTO convertToDTO(Course entity) {
+	private CourseDTO convertToDTO(Course entity) throws DataNotFoundException {
 		LOGGER.trace("Going to convert course (name={}) to courseDTO", entity.getName());
 		CourseDTO courseDTO = modelMapper.map(entity, CourseDTO.class);
 		LOGGER.trace("Converted course to courseDTO (name={})", courseDTO.getName());
@@ -109,62 +87,38 @@ public class CourseService {
 		return courseDTO;
 	}
 
-	protected Course convertToEntity(CourseDTO courseDTO) {
+	protected Course convertToEntity(CourseDTO courseDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert courseDTO (name={}) to entity", courseDTO.getName());
 		Course entity = modelMapper.map(courseDTO, Course.class);
 		LOGGER.trace("Converted courseDTO to entity (name={})", entity.getName());
 		LOGGER.trace("Going to set Teacher for entity course (name={})", entity.getName());
 		Teacher teacher = entity.getTeacher();
-		Integer id = 0;
-		try {
-			id = teacherDAO.getId(teacher);
-			teacher.setId(id);
-			LOGGER.trace("Set ID={} for Teacher for entity course (name={})", id, entity.getName());
-		} catch (DataNotFoundException e) {
-			LOGGER.error("Set ID={} for TeacherID for entity course (name={})", id, entity.getName());
-			teacher.setId(id);
-		}
+		Integer id = teacherDAO.getId(teacher);
+		teacher.setId(id);
+		LOGGER.trace("Set ID={} for Teacher for entity course (name={})", id, entity.getName());
 		entity.setTeacher(teacher);
 		LOGGER.trace("Set Teacher for entity course (name={}) successfully", entity.getName());
 		LOGGER.trace("Going to set ID for entity course (name={})", entity.getName());
-		id = 0;
-		try {
-			id = courseDAO.getId(entity);
-			entity.setId(id);
-			LOGGER.trace("Set ID={} for entity course (name={})", id, entity.getName());
-		} catch (DataNotFoundException e) {
-			LOGGER.error("Set ID={} for entity course (name={})", id, entity.getName());
-			entity.setId(id);
-		}
+		id = courseDAO.getId(entity);
+		entity.setId(id);
+		LOGGER.trace("Set ID={} for entity course (name={})", id, entity.getName());
 		return entity;
 	}
 
-	private Course convertToEntity(CourseDTO oldDTO, CourseDTO newDTO) {
+	private Course convertToEntity(CourseDTO oldDTO, CourseDTO newDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert courseDTO (name={}) to entity", newDTO.getName());
 		Course entity = modelMapper.map(newDTO, Course.class);
 		LOGGER.trace("Converted courseDTO to entity (name={})", entity.getName());
 		LOGGER.trace("Going to set Teacher for entity course (name={})", entity.getName());
 		Teacher teacher = entity.getTeacher();
-		Integer id = 0;
-		try {
-			id = teacherDAO.getId(teacher);
-			teacher.setId(id);
-			LOGGER.trace("Set ID={} for Teacher for entity course (name={})", id, entity.getName());
-		} catch (DataNotFoundException e) {
-			LOGGER.error("Set ID={} for TeacherID for entity course (name={})", id, entity.getName());
-			teacher.setId(id);
-		}
+		Integer id = teacherDAO.getId(teacher);
+		teacher.setId(id);
+		LOGGER.trace("Set ID={} for Teacher for entity course (name={})", id, entity.getName());
 		entity.setTeacher(teacher);
 		LOGGER.trace("Set Teacher for entity course (name={}) successfully", entity.getName());
 		LOGGER.trace("Going to set ID for entity course (name={})", entity.getName());
-		id = 0;
-		try {
-			entity.setId(courseDAO.getId(convertToEntity(oldDTO)));
-			LOGGER.trace("Set ID={} for entity course (name={})", id, entity.getName());
-		} catch (DataNotFoundException e) {
-			LOGGER.error("Set ID={} for entity course (name={})", id, entity.getName());
-			entity.setId(id);
-		}
+		entity.setId(courseDAO.getId(convertToEntity(oldDTO)));
+		LOGGER.trace("Set ID={} for entity course (name={})", id, entity.getName());
 		return entity;
 	}
 }

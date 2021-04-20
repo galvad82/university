@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>University - Classroom information</title>
+
+</head>
+<body>
+	<div th:insert="templates/navbar :: bootstrap"></div>
+
+	<div th:insert="templates/navbar :: navbar"></div>
+
+	<h2>
+		<p class="text-center">Classrooom information</p>
+	</h2>
+
+	<div class="container">
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th scope="col">Name</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td th:text="${classroom.getName()}"></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+</body>
+</html>

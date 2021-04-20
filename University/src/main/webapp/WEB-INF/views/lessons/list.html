@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>University - Lessons</title>
+</head>
+<body>
+
+	<div th:insert="templates/navbar :: bootstrap"></div>
+	<div th:insert="templates/navbar :: navbar"></div>
+
+	<h2>
+		<p class="text-center">List of lessons</p>
+	</h2>
+
+
+	<div class="container">
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th scope="col">#</th>
+					<th scope="col">Group</th>
+					<th scope="col">Course</th>
+					<th scope="col">Classroom</th>
+					<th scope="col">Start time</th>
+					<th scope="col">Duration (HH:mm)</th>
+
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="lessonDTO,stat : ${lessons}">
+					<th scope="row"><a th:href="@{'/lessons/'+${stat.count}}"
+						th:text="${stat.count}"> </a></th>
+					<td th:text="${lessonDTO.getGroup().getName()}"></td>
+					<td th:text="${lessonDTO.getCourse().getName()}"></td>
+					<td th:text="${lessonDTO.getClassroom().getName()}"></td>
+					<td th:text="${lessonDTO.getStartTimeString()}"></td>
+					<td th:text="${lessonDTO.getDurationString()}"></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</body>
+</html>

@@ -1,6 +1,5 @@
 package ua.com.foxminded.galvad.university.services;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,76 +24,42 @@ public class StudentService {
 	@Autowired
 	private StudentDAO studentDAO;
 
-	public void create(StudentDTO studentDTO) {
+	public void create(StudentDTO studentDTO) throws DataAreNotUpdatedException {
 		Student entity = modelMapper.map(studentDTO, Student.class);
-		try {
-			studentDAO.create(entity);
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
-		}
+		studentDAO.create(entity);
 	}
 
-	public StudentDTO retrieve(Integer id) {
-		Student student = new Student();
-		try {
-			student = studentDAO.retrieve(id);
-		} catch (DataNotFoundException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
-		}
-		return convertToDTO(student);
+	public StudentDTO retrieve(Integer id) throws DataNotFoundException {
+		return convertToDTO(studentDAO.retrieve(id));
 	}
 
-	public void update(StudentDTO oldDTO, StudentDTO newDTO) {
+	public void update(StudentDTO oldDTO, StudentDTO newDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to update StudentDTO, firstName={}, lastName={}", newDTO.getFirstName(),
 				newDTO.getLastName());
-		try {
-			studentDAO.update(convertToEntity(oldDTO, newDTO));
-			LOGGER.trace("StudentDTO was updated successfully.");
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
-		}
+		studentDAO.update(convertToEntity(oldDTO, newDTO));
+		LOGGER.trace("StudentDTO was updated successfully.");
 	}
 
-	public void delete(StudentDTO studentDTO) {
+	public void delete(StudentDTO studentDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete StudentDTO by entity, firstName={}, lastName={}", studentDTO.getFirstName(),
 				studentDTO.getLastName());
-		try {
-			studentDAO.delete(convertToEntity(studentDTO));
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
-		}
+		studentDAO.delete(convertToEntity(studentDTO));
 	}
 
-	public void delete(Integer id) {
+	public void delete(Integer id) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete StudentDTO by ID={}", id);
-		try {
-			studentDAO.delete(id);
-			LOGGER.trace("StudentDTO with ID={} was deleted.", id);
-		} catch (DataAreNotUpdatedException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
-		}
-
+		studentDAO.delete(id);
+		LOGGER.trace("StudentDTO with ID={} was deleted.", id);
 	}
 
-	public List<StudentDTO> findAll() {
+	public List<StudentDTO> findAll() throws DataNotFoundException {
 		LOGGER.trace("Going to get list of ALL StudentDTO from DB");
-		List<StudentDTO> list = new ArrayList<>();
-		try {
-			list = studentDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
-			LOGGER.trace("List of ALL StudentDTO retrieved from DB, {} were found", list.size());
-		} catch (DataNotFoundException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
-		}
+		List<StudentDTO> list = studentDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+		LOGGER.trace("List of ALL StudentDTO retrieved from DB, {} were found", list.size());
 		return list;
 	}
 
-	private StudentDTO convertToDTO(Student entity) {
+	private StudentDTO convertToDTO(Student entity) throws DataNotFoundException {
 		LOGGER.trace("Going to convert entity(firstName={}, lastName={}) to DTO", entity.getFirstName(),
 				entity.getLastName());
 		StudentDTO studentDTO = modelMapper.map(entity, StudentDTO.class);
@@ -102,38 +67,27 @@ public class StudentService {
 		return studentDTO;
 	}
 
-	private Student convertToEntity(StudentDTO studentDTO) {
+	private Student convertToEntity(StudentDTO studentDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert StudentDTO to entity");
 		Student entity = modelMapper.map(studentDTO, Student.class);
 		LOGGER.trace("StudentDTO converted successfully.");
-		try {
-			LOGGER.trace("Going to get ID for Student with firstName={}, lastName={}", entity.getFirstName(),
-					entity.getLastName());
-			Integer id = studentDAO.getId(entity);
-			LOGGER.trace("ID={}", id);
-			entity.setId(id);
-			LOGGER.trace("ID was set for the entity successfully");
-		} catch (DataNotFoundException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
-		}
+		LOGGER.trace("Going to get ID for Student with firstName={}, lastName={}", entity.getFirstName(),
+				entity.getLastName());
+		Integer id = studentDAO.getId(entity);
+		LOGGER.trace("ID={}", id);
+		entity.setId(id);
+		LOGGER.trace("ID was set for the entity successfully");
 		return entity;
 	}
 
-	private Student convertToEntity(StudentDTO oldDTO, StudentDTO newDTO) {
+	private Student convertToEntity(StudentDTO oldDTO, StudentDTO newDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert newDTO(firstName={}, lastName={}) to entity", newDTO.getFirstName(),
 				newDTO.getLastName());
 		Student entity = modelMapper.map(newDTO, Student.class);
 		LOGGER.trace("DTO was converted successfully.");
-		try {
-			LOGGER.trace("Going to set ID of oldDTO to newDTO");
-			entity.setId(studentDAO.getId(convertToEntity(oldDTO)));
-			LOGGER.trace("ID of oldDTO was set to newDTO successfully");
-		} catch (DataNotFoundException e) {
-			LOGGER.error(e.getErrorMessage());
-			LOGGER.error(e.getCauseDescription());
-		}
-
+		LOGGER.trace("Going to set ID of oldDTO to newDTO");
+		entity.setId(studentDAO.getId(convertToEntity(oldDTO)));
+		LOGGER.trace("ID of oldDTO was set to newDTO successfully");
 		return entity;
 	}
 }

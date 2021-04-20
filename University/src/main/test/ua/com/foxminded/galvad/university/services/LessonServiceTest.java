@@ -13,7 +13,7 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import ua.com.foxminded.galvad.university.SpringJdbcConfig;
+import ua.com.foxminded.galvad.university.config.SpringConfig;
 import ua.com.foxminded.galvad.university.dao.impl.ClassroomDAO;
 import ua.com.foxminded.galvad.university.dao.impl.CourseDAO;
 import ua.com.foxminded.galvad.university.dao.impl.GroupDAO;
@@ -22,7 +22,7 @@ import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
 import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 
-@SpringJUnitConfig(SpringJdbcConfig.class)
+@SpringJUnitConfig(SpringConfig.class)
 class LessonServiceTest {
 
 	@Autowired

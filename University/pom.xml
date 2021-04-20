@@ -3,7 +3,13 @@
   <groupId>University</groupId>
   <artifactId>University</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  <packaging>war</packaging>
   <name>university</name>
+  <properties>
+  <spring.version>5.3.5</spring.version>
+  <thymeleaf.version>3.0.12.RELEASE</thymeleaf.version>
+  <logback.version>1.2.3</logback.version>
+  </properties>
  	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>
 		<testSourceDirectory>src/main/test</testSourceDirectory>
@@ -22,50 +28,35 @@
 					<target>1.8</target>
 				</configuration>
 			</plugin>
-			<plugin>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<configuration>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-					<archive>
-						<manifest>
-							<addClasspath>true</addClasspath>
-						</manifest>
-					</archive>
-				</configuration>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
 		</plugins>
 	</build>
 	<dependencies>
 		<dependency>
+    		<groupId>io.rest-assured</groupId>
+    		<artifactId>spring-mock-mvc</artifactId>
+    		<version>4.3.3</version>
+    		<scope>test</scope>
+		</dependency>
+		<dependency>
+    		<groupId>javax.servlet</groupId>
+    		<artifactId>javax.servlet-api</artifactId>
+    		<version>4.0.1</version>
+    		<scope>provided</scope>
+		</dependency>
+		<dependency>
     		<groupId>ch.qos.logback</groupId>
     		<artifactId>logback-classic</artifactId>
-    		<version>1.2.3</version>
+    		<version>${logback.version}</version>
 		</dependency>
 		<dependency>
     		<groupId>ch.qos.logback</groupId>
     		<artifactId>logback-core</artifactId>
-    		<version>1.2.3</version>
+    		<version>${logback.version}</version>
 		</dependency>
 		<dependency>
     		<groupId>org.slf4j</groupId>
     		<artifactId>slf4j-api</artifactId>
     		<version>1.7.30</version>
-		</dependency>
-		<dependency>
-    		<groupId>org.springframework</groupId>
-    		<artifactId>spring-test</artifactId>
-    		<version>5.3.5</version>
-    		<scope>test</scope>
 		</dependency>
 		<dependency>
     		<groupId>org.modelmapper</groupId>
@@ -78,19 +69,45 @@
     		<version>3.12.0</version>
 		</dependency>
 		<dependency>
+    		<groupId>org.thymeleaf</groupId>
+    		<artifactId>thymeleaf-spring5</artifactId>
+    		<version>${thymeleaf.version}</version>
+		</dependency>
+		<dependency>
+    		<groupId>org.thymeleaf</groupId>
+    		<artifactId>thymeleaf</artifactId>
+    		<version>${thymeleaf.version}</version>
+		</dependency>
+		<dependency>
+    		<groupId>org.springframework</groupId>
+    		<artifactId>spring-test</artifactId>
+    		<version>${spring.version}</version>
+    		<scope>test</scope>
+		</dependency>
+		<dependency>
     		<groupId>org.springframework</groupId>
     		<artifactId>spring-context</artifactId>
-    		<version>5.3.5</version>
+    		<version>${spring.version}</version>
 		</dependency>
 		<dependency>
     		<groupId>org.springframework</groupId>
     		<artifactId>spring-core</artifactId>
-    		<version>5.3.5</version>
+    		<version>${spring.version}</version>
 		</dependency>
 		<dependency>
    			<groupId>org.springframework</groupId>
     		<artifactId>spring-jdbc</artifactId>
-    		<version>5.3.5</version>
+    		<version>${spring.version}</version>
+		</dependency>
+		<dependency>
+    		<groupId>org.springframework</groupId>
+    		<artifactId>spring-webmvc</artifactId>
+    		<version>${spring.version}</version>
+		</dependency>
+		<dependency>
+    		<groupId>org.springframework</groupId>
+    		<artifactId>spring-web</artifactId>
+    		<version>${spring.version}</version>
 		</dependency>
 		<dependency>
    			<groupId>com.h2database</groupId>
