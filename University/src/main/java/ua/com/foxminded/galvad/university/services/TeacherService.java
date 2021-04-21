@@ -26,7 +26,7 @@ public class TeacherService {
 	private TeacherDAO teacherDAO;
 
 	public void create(TeacherDTO teacherDTO) throws DataAreNotUpdatedException {
-		teacherDAO.create(convertToEntity(teacherDTO));
+		teacherDAO.create(convertToEntityWithoutID(teacherDTO));
 	}
 
 	public TeacherDTO retrieve(Integer id) throws DataNotFoundException {
@@ -81,6 +81,13 @@ public class TeacherService {
 		LOGGER.trace("Going to set ID of oldDTO to newDTO");
 		entity.setId(teacherDAO.getId(convertToEntity(oldDTO)));
 		LOGGER.trace("ID of oldDTO was set to newDTO successfully");
+		return entity;
+	}
+	
+	private Teacher convertToEntityWithoutID(TeacherDTO teacherDTO) throws DataNotFoundException {
+		LOGGER.trace("Going to convert TeacherDTO to entity");
+		Teacher entity = modelMapper.map(teacherDTO, Teacher.class);
+		LOGGER.trace("TeacherDTO converted successfully.");
 		return entity;
 	}
 }

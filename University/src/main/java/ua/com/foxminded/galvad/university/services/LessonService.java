@@ -50,7 +50,7 @@ public class LessonService {
 	private LessonDAO lessonDAO;
 
 	public void create(LessonDTO lessonDTO) throws DataNotFoundException, DataAreNotUpdatedException {
-		lessonDAO.create(convertToEntity(lessonDTO));
+		lessonDAO.create(convertToEntityWithoutID(lessonDTO));
 	}
 
 	public LessonDTO retrieve(Integer id) throws DataNotFoundException {

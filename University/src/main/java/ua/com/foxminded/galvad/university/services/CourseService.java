@@ -29,23 +29,17 @@ public class CourseService {
 	@Autowired
 	private TeacherDAO teacherDAO;
 
-	public void create(CourseDTO courseDTO) {
-		try {
-			Course course = convertToEntity(courseDTO);
-			courseDAO.create(course);
-		} catch (DataNotFoundException | DataAreNotUpdatedException ex) {
-			LOGGER.error(ex.getMessage());
-			LOGGER.error(ex.getCause().toString());
-		}
+	public void create(CourseDTO courseDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+		Course course = convertToEntityWithoutID(courseDTO);
+		courseDAO.create(course);
 	}
 
 	public CourseDTO retrieve(Integer id) throws DataNotFoundException {
-		CourseDTO courseDTO = new CourseDTO();
 		LOGGER.trace("Going to retrieve course by ID={}", id);
 		Course course = courseDAO.retrieve(id);
 		LOGGER.trace("Retrieved a course with ID={}", id);
 		LOGGER.trace("Going to retrieve CourseDTO from a course with ID={}", id);
-		courseDTO = convertToDTO(course);
+		CourseDTO courseDTO = convertToDTO(course);
 		LOGGER.trace("Retrieved CourseDTO from a course with ID={}", id);
 		return courseDTO;
 	}
@@ -105,6 +99,20 @@ public class CourseService {
 		return entity;
 	}
 
+	protected Course convertToEntityWithoutID(CourseDTO courseDTO) throws DataNotFoundException {
+		LOGGER.trace("Going to convert courseDTO (name={}) to entity", courseDTO.getName());
+		Course entity = modelMapper.map(courseDTO, Course.class);
+		LOGGER.trace("Converted courseDTO to entity (name={})", entity.getName());
+		LOGGER.trace("Going to set Teacher for entity course (name={})", entity.getName());
+		Teacher teacher = entity.getTeacher();
+		Integer id = teacherDAO.getId(teacher);
+		teacher.setId(id);
+		LOGGER.trace("Set ID={} for Teacher for entity course (name={})", id, entity.getName());
+		entity.setTeacher(teacher);
+		LOGGER.trace("Set Teacher for entity course (name={}) successfully", entity.getName());
+		return entity;
+	}
+	
 	private Course convertToEntity(CourseDTO oldDTO, CourseDTO newDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert courseDTO (name={}) to entity", newDTO.getName());
 		Course entity = modelMapper.map(newDTO, Course.class);

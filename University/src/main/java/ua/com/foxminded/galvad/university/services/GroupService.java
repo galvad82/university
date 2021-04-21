@@ -47,7 +47,7 @@ public class GroupService {
 	}
 
 	public void create(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
-		groupDAO.create(convertToEntity(groupDTO));
+		groupDAO.create(convertToEntityWithoutID(groupDTO));
 	}
 
 	public GroupDTO retrieve(Integer id) throws DataNotFoundException {
@@ -110,6 +110,24 @@ public class GroupService {
 		Integer id = groupDAO.getId(entity);
 		entity.setId(id);
 		LOGGER.trace("Set an ID={} for a group (name={})", id, entity.getName());
+		LOGGER.trace("Conversion of groupDTO (name={}) to group completed", groupDTO.getName());
+		return entity;
+	}
+	
+	private Group convertToEntityWithoutID(GroupDTO groupDTO) throws DataNotFoundException {
+		LOGGER.trace("Going to convert groupDTO (name={}) to group", groupDTO.getName());
+		Group entity = modelMapper.map(groupDTO, Group.class);
+		LOGGER.trace("Converted groupDTO to group (name={})", entity.getName());
+		LOGGER.trace("Going to set a list of students for group (name={})", entity.getName());
+		List<Student> listOfStudents = new ArrayList<>();
+		groupDTO.getListOfStudent().stream().forEach(studentDTO -> {
+			Student student = modelMapper.map(studentDTO, Student.class);
+			student.setId(studentDAO.getId(student));
+			listOfStudents.add(student);
+			entity.setListOfStudent(listOfStudents);
+			LOGGER.trace("Set a list of students ({} in total) for group (name={})", listOfStudents.size(),
+					entity.getName());
+		});
 		LOGGER.trace("Conversion of groupDTO (name={}) to group completed", groupDTO.getName());
 		return entity;
 	}

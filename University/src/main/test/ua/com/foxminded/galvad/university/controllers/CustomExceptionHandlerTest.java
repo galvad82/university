@@ -6,14 +6,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
@@ -30,9 +27,6 @@ import ua.com.foxminded.galvad.university.services.GroupService;
 @ExtendWith(MockitoExtension.class)
 @SpringJUnitWebConfig(SpringConfig.class)
 class CustomExceptionHandlerTest {
-
-	@Rule
-	public MockitoRule rule = MockitoJUnit.rule();
 
 	@InjectMocks
 	GroupsController groupsControllerUnderTest;

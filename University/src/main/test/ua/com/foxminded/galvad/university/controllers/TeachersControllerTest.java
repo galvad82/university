@@ -10,14 +10,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Rule;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
@@ -33,9 +30,6 @@ import ua.com.foxminded.galvad.university.services.TeacherService;
 @ExtendWith(MockitoExtension.class)
 @SpringJUnitWebConfig(SpringConfig.class)
 class TeachersControllerTest {
-
-	@Rule
-	public MockitoRule rule = MockitoJUnit.rule();
 
 	@Mock
 	TeacherService teacherServiceMock;
