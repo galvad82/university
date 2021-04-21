@@ -18,14 +18,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import ua.com.foxminded.galvad.university.config.SpringConfig;
+import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.services.GroupService;
 
 
 @ExtendWith(MockitoExtension.class)
-@SpringJUnitWebConfig(SpringConfig.class)
+@SpringJUnitWebConfig(SpringConfigTest.class)
 class CustomExceptionHandlerTest {
 
 	@InjectMocks

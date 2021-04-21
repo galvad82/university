@@ -10,6 +10,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,13 +24,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import ua.com.foxminded.galvad.university.config.SpringConfig;
+import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.services.ClassroomService;
 
 @ExtendWith(MockitoExtension.class)
-@SpringJUnitWebConfig(SpringConfig.class)
+@SpringJUnitWebConfig(SpringConfigTest.class)
 class ClassroomsControllerTest {
 
 	@Mock
@@ -47,6 +49,9 @@ class ClassroomsControllerTest {
 	ClassroomsController classroomsController;
 
 	MockMvc mockMvc;
+	
+	@Autowired
+	DataSource dataSource;
 
 	@BeforeEach
 	void setup() {
@@ -71,7 +76,7 @@ class ClassroomsControllerTest {
 	@Test
 	void testClassroomAttributeForSingleView() throws Exception {
 		ClassroomDTO expectedClassroomDTO = new ClassroomDTO();
-		expectedClassroomDTO.setName("ROOM-1");
+		expectedClassroomDTO.setName("ROOM-15");
 		mockMvc.perform(get("/classrooms/{id}", 1)).andExpect(matchAll(model().attribute("classroom", expectedClassroomDTO)));
 	}
 

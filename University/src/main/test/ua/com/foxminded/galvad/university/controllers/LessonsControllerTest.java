@@ -22,7 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import ua.com.foxminded.galvad.university.config.SpringConfig;
+import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
@@ -31,7 +31,7 @@ import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.services.LessonService;
 
 @ExtendWith(MockitoExtension.class)
-@SpringJUnitWebConfig(SpringConfig.class)
+@SpringJUnitWebConfig(SpringConfigTest.class)
 class LessonsControllerTest {
 
 	@Mock

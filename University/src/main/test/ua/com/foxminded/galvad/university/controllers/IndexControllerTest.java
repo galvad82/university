@@ -12,9 +12,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import ua.com.foxminded.galvad.university.config.SpringConfig;
+import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 
-@SpringJUnitWebConfig(SpringConfig.class)
+@SpringJUnitWebConfig(SpringConfigTest.class)
 class IndexControllerTest {
 
 	@Autowired

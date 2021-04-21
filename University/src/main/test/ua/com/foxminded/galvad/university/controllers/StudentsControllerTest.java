@@ -21,13 +21,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import ua.com.foxminded.galvad.university.config.SpringConfig;
+import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.services.StudentService;
 
 @ExtendWith(MockitoExtension.class)
-@SpringJUnitWebConfig(SpringConfig.class)
+@SpringJUnitWebConfig(SpringConfigTest.class)
 class StudentsControllerTest {
 
 	@Mock
@@ -70,8 +70,8 @@ class StudentsControllerTest {
 	@Test
 	void testStudentAttributeForSingleView() throws Exception {
 		StudentDTO expectedStudentDTO = new StudentDTO();
-		expectedStudentDTO.setFirstName("Abbey");
-		expectedStudentDTO.setLastName("Wilkes");
+		expectedStudentDTO.setFirstName("John");
+		expectedStudentDTO.setLastName("Davidson");
 		mockMvc.perform(get("/students/{id}", 1)).andExpect(matchAll(model().attribute("student", expectedStudentDTO)));
 	}
 
