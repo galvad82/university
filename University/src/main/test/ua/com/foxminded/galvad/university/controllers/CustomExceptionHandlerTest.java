@@ -14,7 +14,7 @@ class CustomExceptionHandlerTest {
 	void testHandlingOfDataNotFoundException() throws Exception {
 		DataNotFoundException exception = new DataNotFoundException("Error Message");
 		ExtendedModelMap map = new ExtendedModelMap();
-		customExceptionHandler.databaseError(map, exception);
+		assertEquals("/exception", customExceptionHandler.databaseError(map, exception));
 		assertTrue(map.containsKey("error"));
 		assertTrue(map.containsValue("Error Message"));
 	}
@@ -23,7 +23,7 @@ class CustomExceptionHandlerTest {
 	void testHandlingOfDataAreNotUpdatedException() throws Exception {
 		DataAreNotUpdatedException exception = new DataAreNotUpdatedException("Error Message");
 		ExtendedModelMap map = new ExtendedModelMap();
-		customExceptionHandler.databaseError(map, exception);
+		assertEquals("/exception", customExceptionHandler.databaseError(map, exception));
 		assertTrue(map.containsKey("error"));
 		assertTrue(map.containsValue("Error Message"));
 	}
