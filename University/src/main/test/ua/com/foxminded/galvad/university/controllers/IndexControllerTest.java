@@ -6,25 +6,29 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
-import ua.com.foxminded.galvad.university.config.SpringConfigTest;
-
-@SpringJUnitWebConfig(SpringConfigTest.class)
+@ExtendWith(MockitoExtension.class)
 class IndexControllerTest {
 
-	@Autowired
-	private WebApplicationContext webAppContext;
+	@InjectMocks
+	IndexController indexControllerUnderTest;
+
+	@Mock
+	CustomExceptionHandler customExceptionHandlerMock;
 
 	MockMvc mockMvc;
 
 	@BeforeEach
 	void setup() {
-		this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webAppContext).build();
+		this.mockMvc = null;
+		this.mockMvc = MockMvcBuilders.standaloneSetup(indexControllerUnderTest)
+				.setControllerAdvice(customExceptionHandlerMock).build();
 	}
 
 	@Test

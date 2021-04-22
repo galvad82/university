@@ -1,5 +1,6 @@
 package ua.com.foxminded.galvad.university.controllers;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -15,19 +16,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-
-import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.services.StudentService;
 
 @ExtendWith(MockitoExtension.class)
-@SpringJUnitWebConfig(SpringConfigTest.class)
 class StudentsControllerTest {
 
 	@Mock
@@ -35,21 +30,17 @@ class StudentsControllerTest {
 
 	@InjectMocks
 	StudentsController studentsControllerUnderTest;
-	
-	@Autowired
-	CustomExceptionHandler customExceptionHandler;
 
-	@Autowired
-	private WebApplicationContext webAppContext;
-
-	@Autowired
-	StudentsController studentsController;
+	@Mock
+	CustomExceptionHandler customExceptionHandlerMock;
 
 	MockMvc mockMvc;
 
 	@BeforeEach
 	void setup() {
-		this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webAppContext).build();
+		this.mockMvc = null;
+		this.mockMvc = MockMvcBuilders.standaloneSetup(studentsControllerUnderTest)
+				.setControllerAdvice(customExceptionHandlerMock).build();
 	}
 
 	@Test
@@ -72,6 +63,7 @@ class StudentsControllerTest {
 		StudentDTO expectedStudentDTO = new StudentDTO();
 		expectedStudentDTO.setFirstName("John");
 		expectedStudentDTO.setLastName("Davidson");
+		when(studentServiceMock.retrieve(1)).thenReturn(expectedStudentDTO);
 		mockMvc.perform(get("/students/{id}", 1)).andExpect(matchAll(model().attribute("student", expectedStudentDTO)));
 	}
 
@@ -86,10 +78,11 @@ class StudentsControllerTest {
 	}
 
 	@Test
-	void testSingleView_shouldForwardToExceptionViewAndReturnCorrectErrorMessage() throws Exception {
-		mockMvc.perform(get("/students/{id}", 99999)).andExpect(view().name("/exception"));
+	void testSingleView_shouldThrowExpectedException() throws Exception {
+		DataNotFoundException expectedException = new DataNotFoundException("Error Message");
+		when(studentServiceMock.retrieve(99999)).thenThrow(expectedException);
 		mockMvc.perform(get("/students/{id}", 99999))
-				.andExpect(matchAll(model().attribute("error", "A student with ID=99999 is not found")));
+				.andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
 	}
 
 	@Test
@@ -103,21 +96,18 @@ class StudentsControllerTest {
 		secondStudentDTO.setLastName("Bone");
 		expectedList.add(firstStudentDTO);
 		expectedList.add(secondStudentDTO);
-		
+
 		when(studentServiceMock.findAll()).thenReturn(expectedList);
-		this.mockMvc = MockMvcBuilders.standaloneSetup(studentsControllerUnderTest).build();
 		mockMvc.perform(get("/students")).andExpect(status().isOk()).andExpect(view().name("students/list"))
 				.andExpect(model().attribute("students", expectedList));
 	}
-	
+
 	@Test
-	void testListView_shouldForwardToExceptionView() throws Exception {
-		DataNotFoundException exception = new DataNotFoundException("Error Message");
-		when(studentServiceMock.findAll()).thenThrow(exception);
-		this.mockMvc = MockMvcBuilders.standaloneSetup(studentsControllerUnderTest)
-				.setControllerAdvice(customExceptionHandler).build();
-		mockMvc.perform(get("/students")).andExpect(view().name("/exception"))
-				.andExpect(matchAll(model().attribute("error", "Error Message")));
+	void testListView_shouldThrowExpectedException() throws Exception {
+		DataNotFoundException expectedException = new DataNotFoundException("Error Message");
+		when(studentServiceMock.findAll()).thenThrow(expectedException);
+		mockMvc.perform(get("/students"))
+				.andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
 	}
-	
+
 }

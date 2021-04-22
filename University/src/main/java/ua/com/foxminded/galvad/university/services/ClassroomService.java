@@ -108,10 +108,6 @@ public class ClassroomService {
 		LOGGER.trace("Going to convert classroomDTO (name={}) to entity without setting ID", classroomDTO.getName());
 		Classroom entity = modelMapper.map(classroomDTO, Classroom.class);
 		LOGGER.trace("Converted classroomDTO to entity (name={})", entity.getName());
-//		LOGGER.trace("Going to set ID for entity classroom (name={})", entity.getName());
-//		Integer id = classroomDAO.getId(entity);
-//		entity.setId(id);
-//		LOGGER.trace("Set ID={} for entity classroom (name={})", id, entity.getName());
 		LOGGER.trace("Conversion of classroomDTO (name={}) to classroom completed", classroomDTO.getName());
 		return entity;
 	}

@@ -1,5 +1,6 @@
 package ua.com.foxminded.galvad.university.controllers;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.ResultMatcher.matchAll;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -16,20 +17,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-
-import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.services.CourseService;
 
-
 @ExtendWith(MockitoExtension.class)
-@SpringJUnitWebConfig(SpringConfigTest.class)
 class CoursesControllerTest {
 
 	@Mock
@@ -38,20 +32,16 @@ class CoursesControllerTest {
 	@InjectMocks
 	CoursesController coursesControllerUnderTest;
 
-	@Autowired
-	CustomExceptionHandler customExceptionHandler;
-
-	@Autowired
-	private WebApplicationContext webAppContext;
-
-	@Autowired
-	CoursesController coursesController;
+	@Mock
+	CustomExceptionHandler customExceptionHandlerMock;
 
 	MockMvc mockMvc;
 
 	@BeforeEach
 	void setup() {
-		this.mockMvc = MockMvcBuilders.webAppContextSetup(this.webAppContext).build();
+		this.mockMvc = null;
+		this.mockMvc = MockMvcBuilders.standaloneSetup(coursesControllerUnderTest)
+				.setControllerAdvice(customExceptionHandlerMock).build();
 	}
 
 	@Test
@@ -64,15 +54,10 @@ class CoursesControllerTest {
 		mockMvc.perform(get("/courses/{id}", 1)).andExpect(view().name("courses/single"));
 	}
 
-//	@Test
-//	void testIDView_shouldReturnIDView() throws Exception {
-//		mockMvc.perform(get("/courses/id")).andExpect(view().name("courses/id"));
-//	}
-
 	@Test
 	void testStudentAttributeForSingleView() throws Exception {
 		CourseDTO expectedCourseDTO = new CourseDTO();
-		expectedCourseDTO.setName("Advertising business");		
+		expectedCourseDTO.setName("Advertising business");
 		when(courseServiceMock.retrieve(1)).thenReturn(expectedCourseDTO);
 		this.mockMvc = MockMvcBuilders.standaloneSetup(coursesControllerUnderTest).build();
 		mockMvc.perform(get("/courses/{id}", 1)).andExpect(status().isOk()).andExpect(view().name("courses/single"))
@@ -90,10 +75,11 @@ class CoursesControllerTest {
 	}
 
 	@Test
-	void testSingleView_shouldForwardToExceptionViewAndReturnCorrectErrorMessage() throws Exception {
-		mockMvc.perform(get("/courses/{id}", 99999)).andExpect(view().name("/exception"));
+	void testSingleView_shouldThrowExpectedException() throws Exception {
+		DataNotFoundException expectedException = new DataNotFoundException("Error Message");
+		when(courseServiceMock.retrieve(99999)).thenThrow(expectedException);
 		mockMvc.perform(get("/courses/{id}", 99999))
-				.andExpect(matchAll(model().attribute("error", "A course with ID=99999 is not found")));
+				.andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
 	}
 
 	@Test
@@ -107,20 +93,16 @@ class CoursesControllerTest {
 		expectedList.add(secondCourseDTO);
 
 		when(courseServiceMock.findAll()).thenReturn(expectedList);
-		this.mockMvc = MockMvcBuilders.standaloneSetup(coursesControllerUnderTest).build();
 		mockMvc.perform(get("/courses")).andExpect(status().isOk()).andExpect(view().name("courses/list"))
 				.andExpect(model().attribute("courses", expectedList));
 	}
 
 	@Test
-	void testListView_shouldForwardToExceptionView() throws Exception {
-		DataNotFoundException exception = new DataNotFoundException("Error Message");
-		when(courseServiceMock.findAll()).thenThrow(exception);
-		this.mockMvc = MockMvcBuilders.standaloneSetup(coursesControllerUnderTest)
-				.setControllerAdvice(customExceptionHandler).build();
-		mockMvc.perform(get("/courses")).andExpect(view().name("/exception"))
-				.andExpect(matchAll(model().attribute("error", "Error Message")));
+	void testListView_shouldThrowExpectedException() throws Exception {
+		DataNotFoundException expectedException = new DataNotFoundException("Error Message");
+		when(courseServiceMock.findAll()).thenThrow(expectedException);
+		mockMvc.perform(get("/courses"))
+				.andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
 	}
-
 
 }

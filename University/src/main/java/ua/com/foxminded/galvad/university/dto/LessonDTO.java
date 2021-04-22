@@ -7,8 +7,8 @@ import java.time.format.DateTimeFormatter;
 
 public class LessonDTO {
 	
-	private static final String dateFormat = "dd-MM-yyyy HH:mm";
-	private static final String durationFormat = "HH:mm";
+	private static final String DATE_FORMAT = "dd-MM-yyyy HH:mm";
+	private static final String DURATION_FORMAT = "HH:mm";
 	
 	private GroupDTO group;
 	private CourseDTO course;
@@ -49,7 +49,7 @@ public class LessonDTO {
 
 	public void setStartTime(long startTime) {
 		this.startTime = startTime;
-		this.startTimeString = convertMilToDate(startTime, dateFormat);
+		this.startTimeString = convertMilToDate(startTime, DATE_FORMAT);
 	}
 
 	public long getDuration() {
@@ -58,7 +58,7 @@ public class LessonDTO {
 
 	public void setDuration(long duration) {
 		this.duration = duration;
-		this.durationString=convertMilToDate(duration, durationFormat);
+		this.durationString=convertMilToDate(duration, DURATION_FORMAT);
 	}
 	
 	public String getStartTimeString() {
@@ -127,7 +127,7 @@ public class LessonDTO {
 	}
 
 	private long convertDateToMil(String date) {
-		return LocalDateTime.parse(date, DateTimeFormatter.ofPattern(dateFormat)).atZone(ZoneId.systemDefault())
+		return LocalDateTime.parse(date, DateTimeFormatter.ofPattern(DATE_FORMAT)).atZone(ZoneId.systemDefault())
 				.toInstant().toEpochMilli();
 	}
 	

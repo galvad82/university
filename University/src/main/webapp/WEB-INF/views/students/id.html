@@ -12,23 +12,22 @@
 		<p class="text-center">Find a student by ID</p>
 	</h2>
 
-	<div class="row align-items-start">
-		<div class="col"></div>
-		<div class="col">
-			<form class="row" th:action="@{'/student/'+${studentID}}">
-				<div class="col-auto">
-					<input type="text"  id="studentID" class="form-control" placeholder="Enter a student's ID" aria-label="Enter a student's ID" aria-describedby="basic-addon1">
-				</div>
-				<div class="col-auto">
-					<button type="submit" class="btn btn-primary mb-3">Find</button>
-				</div>
-			</form>
+	<div class="container">
+		<div class="row align-items-start">
+			<div class="col"></div>
+			<div class="col">
+				<form class="row" th:action="@{/students}" th:method="POST">
+					<div class="col-auto">
+						<input type="text" th:name="studentID" class="form-control"
+							placeholder="Enter a student's ID" />
+					</div>
+					<div class="col-auto">
+						<button type="submit" class="btn btn-primary mb-3">Find</button>
+					</div>
+				</form>
+			</div>
+			<div class="col"></div>
 		</div>
-		<div class="col"></div>
 	</div>
-
-
-
-
 </body>
 </html>
