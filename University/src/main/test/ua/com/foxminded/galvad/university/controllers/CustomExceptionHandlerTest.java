@@ -1,6 +1,6 @@
 package ua.com.foxminded.galvad.university.controllers;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.ui.ExtendedModelMap;
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
