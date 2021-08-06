@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.ResultMatcher.matchAll;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -18,7 +19,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.services.ClassroomService;
@@ -45,42 +48,7 @@ class ClassroomsControllerTest {
 	}
 
 	@Test
-	void testListView_shouldReturnListView() throws Exception {
-		mockMvc.perform(get("/classrooms")).andExpect(view().name("classrooms/list"));
-	}
-
-	@Test
-	void testSingleView_shouldReturnSingleView() throws Exception {
-		mockMvc.perform(get("/classrooms/{id}", 1)).andExpect(view().name("classrooms/single"));
-	}
-
-	@Test
-	void testClassroomAttributeForSingleView() throws Exception {
-		ClassroomDTO expectedClassroomDTO = new ClassroomDTO();
-		expectedClassroomDTO.setName("ROOM-15");
-		when(classroomServiceMock.retrieve(1)).thenReturn(expectedClassroomDTO);
-		mockMvc.perform(get("/classrooms/{id}", 1)).andExpect(matchAll(model().attribute("classroom", expectedClassroomDTO)));
-	}
-
-	@Test
-	void testSingleView_shouldSetCorrectIdAttributeValue() throws Exception {
-		mockMvc.perform(get("/classrooms/{id}", 1)).andExpect(matchAll(model().attribute("id", 1)));
-	}
-
-	@Test
-	void testSingleView_shouldReturn4xx() throws Exception {
-		mockMvc.perform(get("/classrooms/{id}", "fff")).andExpect(status().is4xxClientError());
-	}
-
-	@Test
-	void testSingleView_shouldThrowExpectedException() throws Exception {
-		DataNotFoundException expectedException = new DataNotFoundException("Error Message");
-		when(classroomServiceMock.retrieve(99999)).thenThrow(expectedException);
-		mockMvc.perform(get("/classrooms/{id}", 99999)).andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
-	}
-
-	@Test
-	void testListView_shouldReturnExpectedList() throws Exception {
+	void testListView() throws Exception {
 		List<ClassroomDTO> expectedList = new ArrayList<>();
 		ClassroomDTO firstClassroomDTO = new ClassroomDTO();
 		firstClassroomDTO.setName("ROOM-1");
@@ -101,4 +69,58 @@ class ClassroomsControllerTest {
 		mockMvc.perform(get("/classrooms")).andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
 	}
 
+	@Test
+	void testAddViewGet() throws Exception {
+		ClassroomDTO expectedClassroomDTO = new ClassroomDTO();
+		mockMvc.perform(get("/classrooms/add")).andExpect(matchAll(model().attribute("classroomDTO", expectedClassroomDTO))).andExpect(view().name("classrooms/add"));
+	}
+	
+	@Test
+	void testAddViewPost() throws Exception {
+		ClassroomDTO expectedClassroomDTO = new ClassroomDTO();
+		expectedClassroomDTO.setName("TEST");
+		RequestBuilder request = post("/classrooms/add").flashAttr("classroomDTO", expectedClassroomDTO);
+		mockMvc
+		.perform(request)
+		.andExpect(matchAll(model().attribute("classroom", expectedClassroomDTO)))
+		.andExpect(matchAll(model().attribute("result", "A classroom was successfully added.")))
+		.andExpect(view().name("classrooms/result"));
+	}
+	
+	@Test
+	void testEditViewPost() throws Exception {
+		mockMvc
+		.perform(post("/classrooms/edit").param("name", "TEST"))
+		.andExpect(matchAll(model().attribute("name", "TEST")))
+		.andExpect(view().name("classrooms/edit"));
+	}
+	
+	@Test
+	void testEditResultViewPost() throws Exception {
+		mockMvc
+		.perform(post("/classrooms/edit/result").param("name", "name").param("initialName", "initialName"))
+		.andExpect(matchAll(model().attribute("result", "Classroom was successfully updated")))
+		.andExpect(view().name("classrooms/result"));
+	}
+	
+	@Test
+	void testDeleteViewPost() throws Exception {
+		mockMvc
+		.perform(post("/classrooms/delete").param("name", "TEST"))
+		.andExpect(matchAll(model().attribute("name", "TEST")))
+		.andExpect(view().name("classrooms/delete"));
+	}
+	
+	@Test
+	void testDeleteResultViewPost() throws Exception {
+		mockMvc
+		.perform(post("/classrooms/delete/result").param("name", "name"))
+		.andExpect(matchAll(model().attribute("result", "A classroom was successfully deleted.")))
+		.andExpect(view().name("classrooms/result"));
+	}
+
+	@Test
+	void testWrongView_shouldReturn4xx() throws Exception {
+		mockMvc.perform(get("/classrooms/wrong")).andExpect(status().is4xxClientError());
+	}
 }

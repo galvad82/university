@@ -1,19 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>University - Student information</title>
+<title>University - Teacher information</title>
 </head>
 <body>
 	<div th:insert="templates/navbar :: bootstrap"></div>
-
 	<div th:insert="templates/navbar :: navbar"></div>
-	<h2>
-		<p class="text-center">Student information</p>
-	</h2>
+	<h2>Teacher information</h2>
 
+	<div class="alert alert-success text-center" role="alert" th:text="${result}" />
 	<div class="container">
-		<table class="table table-striped">
+		<table class="table table-striped" aria-describedby="Result">
 			<thead>
 				<tr>
 					<th scope="col">First Name</th>
@@ -22,8 +20,8 @@
 			</thead>
 			<tbody>
 				<tr>
-					<td th:text="${student.getFirstName()}"></td>
-					<td th:text="${student.getLastName()}"></td>
+					<td th:text="${teacher.getFirstName()}" />
+					<td th:text="${teacher.getLastName()}" />
 				</tr>
 			</tbody>
 		</table>

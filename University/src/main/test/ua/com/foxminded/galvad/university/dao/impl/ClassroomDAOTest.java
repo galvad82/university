@@ -85,6 +85,22 @@ class ClassroomDAOTest {
 	}
 
 	@Test
+	void testRetrieveByName_shouldReturnCorrectData() {
+		assertEquals("ROOM-15", classroomDAO.retrieve("ROOM-15").getName());
+	}
+
+	@Test
+	void testRetrieveByName_shouldThrowDataNotFoundExceptionAfterDropDB() {
+		dropDB();
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve("ROOM-15"));
+	}
+
+	@Test
+	void testRetrieveByName_shouldThrowDataNotFoundExceptionForNonexistentID() {
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve("ROOM-77"));
+	}
+
+	@Test
 	void testUpdate_shouldReturnUpdatedEntity() {
 		Classroom classroom = classroomDAO.retrieve(1);
 		classroom.setName("New Name");
@@ -124,7 +140,7 @@ class ClassroomDAOTest {
 	}
 
 	@Test
-	void testDelete_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+	void testDeleteByEntity_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
 		Classroom classroom = new Classroom();
 		classroom.setId(1);
@@ -133,20 +149,9 @@ class ClassroomDAOTest {
 
 	@Test
 	void testDeleteByID_shouldReturnCorrectNumberOfEntities() {
-
 		classroomDAO.delete(1);
 		int numOfClassroomsFromTestData = classroomDAO.findAll().size();
 		assertEquals(1, numOfClassroomsFromTestData);
-	}
-
-	@Test
-	void shouldThrowIllegalArgumentExceptionWhenDatasourceIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> classroomDAO.setDataSource(null));
-	}
-
-	@Test
-	void shouldThrowIllegalArgumentExceptionWhenMapperIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> classroomDAO.setMapper(null));
 	}
 
 	@Test
@@ -170,6 +175,16 @@ class ClassroomDAOTest {
 		String query = "DELETE FROM classrooms";
 		jdbcTemplate.execute(query);
 		assertThrows(DataNotFoundException.class, () -> classroomDAO.findAll());
+	}
+
+	@Test
+	void shouldThrowIllegalArgumentExceptionWhenDatasourceIsNull() {
+		Assertions.assertThrows(IllegalArgumentException.class, () -> classroomDAO.setDataSource(null));
+	}
+
+	@Test
+	void shouldThrowIllegalArgumentExceptionWhenMapperIsNull() {
+		Assertions.assertThrows(IllegalArgumentException.class, () -> classroomDAO.setMapper(null));
 	}
 
 	private void dropDB() {

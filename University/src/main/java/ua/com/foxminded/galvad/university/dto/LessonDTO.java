@@ -1,14 +1,9 @@
 package ua.com.foxminded.galvad.university.dto;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 public class LessonDTO {
-	
-	private static final String DATE_FORMAT = "dd-MM-yyyy HH:mm";
-	private static final String DURATION_FORMAT = "HH:mm";
 	
 	private GroupDTO group;
 	private CourseDTO course;
@@ -43,13 +38,13 @@ public class LessonDTO {
 		this.classroom = classroom;
 	}
 
-	public long getStartTime() {
+	public Long getStartTime() {
 		return startTime;
 	}
 
 	public void setStartTime(long startTime) {
 		this.startTime = startTime;
-		this.startTimeString = convertMilToDate(startTime, DATE_FORMAT);
+		this.startTimeString = convertMilToDate(startTime);
 	}
 
 	public long getDuration() {
@@ -58,7 +53,7 @@ public class LessonDTO {
 
 	public void setDuration(long duration) {
 		this.duration = duration;
-		this.durationString=convertMilToDate(duration, DURATION_FORMAT);
+		this.durationString=convertMilToTime(duration);
 	}
 	
 	public String getStartTimeString() {
@@ -120,15 +115,16 @@ public class LessonDTO {
 	
 	
 	
-	private String convertMilToDate(long millis, String format) {
+	private String convertMilToDate(long millis) {
 		Instant instance = java.time.Instant.ofEpochMilli(millis);
 		return java.time.LocalDateTime.ofInstant(instance, java.time.ZoneId.systemDefault())
-				.format(DateTimeFormatter.ofPattern(format));
+				.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"));
 	}
 
-	private long convertDateToMil(String date) {
-		return LocalDateTime.parse(date, DateTimeFormatter.ofPattern(DATE_FORMAT)).atZone(ZoneId.systemDefault())
-				.toInstant().toEpochMilli();
+	private String convertMilToTime(long millis) {
+		long minutes = (millis / (1000*60)) % 60;
+		long hours   = (millis / (1000*60*60)) % 24;
+		return String.format("%02d:%02d",hours,minutes);
 	}
 	
 }

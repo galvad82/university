@@ -1,6 +1,8 @@
 package ua.com.foxminded.galvad.university.dao.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -9,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -21,7 +24,7 @@ import ua.com.foxminded.galvad.university.model.Student;
 public class GroupDAO implements DAO<Integer, Group> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GroupDAO.class);
-
+	private static final String GROUP_NOT_FOUND = "A group with name=%s  is not found";
 	private JdbcTemplate jdbcTemplate;
 	private GroupMapper mapper;
 
@@ -36,6 +39,7 @@ public class GroupDAO implements DAO<Integer, Group> {
 	private static final String FIND_ALL_STUDENTS_FOR_GROUP = "SELECT students.id,students.firstname,students.lastname "
 			+ "FROM students LEFT JOIN groups_students ON (groups_students.student_id=students.id) "
 			+ "WHERE groups_students.group_id=?";
+	private static final String FIND_GROUP_ID_FOR_STUDENT = "SELECT group_id FROM groups_students WHERE student_id=?";
 
 	@Autowired
 	public void setMapper(GroupMapper mapper) {
@@ -88,7 +92,7 @@ public class GroupDAO implements DAO<Integer, Group> {
 		}
 		LOGGER.trace("Going to retrieve a list of students for the group (ID={}) from DB", resultGroup.getId());
 		try {
-			resultGroup.setListOfStudent(findAllStudentsForGroup(resultGroup.getId()));
+			resultGroup.setListOfStudent(findAllStudentsForGroup(resultGroup));
 			LOGGER.trace("Retrieved a list of students ({} in total) for the group (ID={}) from DB successfully",
 					resultGroup.getListOfStudent().size(), resultGroup.getId());
 		} catch (DataNotFoundException e) {
@@ -98,6 +102,39 @@ public class GroupDAO implements DAO<Integer, Group> {
 		return resultGroup;
 	}
 
+	public Group retrieve(String groupName) {
+		Group resultGroup = new Group();
+		try {
+			LOGGER.trace("Going to retrieve a group from DB by name={}", groupName);
+			resultGroup = jdbcTemplate.query(FIND_BY_NAME, mapper, groupName).get(0);
+			LOGGER.info("Retrieved a group (name={}) from DB", resultGroup.getName());
+			return resultGroup;
+		} catch (IndexOutOfBoundsException e) {
+			throw new DataNotFoundException(String.format(GROUP_NOT_FOUND, groupName));
+		} catch (DataAccessException e) {
+			throw new DataNotFoundException(String.format("Cannot retrieve a group from DB by name=%s", groupName), e);
+		}
+	}
+
+	public Group getGroupForStudent(Student student) {
+		try {
+			LOGGER.trace("Going to retrieve a group name for a student from DB. First_Name ={}, Last_Name ={}",
+					student.getFirstName(), student.getLastName());
+			Integer groupID = (Integer) jdbcTemplate.queryForMap(FIND_GROUP_ID_FOR_STUDENT, student.getId())
+					.get("GROUP_ID");
+			LOGGER.info("Retrieved a Group ID for a student from DB. First_Name ={}, Last_Name ={}, ID={}",
+					student.getFirstName(), student.getLastName(), groupID);
+			LOGGER.trace("Going to retrieve a group (ID={}) from DB", groupID);
+			Group group = jdbcTemplate.query(RETRIEVE, mapper, groupID).get(0);
+			LOGGER.trace("Retrieved a group with ID={} from DB", groupID);
+			return group;
+		} catch (EmptyResultDataAccessException e) {
+			throw new DataNotFoundException(
+					String.format("A student (First_Name =%s, Last_Name =%s) is not assigned to any group!",
+							student.getFirstName(), student.getLastName()));
+		}
+	}
+
 	public Integer getId(Group group) throws DataNotFoundException {
 		try {
 			LOGGER.trace("Going to retrieve an ID for a group (name={}) from DB", group.getName());
@@ -105,10 +142,24 @@ public class GroupDAO implements DAO<Integer, Group> {
 			LOGGER.info("Retrieved an ID for a group (name={}) from DB", group.getName());
 			return result;
 		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(String.format("A group with name=%s  is not found", group.getName()));
+			throw new DataNotFoundException(String.format(GROUP_NOT_FOUND, group.getName()));
 		} catch (DataAccessException e) {
 			throw new DataNotFoundException(
 					String.format("Cannot retrieve an ID for a group with name=%s", group.getName()), e);
+		}
+	}
+
+	public Integer getId(String groupName) throws DataNotFoundException {
+		try {
+			LOGGER.trace("Going to retrieve an ID for a group (name={}) from DB", groupName);
+			Integer result = jdbcTemplate.query(FIND_BY_NAME, mapper, groupName).get(0).getId();
+			LOGGER.info("Retrieved an ID for a group (name={}) from DB", groupName);
+			return result;
+		} catch (IndexOutOfBoundsException e) {
+			throw new DataNotFoundException(String.format(GROUP_NOT_FOUND, groupName));
+		} catch (DataAccessException e) {
+			throw new DataNotFoundException(String.format("Cannot retrieve an ID for a group with name=%s", groupName),
+					e);
 		}
 	}
 
@@ -138,6 +189,10 @@ public class GroupDAO implements DAO<Integer, Group> {
 
 	public void delete(Integer id) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete a group (ID={})", id);
+		LOGGER.trace("Going to remove all the students from a group (ID={})", id);
+		removeAllStudentsFromGroup(id);
+		LOGGER.trace("All the students were removed from a group (ID={}) successfully", id);
+		LOGGER.trace("Going to delete a group (ID={}) from DB", id);
 		try {
 			Integer result = jdbcTemplate.update(DELETE, id);
 			if (result == 0) {
@@ -159,6 +214,7 @@ public class GroupDAO implements DAO<Integer, Group> {
 		LOGGER.trace("Going to retrieve a list of groups from DB");
 		try {
 			resultList = jdbcTemplate.query(FIND_ALL, mapper);
+			Collections.sort(resultList, Comparator.comparing(Group::getName));
 			if (resultList.isEmpty()) {
 				throw new DataNotFoundException("None of groups was found in DB");
 			} else {
@@ -171,13 +227,30 @@ public class GroupDAO implements DAO<Integer, Group> {
 		LOGGER.trace("Going to retrieve a list of students for each of the groups from DB");
 		for (Group group : resultList) {
 			try {
-				group.setListOfStudent(findAllStudentsForGroup(group.getId()));
+				group.setListOfStudent(findAllStudentsForGroup(group));
 			} catch (DataNotFoundException e) {
-				LOGGER.error("None of students was for the group (ID={})", group.getId());
+				LOGGER.error("None of students was found for the group (ID={})", group.getId());
 			} catch (DataAccessException e) {
 				throw new DataNotFoundException(
 						String.format("Cannot retrieve a list of students for the group(ID=%d)", group.getId()), e);
 			}
+		}
+		return resultList;
+	}
+
+	public List<Group> findAllWithoutStudentList() throws DataNotFoundException {
+		List<Group> resultList = new ArrayList<>();
+		LOGGER.trace("Going to retrieve a list of groups from DB");
+		try {
+			resultList = jdbcTemplate.query(FIND_ALL, mapper);
+			Collections.sort(resultList, Comparator.comparing(Group::getName));
+			if (resultList.isEmpty()) {
+				throw new DataNotFoundException("None of groups was found in DB");
+			} else {
+				LOGGER.info("Retrieved a list of groups successfully. {} groups were found", resultList.size());
+			}
+		} catch (DataAccessException e) {
+			throw new DataNotFoundException("Cannot retrieve a list of groups from DB", e);
 		}
 		return resultList;
 	}
@@ -196,11 +269,7 @@ public class GroupDAO implements DAO<Integer, Group> {
 	public void removeAllStudentsFromGroup(Integer groupID) throws DataAreNotUpdatedException, DataNotFoundException {
 		LOGGER.trace("Going to delete all students from the group (ID={})", groupID);
 		try {
-			if (jdbcTemplate.update(REMOVE_ALL_STUDENTS_FROM_GROUP, groupID) == 0) {
-				throw new DataNotFoundException(String.format("A group with ID=%d was not found", groupID));
-			} else {
-				LOGGER.info("All students were deleted from the group (ID={}) successfully", groupID);
-			}
+			jdbcTemplate.update(REMOVE_ALL_STUDENTS_FROM_GROUP, groupID);
 		} catch (DataAccessException e) {
 			throw new DataAreNotUpdatedException(
 					String.format("Cannot delete all students from the group (ID=%d", groupID), e);
@@ -208,22 +277,28 @@ public class GroupDAO implements DAO<Integer, Group> {
 
 	}
 
-	public List<Student> findAllStudentsForGroup(Integer groupID) throws DataNotFoundException {
-		LOGGER.trace("Going to retrieve a list of students for the group (ID={}) from DB", groupID);
+	public List<Student> findAllStudentsForGroup(Group group) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a list of students for the group (ID={}, name={}) from DB", group.getId(),
+				group.getName());
 		try {
 			List<Student> resultList = jdbcTemplate.query(FIND_ALL_STUDENTS_FOR_GROUP,
 					(rs, rowNum) -> new Student(rs.getInt("id"), rs.getString("firstname"), rs.getString("lastname")),
-					groupID);
+					group.getId());
+			Collections.sort(resultList,
+					Comparator.comparing(Student::getLastName).thenComparing(Student::getFirstName));
 			if (resultList.isEmpty()) {
-				throw new DataNotFoundException(String.format("The group (ID=%d) does not have any student", groupID));
+				throw new DataNotFoundException(
+						String.format("The group (ID=%d) does not have any student", group.getId()));
 			} else {
 				LOGGER.info("Retrieved a list of students for the group (ID={}) successfully. {} students were found",
-						groupID, resultList.size());
+						group.getId(), resultList.size());
 				return resultList;
 			}
 		} catch (DataAccessException e) {
 			throw new DataNotFoundException(
-					String.format("Cannot retrieve a list of students for the group (ID=%d) from DB", groupID), e);
+					String.format("Cannot retrieve a list of students for the group (ID=%d, name=%s) from DB",
+							group.getId(), group.getName()),
+					e);
 		}
 	}
 }

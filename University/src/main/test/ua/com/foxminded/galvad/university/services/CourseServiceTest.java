@@ -13,12 +13,13 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 
-import ua.com.foxminded.galvad.university.config.SpringConfig;
+import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dao.impl.CourseDAO;
 import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
+import ua.com.foxminded.galvad.university.dto.LessonDTO;
 
-@SpringJUnitWebConfig(SpringConfig.class)
+@SpringJUnitWebConfig(SpringConfigTest.class)
 class CourseServiceTest {
 
 	@Autowired
@@ -52,15 +53,7 @@ class CourseServiceTest {
 
 	@Test
 	void testRetrieve() {
-		CourseDTO courseDTO = courseService.retrieve(1);
-		assertEquals("Science", courseDTO.getName());
-		assertEquals("Jennie", courseDTO.getTeacher().getFirstName());
-		assertEquals("Crigler", courseDTO.getTeacher().getLastName());
-	}
-
-	@Test
-	void testRetrieveByFindAll() {
-		CourseDTO courseDTO = courseService.findAll().get(0);
+		CourseDTO courseDTO = courseService.retrieve("Science");
 		assertEquals("Science", courseDTO.getName());
 		assertEquals("Jennie", courseDTO.getTeacher().getFirstName());
 		assertEquals("Crigler", courseDTO.getTeacher().getLastName());
@@ -80,23 +73,35 @@ class CourseServiceTest {
 
 	@Test
 	void testDelete() {
-		List<CourseDTO> listDTO = courseService.findAll();
-		int count = 1;
-		if (!listDTO.isEmpty()) {
-			count = listDTO.size();
-		}
-		courseService.delete(listDTO.get(0));
+		List<CourseDTO> listBeforeDel = courseService.findAll();
+		courseService.delete(listBeforeDel.get(0));
 		List<CourseDTO> listAfterDel = courseService.findAll();
-		int countAfterDel = 0;
-		if (!listAfterDel.isEmpty()) {
-			countAfterDel = listAfterDel.size();
-		}
-		assertEquals((count - 1), countAfterDel);
+		assertEquals(listBeforeDel.size()-1, listAfterDel.size());
 	}
 
 	@Test
 	void testFindAll() {
+		CourseDTO courseDTO = courseService.findAll().get(0);
+		assertEquals("Math", courseDTO.getName());
+		assertEquals("Gladys", courseDTO.getTeacher().getFirstName());
+		assertEquals("Swon", courseDTO.getTeacher().getLastName());
+		CourseDTO courseDTO2 = courseService.findAll().get(1);
+		assertEquals("Science", courseDTO2.getName());
+		assertEquals("Jennie", courseDTO2.getTeacher().getFirstName());
+		assertEquals("Crigler", courseDTO2.getTeacher().getLastName());
 		assertEquals(2, courseService.findAll().size());
 	}
-
+	
+	@Test
+	void testFindAllLessonsForCourse() {
+		List<LessonDTO> listOfLessons = courseService.findAllLessonsForCourse("Science");
+		assertEquals("ROOM-15", listOfLessons.get(0).getClassroom().getName());
+		assertEquals("Science", listOfLessons.get(0).getCourse().getName());
+		assertEquals("Crigler", listOfLessons.get(0).getCourse().getTeacher().getLastName());
+		assertEquals("AB-123", listOfLessons.get(0).getGroup().getName());
+		assertEquals("Davidson", listOfLessons.get(0).getGroup().getListOfStudent().get(0).getLastName());
+		assertEquals(2700000l, listOfLessons.get(0).getDuration());
+		assertEquals(1616510000000l, listOfLessons.get(0).getStartTime());
+		assertEquals(1, listOfLessons.size());
+	}
 }

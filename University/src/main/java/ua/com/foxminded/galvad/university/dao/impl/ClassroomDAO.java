@@ -1,6 +1,7 @@
 package ua.com.foxminded.galvad.university.dao.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -69,6 +70,20 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 		}
 	}
 
+	public Classroom retrieve(String classroomName) throws DataNotFoundException {
+		try {
+			LOGGER.trace("Going to retrieve a classroom from DB. Name={}", classroomName);
+			Classroom retrievedClassroom = jdbcTemplate.query(FIND_BY_NAME, mapper, classroomName).get(0);
+			LOGGER.info("Retrieved a classroom with name={} from DB", classroomName);
+			return retrievedClassroom;
+		} catch (IndexOutOfBoundsException e) {
+			throw new DataNotFoundException(String.format("A classroom with name=%s is not found", classroomName));
+		} catch (DataAccessException e) {
+			throw new DataNotFoundException(String.format("Cannot retrieve a classroom with name=%s", classroomName),
+					e);
+		}
+	}
+
 	public Integer getId(Classroom classroom) throws DataNotFoundException {
 		try {
 			LOGGER.trace("Going to retrieve an ID for a classroom (name={}) from DB. ", classroom.getName());
@@ -122,6 +137,7 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 		LOGGER.trace("Going to retrieve a list of classrooms from DB");
 		try {
 			resultList = jdbcTemplate.query(FIND_ALL, mapper);
+			Collections.sort(resultList, (o1, o2) -> o1.getId().compareTo(o2.getId()));
 			if (resultList.isEmpty()) {
 				throw new DataNotFoundException("None of classrooms was found in DB");
 			} else {

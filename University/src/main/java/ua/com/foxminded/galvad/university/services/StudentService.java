@@ -1,6 +1,9 @@
 package ua.com.foxminded.galvad.university.services;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -12,6 +15,7 @@ import org.springframework.stereotype.Service;
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
+import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.model.Student;
 
@@ -24,12 +28,23 @@ public class StudentService {
 	@Autowired
 	private StudentDAO studentDAO;
 
+	@Autowired
+	private GroupService groupService;
+
 	public void create(StudentDTO studentDTO) throws DataAreNotUpdatedException {
-		studentDAO.create(convertToEntityWithoutID(studentDTO));		
+		studentDAO.create(convertToEntityWithoutID(studentDTO));
 	}
 
-	public StudentDTO retrieve(Integer id) throws DataNotFoundException {
-		return convertToDTO(studentDAO.retrieve(id));
+	public StudentDTO retrieve(String firstName, String lastName) throws DataAreNotUpdatedException {
+		LOGGER.trace("Going to retrieve StudentDTO, firstName={}, lastName={}", firstName, lastName);
+		LOGGER.trace("Going to retrieve Student entity, firstName={}, lastName={}", firstName, lastName);
+		Student student = studentDAO.retrieve(firstName, lastName);
+		LOGGER.trace("Student entity retrieved, firstName={}, lastName={}", firstName, lastName);
+		LOGGER.trace("Converting Student entity to DTO, firstName={}, lastName={}", firstName, lastName);
+		StudentDTO resultDTO = convertToDTO(student);
+		LOGGER.trace("Student entity converted to DTO, firstName={}, lastName={}", resultDTO.getFirstName(),
+				resultDTO.getLastName());
+		return resultDTO;
 	}
 
 	public void update(StudentDTO oldDTO, StudentDTO newDTO) throws DataAreNotUpdatedException {
@@ -39,16 +54,17 @@ public class StudentService {
 		LOGGER.trace("StudentDTO was updated successfully.");
 	}
 
+	public void updateGroup(StudentDTO studentDTO, GroupDTO groupDTO) throws DataAreNotUpdatedException {
+		LOGGER.trace("Going to assign StudentDTO (firstName={}, lastName={}) to a groupDTO with name={}",
+				studentDTO.getFirstName(), studentDTO.getLastName(), groupDTO.getName());
+		studentDAO.updateGroupForStudent(convertToEntity(studentDTO), groupService.convertToEntity(groupDTO));
+		LOGGER.trace("StudentDTO was assigned successfully.");
+	}
+
 	public void delete(StudentDTO studentDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete StudentDTO by entity, firstName={}, lastName={}", studentDTO.getFirstName(),
 				studentDTO.getLastName());
 		studentDAO.delete(convertToEntity(studentDTO));
-	}
-
-	public void delete(Integer id) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete StudentDTO by ID={}", id);
-		studentDAO.delete(id);
-		LOGGER.trace("StudentDTO with ID={} was deleted.", id);
 	}
 
 	public List<StudentDTO> findAll() throws DataNotFoundException {
@@ -56,6 +72,39 @@ public class StudentService {
 		List<StudentDTO> list = studentDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
 		LOGGER.trace("List of ALL StudentDTO retrieved from DB, {} were found", list.size());
 		return list;
+	}
+
+	public Map<StudentDTO, String> buildStudentGroupMap() throws DataNotFoundException {
+		LOGGER.trace("Going to get a map (StudentDTO,GroupName)");
+		Map<StudentDTO, String> studentGroupMap = new LinkedHashMap<>();
+		studentDAO.findAll().stream().forEach(
+				student -> studentGroupMap.put(convertToDTO(student), groupService.getGroupNameForStudent(student)));
+		LOGGER.trace("A map (StudentDTO,GroupName) is prepared.");
+		return studentGroupMap;
+	}
+
+	public List<StudentDTO> findAllUnassignedStudents() throws DataNotFoundException {
+		LOGGER.trace("Going to find all unassigned students");
+		List<StudentDTO> listOfUnassignedStudents = new ArrayList<>();
+		studentDAO.findAll().stream().forEach(student -> {
+			if (studentDAO.getGroupId(student) == 0) {
+				listOfUnassignedStudents.add(convertToDTO(student));
+			}
+		});
+		LOGGER.trace("A list with all unassigned students is prepared.");
+		return listOfUnassignedStudents;
+	}
+
+	public void addToGroup(StudentDTO studentDTO, GroupDTO groupDTO) throws DataAreNotUpdatedException {
+		studentDAO.addStudentToGroup(convertToEntity(studentDTO), groupService.convertToEntity(groupDTO));
+	}
+
+	public void removeStudentFromGroup(StudentDTO studentDTO) throws DataNotFoundException {
+		LOGGER.trace("Going to remove a studentDTO(firstName={}, lastName={}) from group", studentDTO.getFirstName(),
+				studentDTO.getLastName());
+		studentDAO.removeStudentFromGroups(convertToEntity(studentDTO));
+		LOGGER.trace("A studentDTO(firstName={}, lastName={}) was removed from group successfully",
+				studentDTO.getFirstName(), studentDTO.getLastName());
 	}
 
 	private StudentDTO convertToDTO(Student entity) throws DataNotFoundException {
@@ -89,7 +138,7 @@ public class StudentService {
 		LOGGER.trace("ID of oldDTO was set to newDTO successfully");
 		return entity;
 	}
-	
+
 	private Student convertToEntityWithoutID(StudentDTO studentDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert StudentDTO to entity");
 		Student entity = modelMapper.map(studentDTO, Student.class);

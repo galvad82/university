@@ -1,5 +1,6 @@
 package ua.com.foxminded.galvad.university.services;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
+import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
@@ -24,15 +26,18 @@ public class TeacherService {
 	private ModelMapper modelMapper;
 	@Autowired
 	private TeacherDAO teacherDAO;
+	@Autowired
+	private LessonService lessonService;
 
 	public void create(TeacherDTO teacherDTO) throws DataAreNotUpdatedException {
 		teacherDAO.create(convertToEntityWithoutID(teacherDTO));
 	}
 
-	public TeacherDTO retrieve(Integer id) throws DataNotFoundException {
-		return convertToDTO(teacherDAO.retrieve(id));
+	public TeacherDTO retrieve(String firstName, String lastName) throws DataAreNotUpdatedException {
+		return convertToDTO(teacherDAO.retrieve(firstName, lastName));
+		
 	}
-
+	
 	public void update(TeacherDTO oldDTO, TeacherDTO newDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to update TeacherDTO, firstName={}, lastName={}", newDTO.getFirstName(),
 				newDTO.getLastName());
@@ -50,6 +55,17 @@ public class TeacherService {
 		List<TeacherDTO> list = teacherDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
 		LOGGER.trace("List of ALL TeacherDTO retrieved from DB, {} were found", list.size());
 		return list;
+	}
+	
+	public List<LessonDTO> findAllLessonsForTeacher (String firstName, String lastName)  throws DataNotFoundException {
+		LOGGER.trace("Going to get list of lessons for Teacher (firstName={}, lastName={}", firstName, lastName);
+		LOGGER.trace("Going to get DTO for Teacher (firstName={}, lastName={}", firstName, lastName);
+		TeacherDTO teacherDTO = retrieve(firstName, lastName);
+		LOGGER.trace("Got TeacherDTO (firstName={}, lastName={}", teacherDTO.getFirstName(), teacherDTO.getLastName());
+		List<LessonDTO> listOfLessons = lessonService.findAll().stream().filter(s -> s.getCourse().getTeacher().equals(teacherDTO)).collect(Collectors.toList());
+		Collections.sort(listOfLessons, (o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime()));
+		LOGGER.trace("The list of lessons for Teacher (firstName={}, lastName={} retrieved successfully", firstName, lastName);
+		return listOfLessons;
 	}
 
 	private TeacherDTO convertToDTO(Teacher entity) throws DataNotFoundException {
@@ -83,7 +99,7 @@ public class TeacherService {
 		LOGGER.trace("ID of oldDTO was set to newDTO successfully");
 		return entity;
 	}
-	
+
 	private Teacher convertToEntityWithoutID(TeacherDTO teacherDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert TeacherDTO to entity");
 		Teacher entity = modelMapper.map(teacherDTO, Teacher.class);

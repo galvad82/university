@@ -1,5 +1,8 @@
 package ua.com.foxminded.galvad.university.services;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -53,18 +56,6 @@ public class LessonService {
 		lessonDAO.create(convertToEntityWithoutID(lessonDTO));
 	}
 
-	public LessonDTO retrieve(Integer id) throws DataNotFoundException {
-		LOGGER.trace("Going to retrieve LessonDTO from lesson with ID={}", id);
-		LessonDTO lessonDTO = new LessonDTO();
-		LOGGER.trace("Going to retrieve lesson by ID={}", id);
-		Lesson lesson = lessonDAO.retrieve(id);
-		LOGGER.trace("Retrieved a lesson with ID={}", id);
-		LOGGER.trace("Going to retrieve LessonDTO from a lesson with ID={}", id);
-		lessonDTO = convertToDTO(lesson);
-		LOGGER.trace("Retrieved LessonDTO from a lesson with ID={}", id);
-		return lessonDTO;
-	}
-
 	public void update(LessonDTO oldDTO, LessonDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update LessonDTO");
 		lessonDAO.update(convertToEntity(oldDTO, newDTO));
@@ -82,7 +73,7 @@ public class LessonService {
 		LOGGER.trace("List of ALL LessonDTO retrieved from DB, {} were found", list.size());
 		return list;
 	}
-
+	
 	public void deleteByClassroom(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete LessonDTO by classroomDTO (name={})", classroomDTO.getName());
 		LOGGER.trace("Going to get an entity for classroomDTO (name={})", classroomDTO.getName());
@@ -179,5 +170,15 @@ public class LessonService {
 		LOGGER.trace("Created a new lesson with converted group, course and classroom");
 		return entity;
 	}
-
+	
+	public long convertDateToMil(String date) {		
+		return LocalDateTime.parse(date, DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")).atZone(ZoneId.systemDefault())
+				.toInstant().toEpochMilli();
+	}
+	
+	public long convertTimeToMil(String timeString) {	
+		String[] time=timeString.split(":");
+		return (long) (Integer.parseInt(time[0])*60 + Integer.parseInt(time[1]))*1000*60;
+	}
+	
 }

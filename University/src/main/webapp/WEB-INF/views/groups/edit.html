@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>University - Edit group information</title>
+</head>
+<body>
+	<div th:insert="templates/navbar :: bootstrap"></div>
+	<div th:insert="templates/navbar :: navbar"></div>
+	<h2>Edit group information</h2>
+
+	<div class="container">
+		<div class="row align-items-start">
+			<div class="col"></div>
+			<div class="col">
+				<form class="row" th:action="@{/groups/edit/result}" th:method="POST" th:object="${groupDTO}">
+					<label><span class="red">*</span> Group Name:</label>
+					<input type="text" th:field="*{name}" th:value="*{name}" class="form-control" />
+					<input type="hidden" th:name="initialName" th:value="${groupDTO.name}" />
+					<p>
+					<th:block th:each="studentDTO, itemStat : ${groupDTO.listOfStudent}">
+						<input class="form-check-input" type="checkbox" th:name="${itemStat.index}" checked 
+					 		th:text="'   '+${studentDTO.firstName}+' '+${studentDTO.lastName}" onchange="changeList(this)" />
+					 	<br>
+					 	<input type="hidden" th:field="*{listOfStudent[__${itemStat.index}__].firstName}" 
+					 		th:value="*{listOfStudent[__${itemStat.index}__].firstName}" />
+					 	<input type="hidden" th:field="*{listOfStudent[__${itemStat.index}__].lastName}" 
+					 		th:value="*{listOfStudent[__${itemStat.index}__].lastName}" />
+					</th:block>
+					</p>
+					<p>
+						<span class="red">*</span> indicates a required field
+					</p>
+					<button type="submit" class="btn btn-primary mb-3">Update</button>
+				</form>
+			</div>
+			<div class="col"></div>
+		</div>
+	</div>
+	
+<script th:inline="javascript">
+	function changeList(checkboxElem) {
+		var listOfStudent = /*[[${groupDTO.listOfStudent}]]*/ null;
+		var index=checkboxElem.name;
+		var fname="listOfStudent"+index+".firstName";
+		var lname="listOfStudent"+index+".lastName";
+		var t = listOfStudent[index];
+		if (checkboxElem.checked){
+			document.getElementById(fname).value=t.firstName;
+			document.getElementById(lname).value=t.lastName;
+		} else {
+			document.getElementById(fname).value="";
+			document.getElementById(lname).value="";
+		}
+	}
+	$(function() { changeList(); });
+</script>
+	
+</body>
+</html>

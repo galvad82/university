@@ -47,7 +47,7 @@ public class SpringConfigTest implements WebMvcConfigurer {
 		templateResolver.setApplicationContext(applicationContext);
 		templateResolver.setCharacterEncoding("UTF-8");
 		templateResolver.setPrefix("/WEB-INF/views/");
-		templateResolver.setTemplateMode("HTML5");
+		templateResolver.setTemplateMode("HTML");
 		templateResolver.setSuffix(".html");
 		return templateResolver;
 	}

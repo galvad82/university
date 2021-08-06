@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>University - Course information</title>
+</head>
+<body>
+	<div th:insert="templates/navbar :: bootstrap"></div>
+	<div th:insert="templates/navbar :: navbar"></div>
+	<h2>Delete a course</h2>
+	<div class="container">
+		<table class="table table-striped" aria-describedby="Delete the Course">
+			<thead>
+				<tr>
+					<th scope="col">Course name</th>
+					<th scope="col">Teacher</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td th:text="${course.name}"></td>
+					<td th:text="${course.teacher.firstName}+' '+${course.teacher.lastName}"></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<div class="container">
+		<p class="alert alert-danger text-center" role="alert"> "Are you sure you want to delete the course?" </p>
+		<div class="row align-items-start">
+			<div class="col"></div>
+			<div class="col"></div>
+			<div class="col">
+				<form class="row" th:action="@{/courses/delete/result}" th:method="POST" th:object="${course}">
+					<input type="hidden" th:field="*{name}" th:value="*{name}" />
+					<input type="hidden" th:field="*{teacher.firstName}" th:value="*{teacher.firstName}" />
+					<input type="hidden" th:field="*{teacher.lastName}" th:value="*{teacher.lastName}" />
+					<button type="submit" class="btn btn-danger">Yes, delete!</button>
+				</form>	
+			</div>
+			<div class="col">
+			<button onclick="goBack()" class="btn btn-primary mb-3">Cancel</button>
+			</div>
+			<div class="col"></div>
+			<div class="col"></div>
+		</div>
+	</div>
+	
+<script>
+function goBack() {
+    window.history.back();
+}
+</script>
+
+</body>
+</html>

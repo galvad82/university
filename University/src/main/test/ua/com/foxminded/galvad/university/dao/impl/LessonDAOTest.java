@@ -128,7 +128,7 @@ class LessonDAOTest {
 	}
 
 	@Test
-	void testDelete_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+	void testDeleteByEntity_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
 		Lesson lesson = new Lesson(1, new Group(1), new Course(1), new Classroom(1), 161651000L, 3600000L);
 		assertThrows(DataAreNotUpdatedException.class, () -> lessonDAO.delete(lesson));
@@ -156,7 +156,7 @@ class LessonDAOTest {
 		List<Lesson> retrievedList = lessonDAO.findAll();
 		List<Lesson> expectedList = new ArrayList<>();
 		expectedList.add(new Lesson(1, new Group(1), new Course(1), new Classroom(1), 1616510000000L, 2700000L));
-		expectedList.add(new Lesson(2, new Group(2), new Course(2), new Classroom(2), 1616510000000L, 3600000L));
+		expectedList.add(new Lesson(2, new Group(2), new Course(2), new Classroom(2), 1616520000000L, 3600000L));
 		assertEquals(expectedList, retrievedList);
 	}
 
@@ -172,6 +172,72 @@ class LessonDAOTest {
 		String query = "DELETE FROM lessons";
 		jdbcTemplate.execute(query);
 		assertThrows(DataNotFoundException.class, () -> lessonDAO.findAll());
+	}
+
+	@Test
+	void testDeleteByClassroomID() {
+		List<Lesson> listBeforeDelete = lessonDAO.findAll();
+		assertEquals(2, listBeforeDelete.size());
+		assertEquals(1, listBeforeDelete.get(0).getClassroom().getId());
+		lessonDAO.deleteByClassroomID(1);
+		List<Lesson> listAfterDelete = lessonDAO.findAll();
+		assertEquals(1, listAfterDelete.size());
+		assertNotEquals(1, listAfterDelete.get(0).getClassroom().getId());
+	}
+	
+	@Test
+	void testDeleteByClassroomID_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		dropDB();
+		assertThrows(DataAreNotUpdatedException.class, () -> lessonDAO.deleteByClassroomID(1));
+	}
+	
+	@Test
+	void testDeleteByWrongClassroomID_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		assertThrows(DataAreNotUpdatedException.class, () -> lessonDAO.deleteByClassroomID(100));
+	}
+
+	@Test
+	void testDeleteByCourseID() {
+		List<Lesson> listBeforeDelete = lessonDAO.findAll();
+		assertEquals(2, listBeforeDelete.size());
+		assertEquals(1, listBeforeDelete.get(0).getCourse().getId());
+		lessonDAO.deleteByCourseID(1);
+		List<Lesson> listAfterDelete = lessonDAO.findAll();
+		assertEquals(1, listAfterDelete.size());
+		assertNotEquals(1, listAfterDelete.get(0).getClassroom().getId());
+	}
+
+	@Test
+	void testDeleteByCourseID_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		dropDB();
+		assertThrows(DataAreNotUpdatedException.class, () -> lessonDAO.deleteByCourseID(1));
+	}
+	
+	@Test
+	void testDeleteByWrongCourseID_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		assertThrows(DataAreNotUpdatedException.class, () -> lessonDAO.deleteByCourseID(100));
+	}
+	
+	@Test
+	void testDeleteByGroupID() {
+		List<Lesson> listBeforeDelete = lessonDAO.findAll();
+		assertEquals(2, listBeforeDelete.size());
+		assertEquals(1, listBeforeDelete.get(0).getGroup().getId());
+		lessonDAO.deleteByGroupID(1);
+		List<Lesson> listAfterDelete = lessonDAO.findAll();
+		assertEquals(1, listAfterDelete.size());
+		assertNotEquals(1, listAfterDelete.get(0).getClassroom().getId());
+	}
+	
+	@Test
+	void testDeleteByGroupID_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		dropDB();
+		assertThrows(DataAreNotUpdatedException.class, () -> lessonDAO.deleteByGroupID(1));
+	}
+	
+	@Test
+	void testDeleteByWrongGroupID_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		assertThrows(DataAreNotUpdatedException.class, () -> lessonDAO.deleteByGroupID(100));
 	}
 
 	private void dropDB() {

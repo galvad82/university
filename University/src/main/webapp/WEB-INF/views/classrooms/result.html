@@ -1,31 +1,26 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>University - Course information</title>
+<title>University - Classroom information</title>
 </head>
 <body>
 	<div th:insert="templates/navbar :: bootstrap"></div>
-
 	<div th:insert="templates/navbar :: navbar"></div>
-	
-	<h2>
-		<p class="text-center">Course information</p>
-	</h2>
+	<h2>Classroom information</h2>
+
+	<div class="alert alert-success text-center" role="alert" th:text="${result}" />
 
 	<div class="container">
-		<table class="table table-striped">
+		<table class="table table-striped" aria-describedby="Result">
 			<thead>
 				<tr>
 					<th scope="col">Name</th>
-					<th scope="col">Teacher</th>
 				</tr>
 			</thead>
 			<tbody>
 				<tr>
-					<td th:text="${course.getName()}"></td>
-					<td
-						th:text="${course.getTeacher().getFirstName}+' '+${course.getTeacher().getLastName}"></td>
+					<td th:text="${classroom.getName()}"></td>
 				</tr>
 			</tbody>
 		</table>

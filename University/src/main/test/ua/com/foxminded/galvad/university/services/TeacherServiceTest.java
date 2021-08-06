@@ -13,11 +13,12 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 
-import ua.com.foxminded.galvad.university.config.SpringConfig;
+import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
+import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
 
-@SpringJUnitWebConfig(SpringConfig.class)
+@SpringJUnitWebConfig(SpringConfigTest.class)
 class TeacherServiceTest {
 
 	@Autowired
@@ -40,13 +41,13 @@ class TeacherServiceTest {
 		teacherDTO.setFirstName("First Name");
 		teacherDTO.setLastName("Last Name");
 		teacherService.create(teacherDTO);
-		TeacherDTO retrievedDTO = teacherService.findAll().get(2);
+		TeacherDTO retrievedDTO = teacherService.findAll().get(1);
 		assertEquals(teacherDTO, retrievedDTO);
 	}
 
 	@Test
 	void testRetrieve() {
-		TeacherDTO teacherDTO = teacherService.retrieve(1);
+		TeacherDTO teacherDTO = teacherService.retrieve("Jennie", "Crigler");
 		assertEquals("Jennie", teacherDTO.getFirstName());
 		assertEquals("Crigler", teacherDTO.getLastName());
 	}
@@ -89,6 +90,19 @@ class TeacherServiceTest {
 	@Test
 	void testFindAll() {
 		assertEquals(2, teacherService.findAll().size());
+	}
+	
+	@Test
+	void testFindAllLessonsForTeacher() {
+		List<LessonDTO> listOfLessons = teacherService.findAllLessonsForTeacher("Jennie","Crigler");
+		assertEquals("ROOM-15", listOfLessons.get(0).getClassroom().getName());
+		assertEquals("Science", listOfLessons.get(0).getCourse().getName());
+		assertEquals("Crigler", listOfLessons.get(0).getCourse().getTeacher().getLastName());
+		assertEquals("AB-123", listOfLessons.get(0).getGroup().getName());
+		assertEquals("Davidson", listOfLessons.get(0).getGroup().getListOfStudent().get(0).getLastName());
+		assertEquals(2700000l, listOfLessons.get(0).getDuration());
+		assertEquals(1616510000000l, listOfLessons.get(0).getStartTime());
+		assertEquals(1, listOfLessons.size());
 	}
 
 }

@@ -13,47 +13,33 @@ import ua.com.foxminded.galvad.university.dao.impl.ClassroomDAO;
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
+import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
 
 @Service
 public class ClassroomService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClassroomService.class);
-
+	private static final String CONVERSION_COMPLETED = "Conversion of classroomDTO (name={}) to classroom completed";
+	private static final String CONVERSION_TO_ENTITY_COMPLETED = "Converted classroomDTO to entity (name={})";
+	@Autowired
 	private ModelMapper modelMapper;
+	@Autowired
 	private ClassroomDAO classroomDAO;
-
 	@Autowired
-	public void setModelMapper(ModelMapper modelMapper) {
-		if (modelMapper != null) {
-			this.modelMapper = modelMapper;
-		} else {
-			throw new IllegalArgumentException("ModelMapper cannot be null!");
-		}
-	}
-
-	@Autowired
-	public void setClassroomDAO(ClassroomDAO classroomDAO) {
-		if (classroomDAO != null) {
-			this.classroomDAO = classroomDAO;
-		} else {
-			throw new IllegalArgumentException("ClassroomDAO cannot be null!");
-		}
-	}
+	private LessonService lessonService;
 
 	public void create(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		classroomDAO.create(convertToEntityWithoutID(classroomDTO));
 	}
 
-	public ClassroomDTO retrieve(Integer id) throws DataNotFoundException {
-		LOGGER.trace("Going to retrieve ClassroomDTO from classroom with ID={}", id);
-		ClassroomDTO classroomDTO = new ClassroomDTO();
-		LOGGER.trace("Going to retrieve classroom by ID={}", id);
-		Classroom classroom = classroomDAO.retrieve(id);
-		LOGGER.trace("Retrieved a classroom with ID={}", id);
-		LOGGER.trace("Going to retrieve ClassroomDTO from a classroom with ID={}", id);
-		classroomDTO = convertToDTO(classroom);
-		LOGGER.trace("Retrieved ClassroomDTO from a classroom with ID={}", id);
+	public ClassroomDTO retrieve(String classroomName) {
+		LOGGER.trace("Going to retrieve classroom by name={}", classroomName);
+		Classroom classroom = classroomDAO.retrieve(classroomName);
+		LOGGER.trace("Retrieved a classroom with name={}", classroom.getName());
+		LOGGER.trace("Converting classroom with name={} to DTO", classroom.getName());
+		ClassroomDTO classroomDTO = convertToDTO(classroom);
+		LOGGER.trace("Retrieved ClassroomDTO from a classroom with name={}", classroomDTO.getName());
 		return classroomDTO;
 	}
 
@@ -76,12 +62,13 @@ public class ClassroomService {
 		return list;
 	}
 
-	public Classroom setId(Classroom classroom) throws DataNotFoundException {
-		LOGGER.trace("Going to set ID for a classroom (name={})", classroom.getName());
-		Integer id = classroomDAO.getId(classroom);
-		classroom.setId(id);
-		LOGGER.trace("Set ID={} for a classroom (name={}) successfully", id, classroom.getName());
-		return classroom;
+	public List<LessonDTO> findAllLessonsForClassroom(String classroomName) throws DataNotFoundException {
+		LOGGER.trace("Going to get list of lessons for a classroom (name={})", classroomName);
+		List<LessonDTO> listOfLessons = lessonService.findAll().stream()
+				.filter(s -> s.getClassroom().getName().equals(classroomName))
+				.sorted((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime())).collect(Collectors.toList());
+		LOGGER.trace("The list of lessons for the classroom (name={}) retrieved successfully", classroomName);
+		return listOfLessons;
 	}
 
 	private ClassroomDTO convertToDTO(Classroom entity) throws DataNotFoundException {
@@ -95,32 +82,32 @@ public class ClassroomService {
 	protected Classroom convertToEntity(ClassroomDTO classroomDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert classroomDTO (name={}) to entity", classroomDTO.getName());
 		Classroom entity = modelMapper.map(classroomDTO, Classroom.class);
-		LOGGER.trace("Converted classroomDTO to entity (name={})", entity.getName());
+		LOGGER.trace(CONVERSION_TO_ENTITY_COMPLETED, entity.getName());
 		LOGGER.trace("Going to set ID for entity classroom (name={})", entity.getName());
 		Integer id = classroomDAO.getId(entity);
 		entity.setId(id);
 		LOGGER.trace("Set ID={} for entity classroom (name={})", id, entity.getName());
-		LOGGER.trace("Conversion of classroomDTO (name={}) to classroom completed", classroomDTO.getName());
+		LOGGER.trace(CONVERSION_COMPLETED, classroomDTO.getName());
 		return entity;
 	}
-	
+
 	protected Classroom convertToEntityWithoutID(ClassroomDTO classroomDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert classroomDTO (name={}) to entity without setting ID", classroomDTO.getName());
 		Classroom entity = modelMapper.map(classroomDTO, Classroom.class);
-		LOGGER.trace("Converted classroomDTO to entity (name={})", entity.getName());
-		LOGGER.trace("Conversion of classroomDTO (name={}) to classroom completed", classroomDTO.getName());
+		LOGGER.trace(CONVERSION_TO_ENTITY_COMPLETED, entity.getName());
+		LOGGER.trace(CONVERSION_COMPLETED, classroomDTO.getName());
 		return entity;
 	}
 
 	protected Classroom convertToEntity(ClassroomDTO oldDTO, ClassroomDTO newDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert classroomDTO (name={}) to entity", newDTO.getName());
 		Classroom entity = modelMapper.map(newDTO, Classroom.class);
-		LOGGER.trace("Converted classroomDTO to entity (name={})", entity.getName());
+		LOGGER.trace(CONVERSION_TO_ENTITY_COMPLETED, entity.getName());
 		LOGGER.trace("Going to set ID for entity classroom (name={})", entity.getName());
 		Integer id = classroomDAO.getId(convertToEntity(oldDTO));
 		entity.setId(id);
 		LOGGER.trace("Set ID={} for entity classroom (name={})", id, entity.getName());
-		LOGGER.trace("Conversion of classroomDTO (name={}) to classroom completed", newDTO.getName());
+		LOGGER.trace(CONVERSION_COMPLETED, newDTO.getName());
 		return entity;
 	}
 }

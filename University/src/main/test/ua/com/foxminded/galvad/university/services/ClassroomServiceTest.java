@@ -13,11 +13,12 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 
-import ua.com.foxminded.galvad.university.config.SpringConfig;
+import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dao.impl.ClassroomDAO;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
+import ua.com.foxminded.galvad.university.dto.LessonDTO;
 
-@SpringJUnitWebConfig(SpringConfig.class)
+@SpringJUnitWebConfig(SpringConfigTest.class)
 class ClassroomServiceTest {
 
 	@Autowired
@@ -46,7 +47,7 @@ class ClassroomServiceTest {
 
 	@Test
 	void testRetrieve() {
-		ClassroomDTO classroomDTO = classroomService.retrieve(1);
+		ClassroomDTO classroomDTO = classroomService.retrieve("ROOM-15");
 		assertEquals("ROOM-15", classroomDTO.getName());
 	}
 
@@ -88,4 +89,16 @@ class ClassroomServiceTest {
 		assertEquals(2, classroomService.findAll().size());
 	}
 
+	@Test
+	void testFindAllLessonsForClassroom() {
+		List<LessonDTO> listOfLessons = classroomService.findAllLessonsForClassroom("ROOM-15");
+		assertEquals("ROOM-15", listOfLessons.get(0).getClassroom().getName());
+		assertEquals("Science", listOfLessons.get(0).getCourse().getName());
+		assertEquals("Crigler", listOfLessons.get(0).getCourse().getTeacher().getLastName());
+		assertEquals("AB-123", listOfLessons.get(0).getGroup().getName());
+		assertEquals("Davidson", listOfLessons.get(0).getGroup().getListOfStudent().get(0).getLastName());
+		assertEquals(2700000l, listOfLessons.get(0).getDuration());
+		assertEquals(1616510000000l, listOfLessons.get(0).getStartTime());
+		assertEquals(1, listOfLessons.size());
+	}
 }

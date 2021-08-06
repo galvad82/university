@@ -64,7 +64,7 @@ public class SpringConfig implements WebMvcConfigurer{
         templateResolver.setApplicationContext(applicationContext);
         templateResolver.setCharacterEncoding("UTF-8");
         templateResolver.setPrefix("/WEB-INF/views/");
-        templateResolver.setTemplateMode("HTML5");
+        templateResolver.setTemplateMode("HTML");
         templateResolver.setSuffix(".html");
         return templateResolver;
     }
@@ -86,7 +86,7 @@ public class SpringConfig implements WebMvcConfigurer{
 	
     @Override
     public void addResourceHandlers(final ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/static/**").addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/resources/**").addResourceLocations("/WEB-INF/resources/");
     }
 
 }

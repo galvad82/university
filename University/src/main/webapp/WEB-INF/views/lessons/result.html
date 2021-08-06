@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>University - Lesson information</title>
+</head>
+<body>
+	<div th:insert="templates/navbar :: bootstrap"></div>
+
+	<div th:insert="templates/navbar :: navbar"></div>
+	<h2>Lesson information</h2>
+
+	<div class="alert alert-success text-center" role="alert"
+		th:text="${result}" />
+
+	<div class="container">
+		<table class="table table-striped" aria-describedby="Result">
+			<thead>
+				<tr>
+					<th scope="col">Group</th>
+					<th scope="col">Course</th>
+					<th scope="col">Classroom</th>
+					<th scope="col">Start Time</th>
+					<th scope="col">Duration</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td th:text="${lesson.group.name}"></td>
+					<td th:text="${lesson.course.name}"></td>
+					<td th:text="${lesson.classroom.name}"></td>
+					<td th:text="${lesson.startTimeString}"></td>
+					<td th:text="${lesson.durationString}"></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+</body>
+</html>
