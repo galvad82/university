@@ -241,14 +241,6 @@ class GroupDAOTest {
 	}
 	
 	@Test
-	void findAllWithoutStudentList_shouldThrowDataNotFoundExceptionAsNothingFound() {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		String query = "DELETE FROM groups";
-		jdbcTemplate.execute(query);
-		assertThrows(DataNotFoundException.class, () -> groupDAO.findAllWithoutStudentList());
-	}
-	
-	@Test
 	void testFindAllWithoutStudentList_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
 		assertThrows(DataNotFoundException.class, () -> groupDAO.findAllWithoutStudentList());

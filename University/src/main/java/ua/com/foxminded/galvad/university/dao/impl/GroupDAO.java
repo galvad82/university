@@ -244,11 +244,6 @@ public class GroupDAO implements DAO<Integer, Group> {
 		try {
 			resultList = jdbcTemplate.query(FIND_ALL, mapper);
 			Collections.sort(resultList, Comparator.comparing(Group::getName));
-			if (resultList.isEmpty()) {
-				throw new DataNotFoundException("None of groups was found in DB");
-			} else {
-				LOGGER.info("Retrieved a list of groups successfully. {} groups were found", resultList.size());
-			}
 		} catch (DataAccessException e) {
 			throw new DataNotFoundException("Cannot retrieve a list of groups from DB", e);
 		}

@@ -36,20 +36,9 @@ class ScheduleControllerTest {
 	private static final String SECOND = "Second";
 	private static final String FIRST_NAME = "FirstName";
 	private static final String LAST_NAME = "LastName";
-	private static final String SCRIPT_CODE = "document.addEventListener(\"DOMContentLoaded\","
-			+ "function(){var e=document.getElementById(\"calendar\");new FullCalendar.Calendar"
-			+ "(e,{themeSystem:\"standard\",bootstrapFontAwesome:{close:\"fa-times\",prev:"
-			+ "\"fa-chevron-left\",next:\"fa-chevron-right\",prevYear:\"fa-angle-double-left\",nextYear"
-			+ ":\"fa-angle-double-right\"},events:[{ title  : 'Group: First, Course: First, Classroom:"
-			+ " First, Teacher: FirstName LastName', start : 1, end : 2}, { title  : 'Group: Second,"
-			+ " Course: Second, Classroom: Second, Teacher: FirstName LastName', start : 2, end : 4},"
-			+ " {}],eventTimeFormat:{hour:\"2-digit\",minute:\"2-digit\",meridiem:!1,hour12:!1},slotMinTime"
-			+ ":\"08:00\",slotMaxTime:\"22:00\",slotLabelFormat:[{hour:\"2-digit\",minute:\"2-digit\",meridiem"
-			+ ":!1,hour12:!1},{hour:\"2-digit\",minute:\"2-digit\",meridiem:!1,hour12:!1}],locale:\"en\",firstDay"
-			+ ":1,headerToolbar:{center:\"dayGridMonth,timeGridWeek,timeGridDay\"},views:{dayGridMonth:"
-			+ "{titleFormat:{year:\"numeric\",month:\"long\"},navLinks:!0},timeGridWeek:{titleFormat:"
-			+ "{month:\"short\",day:\"numeric\"},titleRangeSeparator:\" to \",hour:\"2-digit\",minute:"
-			+ "\"2-digit\",meridiem:!1,hour12:!1}}}).render()});";
+	private static final String EVENT_LIST = "{ title  : 'Group: First, Course: First, Classroom: First,"
+			+ " Teacher: FirstName LastName', start : 1, end : 2}, { title  : 'Group: Second, "
+			+ "Course: Second, Classroom: Second, Teacher: FirstName LastName', start : 2, end : 4}, {}";
 
 	@Mock
 	ClassroomService classroomServiceMock;
@@ -89,7 +78,7 @@ class ScheduleControllerTest {
 		when(teacherServiceMock.findAllLessonsForTeacher(FIRST_NAME, LAST_NAME)).thenReturn(createListOfLessons());
 		mockMvc.perform(post("/schedule/teacher/result").param("firstName", FIRST_NAME).param("lastName", LAST_NAME))
 				.andExpect(status().isOk()).andExpect(view().name(SCHEDULE_RESULT))
-				.andExpect(model().attribute("script", SCRIPT_CODE));
+				.andExpect(model().attribute("lessons", EVENT_LIST));
 	}
 
 	@Test
@@ -105,7 +94,7 @@ class ScheduleControllerTest {
 		List<LessonDTO> listOfLessons = createListOfLessons();
 		when(groupServiceMock.findAllLessonsForGroup(FIRST)).thenReturn(listOfLessons);
 		mockMvc.perform(post("/schedule/group/result").param("group", FIRST)).andExpect(status().isOk())
-				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("script", SCRIPT_CODE));
+				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", EVENT_LIST));
 	}
 
 	@Test
@@ -122,7 +111,7 @@ class ScheduleControllerTest {
 		List<LessonDTO> listOfLessons = createListOfLessons();
 		when(classroomServiceMock.findAllLessonsForClassroom(FIRST)).thenReturn(listOfLessons);
 		mockMvc.perform(post("/schedule/classroom/result").param("classroom", FIRST)).andExpect(status().isOk())
-				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("script", SCRIPT_CODE));
+				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", EVENT_LIST));
 	}
 
 	@Test
@@ -138,7 +127,7 @@ class ScheduleControllerTest {
 		List<LessonDTO> listOfLessons = createListOfLessons();
 		when(courseServiceMock.findAllLessonsForCourse(FIRST)).thenReturn(listOfLessons);
 		mockMvc.perform(post("/schedule/course/result").param("course", FIRST)).andExpect(status().isOk())
-				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("script", SCRIPT_CODE));
+				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", EVENT_LIST));
 	}
 
 	@Test
