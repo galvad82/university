@@ -16,7 +16,12 @@ import ua.com.foxminded.galvad.university.services.TeacherService;
 @Controller
 @RequestMapping("/teachers")
 public class TeachersController {
+	
 	private static final String TEACHERS_RESULT = "teachers/result";
+	private static final String TEACHERS_LIST = "teachers/list";
+	private static final String TEACHERS_ADD = "teachers/add";
+	private static final String TEACHERS_EDIT = "teachers/edit";
+	private static final String TEACHERS_DELETE = "teachers/delete";
 	private static final String TEACHER = "teacher";
 	private static final String RESULT = "result";
 	private final TeacherService teacherService;
@@ -30,14 +35,14 @@ public class TeachersController {
 	public String findAll(Model model) {
 		List<TeacherDTO> listOfTeacherDTOs = teacherService.findAll();
 		model.addAttribute("teachers", listOfTeacherDTOs);
-		return "teachers/list";
+		return TEACHERS_LIST;
 	}
 
 	@GetMapping("/add")
 	public String create(Model model) {
 		TeacherDTO teacherDTO = new TeacherDTO();
 		model.addAttribute("teacherDTO", teacherDTO);
-		return "teachers/add";
+		return TEACHERS_ADD;
 	}
 
 	@PostMapping("/add")
@@ -53,7 +58,7 @@ public class TeachersController {
 			Model model) {
 		model.addAttribute("firstName", firstName);
 		model.addAttribute("lastName", lastName);
-		return "teachers/edit";
+		return TEACHERS_EDIT;
 	}
 
 	@PostMapping("/edit/result")
@@ -80,7 +85,7 @@ public class TeachersController {
 			Model model) {
 		model.addAttribute("firstName", firstName);
 		model.addAttribute("lastName", lastName);
-		return "teachers/delete";
+		return TEACHERS_DELETE;
 	}
 
 	@PostMapping("/delete/result")

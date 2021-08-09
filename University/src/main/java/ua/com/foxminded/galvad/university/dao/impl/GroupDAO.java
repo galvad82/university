@@ -282,13 +282,12 @@ public class GroupDAO implements DAO<Integer, Group> {
 			Collections.sort(resultList,
 					Comparator.comparing(Student::getLastName).thenComparing(Student::getFirstName));
 			if (resultList.isEmpty()) {
-				throw new DataNotFoundException(
-						String.format("The group (ID=%d) does not have any student", group.getId()));
+				LOGGER.info("The group (ID={}) does not have any student", group.getId());
 			} else {
 				LOGGER.info("Retrieved a list of students for the group (ID={}) successfully. {} students were found",
 						group.getId(), resultList.size());
-				return resultList;
 			}
+			return resultList;
 		} catch (DataAccessException e) {
 			throw new DataNotFoundException(
 					String.format("Cannot retrieve a list of students for the group (ID=%d, name=%s) from DB",

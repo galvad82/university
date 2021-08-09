@@ -20,10 +20,16 @@ import ua.com.foxminded.galvad.university.services.LessonService;
 @Controller
 @RequestMapping("/lessons")
 public class LessonsController {
-	private static final String LESSON="lesson";
-	private static final String LESSON_DTO="lessonDTO";
-	private static final String LESSON_RESULT="lessons/result";
-	private static final String RESULT="result";
+
+	private static final String LESSON_RESULT = "lessons/result";
+	private static final String LESSONS_LIST = "lessons/list";
+	private static final String LESSONS_ADD = "lessons/add";
+	private static final String LESSONS_EDIT = "lessons/edit";
+	private static final String LESSONS_DELETE = "lessons/delete";
+	private static final String LESSON = "lesson";
+	private static final String RESULT = "result";
+	private static final String LESSON_DTO = "lessonDTO";
+
 	private final LessonService lessonService;
 	private final GroupService groupService;
 	private final CourseService courseService;
@@ -43,7 +49,7 @@ public class LessonsController {
 		List<LessonDTO> listOfLessonDTOs = lessonService.findAll();
 		model.addAttribute("lessons", listOfLessonDTOs);
 		model.addAttribute(LESSON_DTO, new LessonDTO());
-		return "lessons/list";
+		return LESSONS_LIST;
 	}
 
 	@GetMapping("/add")
@@ -67,7 +73,7 @@ public class LessonsController {
 		listOfClassroomNames.add("");
 		classroomService.findAll().stream().forEach(s -> listOfClassroomNames.add(s.getName()));
 		model.addAttribute("classrooms", listOfClassroomNames);
-		return "lessons/add";
+		return LESSONS_ADD;
 	}
 
 	@PostMapping("/add")
@@ -88,9 +94,10 @@ public class LessonsController {
 	}
 
 	@PostMapping("/edit")
-	public String editDTO(@ModelAttribute("groupName") String groupName, @ModelAttribute("courseName") String courseName,
-			@ModelAttribute("classroomName") String classroomName, @ModelAttribute("startTime") String startTimeString,
-			@ModelAttribute("duration") String durationString, Model model) {
+	public String editDTO(@ModelAttribute("groupName") String groupName,
+			@ModelAttribute("courseName") String courseName, @ModelAttribute("classroomName") String classroomName,
+			@ModelAttribute("startTime") String startTimeString, @ModelAttribute("duration") String durationString,
+			Model model) {
 
 		List<String> listOfGroupNames = new ArrayList<>();
 		groupService.findAllWithoutStudentList().stream().forEach(s -> listOfGroupNames.add(s.getName()));
@@ -102,55 +109,60 @@ public class LessonsController {
 
 		List<String> listOfClassroomNames = new ArrayList<>();
 		classroomService.findAll().stream().forEach(s -> listOfClassroomNames.add(s.getName()));
-		model.addAttribute("classrooms", listOfClassroomNames);		
-		
+		model.addAttribute("classrooms", listOfClassroomNames);
+
 		LessonDTO lessonDTO = new LessonDTO();
 		lessonDTO.setStartTime(lessonService.convertDateToMil(startTimeString));
 		lessonDTO.setDuration(lessonService.convertTimeToMil(durationString));
 		model.addAttribute(LESSON_DTO, lessonDTO);
-		
+
 		model.addAttribute("initialGroup", groupName);
 		model.addAttribute("initialCourse", courseName);
 		model.addAttribute("initialClassroom", classroomName);
 		model.addAttribute("initialStartTime", startTimeString);
 		model.addAttribute("initialDuration", durationString);
 		model.addAttribute(LESSON_DTO, lessonDTO);
-		
-		return "lessons/edit";
+
+		return LESSONS_EDIT;
 	}
-	
+
 	@PostMapping("/edit/result")
-	public String editDTOResult(@ModelAttribute("initialGroup") String initialGroupName, @ModelAttribute("initialCourse") String initialCourseName,
-			@ModelAttribute("initialClassroom") String initialClassroomName, @ModelAttribute("initialStartTime") String initialStartTimeString,
-			@ModelAttribute("initialDuration") String initialDurationString, @ModelAttribute("group") String updatedGroupName, @ModelAttribute("course") String updatedCourseName,
-			@ModelAttribute("classroom") String updatedClassroomName, @ModelAttribute("startTime") String updatedStartTimeString,
+	public String editDTOResult(@ModelAttribute("initialGroup") String initialGroupName,
+			@ModelAttribute("initialCourse") String initialCourseName,
+			@ModelAttribute("initialClassroom") String initialClassroomName,
+			@ModelAttribute("initialStartTime") String initialStartTimeString,
+			@ModelAttribute("initialDuration") String initialDurationString,
+			@ModelAttribute("group") String updatedGroupName, @ModelAttribute("course") String updatedCourseName,
+			@ModelAttribute("classroom") String updatedClassroomName,
+			@ModelAttribute("startTime") String updatedStartTimeString,
 			@ModelAttribute("duration") String updatedDurationString, Model model) {
-	
+
 		LessonDTO initialLessonDTO = new LessonDTO();
 		initialLessonDTO.setGroup(groupService.retrieve(initialGroupName));
 		initialLessonDTO.setClassroom(classroomService.retrieve(initialClassroomName));
 		initialLessonDTO.setCourse(courseService.retrieve(initialCourseName));
 		initialLessonDTO.setStartTime(lessonService.convertDateToMil(initialStartTimeString));
 		initialLessonDTO.setDuration(lessonService.convertTimeToMil(initialDurationString));
-		
+
 		LessonDTO updatedLessonDTO = new LessonDTO();
 		updatedLessonDTO.setGroup(groupService.retrieve(updatedGroupName));
 		updatedLessonDTO.setClassroom(classroomService.retrieve(updatedClassroomName));
 		updatedLessonDTO.setCourse(courseService.retrieve(updatedCourseName));
 		updatedLessonDTO.setStartTime(lessonService.convertDateToMil(updatedStartTimeString));
 		updatedLessonDTO.setDuration(lessonService.convertTimeToMil(updatedDurationString));
-		
+
 		lessonService.update(initialLessonDTO, updatedLessonDTO);
 		model.addAttribute(RESULT, "Lesson was successfully updated");
 		model.addAttribute(LESSON, updatedLessonDTO);
 		return LESSON_RESULT;
 	}
-	
+
 	@PostMapping("/delete")
-	public String deleteDTO(@ModelAttribute("groupName") String groupName, @ModelAttribute("courseName") String courseName,
-			@ModelAttribute("classroomName") String classroomName, @ModelAttribute("startTime") String startTimeString,
-			@ModelAttribute("duration") String durationString, Model model) {
-		
+	public String deleteDTO(@ModelAttribute("groupName") String groupName,
+			@ModelAttribute("courseName") String courseName, @ModelAttribute("classroomName") String classroomName,
+			@ModelAttribute("startTime") String startTimeString, @ModelAttribute("duration") String durationString,
+			Model model) {
+
 		LessonDTO lessonDTO = new LessonDTO();
 		lessonDTO.setGroup(groupService.retrieve(groupName));
 		lessonDTO.setClassroom(classroomService.retrieve(classroomName));
@@ -159,14 +171,14 @@ public class LessonsController {
 		lessonDTO.setDuration(lessonService.convertTimeToMil(durationString));
 
 		model.addAttribute(LESSON, lessonDTO);
-		return "lessons/delete";
+		return LESSONS_DELETE;
 	}
-	
+
 	@PostMapping("/delete/result")
 	public String deleteCourseFromDB(@ModelAttribute("lesson") LessonDTO lessonDTO, Model model) {
 
 		lessonDTO.setCourse(courseService.retrieve(lessonDTO.getCourse().getName()));
-		lessonService.delete(lessonDTO);		
+		lessonService.delete(lessonDTO);
 		model.addAttribute(RESULT, "A lesson was successfully added");
 		model.addAttribute(LESSON, lessonDTO);
 		return LESSON_RESULT;

@@ -21,9 +21,14 @@ import ua.com.foxminded.galvad.university.services.StudentService;
 @Controller
 @RequestMapping("/groups")
 public class GroupsController {
-	private static final String GROUPS_RESULT="groups/result";
-	private static final String GROUP="group";	
-	private static final String RESULT="result";	
+
+	private static final String GROUPS_RESULT = "groups/result";
+	private static final String GROUPS_LIST = "groups/list";
+	private static final String GROUPS_ADD = "groups/add";
+	private static final String GROUPS_EDIT = "groups/edit";
+	private static final String GROUPS_DELETE = "groups/delete";
+	private static final String GROUP = "group";
+	private static final String RESULT = "result";
 	private static final String SHOWTABLE="showTable";
 	private final GroupService groupService;
 	private final StudentService studentService;
@@ -38,14 +43,14 @@ public class GroupsController {
 	public String findAll(Model model) {
 		List<GroupDTO> listOfGroupDTOs = groupService.findAll();
 		model.addAttribute("groups", listOfGroupDTOs);
-		return "groups/list";
+		return GROUPS_LIST;
 	}
 
 	@PostMapping("/edit")
 	public String editDTO(@ModelAttribute("name") String name, Model model) {
 		GroupDTO groupDTO = groupService.retrieveWithListOfStudents(name);
 		model.addAttribute("groupDTO", groupDTO);
-		return "groups/edit";
+		return GROUPS_EDIT;
 	}
 
 	@PostMapping("/edit/result")
@@ -70,7 +75,7 @@ public class GroupsController {
 		groupDTO.setName("");
 		groupDTO.setListOfStudent(studentService.findAllUnassignedStudents());
 		model.addAttribute("groupDTO", groupDTO);
-		return "groups/add";
+		return GROUPS_ADD;
 	}
 
 	@PostMapping("/add")
@@ -100,7 +105,7 @@ public class GroupsController {
 			groupDTO.setListOfStudent(listOfStudent);
 		}
 		model.addAttribute(GROUP, groupDTO);
-		return "groups/delete";
+		return GROUPS_DELETE;
 	}
 
 	@PostMapping("/delete/result")

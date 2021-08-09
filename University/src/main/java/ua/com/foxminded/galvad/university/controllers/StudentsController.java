@@ -20,11 +20,16 @@ import ua.com.foxminded.galvad.university.services.StudentService;
 @Controller
 @RequestMapping("/students")
 public class StudentsController {
-	private static final String STUDENTS_RESULT="students/result";
-	private static final String STUDENT="student";
+	
+	private static final String STUDENTS_RESULT = "students/result";
+	private static final String STUDENTS_LIST = "students/list";
+	private static final String STUDENTS_ADD = "students/add";
+	private static final String STUDENTS_EDIT = "students/edit";
+	private static final String STUDENTS_DELETE = "students/delete";
+	private static final String STUDENT = "student";
+	private static final String RESULT="result";	
 	private static final String STUDENTDTO="studentDTO";
 	private static final String GROUP_NAME="groupName";
-	private static final String RESULT="result";
 	
 	private final GroupService groupService;
 	private final StudentService studentService;
@@ -42,7 +47,7 @@ public class StudentsController {
 		model.addAttribute("students", studentGroupMap);
 		StudentDTO studentDTO = new StudentDTO();
 		model.addAttribute(STUDENTDTO, studentDTO);
-		return "students/list";
+		return STUDENTS_LIST;
 	}
 
 	@GetMapping("/add")
@@ -53,7 +58,7 @@ public class StudentsController {
 		listGroupNames.add(NONE);
 		groupService.findAllWithoutStudentList().stream().forEach(s -> listGroupNames.add(s.getName()));
 		model.addAttribute("listGroupNames", listGroupNames);
-		return "students/add";
+		return STUDENTS_ADD;
 	}
 
 	@PostMapping("/add")
@@ -83,7 +88,7 @@ public class StudentsController {
 		model.addAttribute("listOfGroups", listOfGroups);
 		model.addAttribute("initialGroup", groupName);
 		model.addAttribute(STUDENTDTO, studentDTO);
-		return "students/edit";
+		return STUDENTS_EDIT;
 	}
 
 	@PostMapping("/edit/result")
@@ -120,7 +125,7 @@ public class StudentsController {
 		model.addAttribute(GROUP_NAME, groupName);
 		model.addAttribute("firstName", firstName);
 		model.addAttribute("lastName", lastName);
-		return "students/delete";
+		return STUDENTS_DELETE;
 	}
 
 	@PostMapping("/delete/result")

@@ -23,6 +23,10 @@ public class CoursesController {
 	public final TeacherService teacherService;
 
 	private static final String COURSES_RESULT = "courses/result";
+	private static final String COURSES_LIST = "courses/list";
+	private static final String COURSES_ADD = "courses/add";
+	private static final String COURSES_EDIT = "courses/edit";
+	private static final String COURSES_DELETE = "courses/delete";
 	private static final String COURSE = "course";
 	private static final String RESULT = "result";
 
@@ -36,7 +40,7 @@ public class CoursesController {
 	public String findAll(Model model) {
 		List<CourseDTO> listOfCourseDTOs = courseService.findAll();
 		model.addAttribute("courses", listOfCourseDTOs);
-		return "courses/list";
+		return COURSES_LIST;
 	}
 
 	@PostMapping("/edit")
@@ -45,7 +49,7 @@ public class CoursesController {
 		model.addAttribute("courseDTO", courseDTO);
 		List<TeacherDTO> listOfTeachers = teacherService.findAll();
 		model.addAttribute("listOfTeachers", listOfTeachers);
-		return "courses/edit";
+		return COURSES_EDIT;
 	}
 
 	@PostMapping("/edit/result")
@@ -70,7 +74,7 @@ public class CoursesController {
 		courseDTO.setName("");
 		courseDTO.setTeacher(emptyDTO);
 		model.addAttribute("courseDTO", courseDTO);
-		return "courses/add";
+		return COURSES_ADD;
 	}
 
 	@PostMapping("/add")
@@ -84,7 +88,7 @@ public class CoursesController {
 	@PostMapping("/delete")
 	public String deleteCourse(@ModelAttribute("name") String name, Model model) {
 		model.addAttribute(COURSE, courseService.retrieve(name));
-		return "courses/delete";
+		return COURSES_DELETE;
 	}
 
 	@PostMapping("/delete/result")

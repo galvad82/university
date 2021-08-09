@@ -19,6 +19,12 @@ import ua.com.foxminded.galvad.university.services.TeacherService;
 @Controller
 @RequestMapping("/schedule")
 public class ScheduleController {
+	
+	private static final String SCHEDULE_TEACHER = "schedule/teacher";
+	private static final String SCHEDULE_GROUP = "schedule/group";
+	private static final String SCHEDULE_CLASSROOM = "schedule/classroom";
+	private static final String SCHEDULE_COURSE = "schedule/course";
+	
 	private static final String LESSONS = "lessons";
 	private static final String SCHEDULE_RESULT = "schedule/result";
 
@@ -41,7 +47,7 @@ public class ScheduleController {
 		model.addAttribute("listOfTeachers", teacherService.findAll());
 		model.addAttribute("firstName", "");
 		model.addAttribute("lastName", "");
-		return "schedule/teacher";
+		return SCHEDULE_TEACHER;
 	}
 
 	@PostMapping("/teacher/result")
@@ -54,7 +60,7 @@ public class ScheduleController {
 	@GetMapping("/group")
 	public String forGroup(Model model) {
 		model.addAttribute("listOfGroups", groupService.findAllWithoutStudentList());
-		return "schedule/group";
+		return SCHEDULE_GROUP;
 	}
 
 	@PostMapping("/group/result")
@@ -66,7 +72,7 @@ public class ScheduleController {
 	@GetMapping("/classroom")
 	public String forClassroom(Model model) {
 		model.addAttribute("listOfClassrooms", classroomService.findAll());
-		return "schedule/classroom";
+		return SCHEDULE_CLASSROOM;
 	}
 
 	@PostMapping("/classroom/result")
@@ -78,7 +84,7 @@ public class ScheduleController {
 	@GetMapping("/course")
 	public String forCourse(Model model) {
 		model.addAttribute("listOfCourses", courseService.findAll());
-		return "schedule/course";
+		return SCHEDULE_COURSE;
 	}
 
 	@PostMapping("/course/result")

@@ -19,6 +19,10 @@ public class ClassroomsController {
 
 	public final ClassroomService classroomService;
 	private static final String CLASSROOMS_RESULT = "classrooms/result";
+	private static final String CLASSROOMS_LIST = "classrooms/list";
+	private static final String CLASSROOMS_ADD = "classrooms/add";
+	private static final String CLASSROOMS_EDIT = "classrooms/edit";
+	private static final String CLASSROOMS_DELETE = "classrooms/delete";
 	private static final String CLASSROOM = "classroom";
 	private static final String RESULT = "result";
 
@@ -31,14 +35,14 @@ public class ClassroomsController {
 	public String findAll(Model model) {
 		List<ClassroomDTO> listOfClassroomDTOs = classroomService.findAll();
 		model.addAttribute("classrooms", listOfClassroomDTOs);
-		return "classrooms/list";
+		return CLASSROOMS_LIST;
 	}
 
 	@GetMapping("/add")
 	public String create(Model model) {
 		ClassroomDTO classroomDTO = new ClassroomDTO();
 		model.addAttribute("classroomDTO", classroomDTO);
-		return "classrooms/add";
+		return CLASSROOMS_ADD;
 	}
 
 	@PostMapping("/add")
@@ -52,7 +56,7 @@ public class ClassroomsController {
 	@PostMapping("/edit")
 	public String editDTO(@ModelAttribute("name") String name, Model model) {
 		model.addAttribute("name", name);
-		return "classrooms/edit";
+		return CLASSROOMS_EDIT;
 	}
 
 	@PostMapping("/edit/result")
@@ -73,7 +77,7 @@ public class ClassroomsController {
 	@PostMapping("/delete")
 	public String deleteDTO(@ModelAttribute("name") String name, Model model) {
 		model.addAttribute("name", name);
-		return "classrooms/delete";
+		return CLASSROOMS_DELETE;
 	}
 
 	@PostMapping("/delete/result")
