@@ -23,9 +23,11 @@ import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
+import ua.com.foxminded.galvad.university.model.Event;
 import ua.com.foxminded.galvad.university.services.ClassroomService;
 import ua.com.foxminded.galvad.university.services.CourseService;
 import ua.com.foxminded.galvad.university.services.GroupService;
+import ua.com.foxminded.galvad.university.services.LessonService;
 import ua.com.foxminded.galvad.university.services.TeacherService;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,9 +38,6 @@ class ScheduleControllerTest {
 	private static final String SECOND = "Second";
 	private static final String FIRST_NAME = "FirstName";
 	private static final String LAST_NAME = "LastName";
-	private static final String EVENT_LIST = "{ title  : 'Group: First, Course: First, Classroom: First,"
-			+ " Teacher: FirstName LastName', start : 1, end : 2}, { title  : 'Group: Second, "
-			+ "Course: Second, Classroom: Second, Teacher: FirstName LastName', start : 2, end : 4}, {}";
 
 	@Mock
 	ClassroomService classroomServiceMock;
@@ -48,6 +47,8 @@ class ScheduleControllerTest {
 	CourseService courseServiceMock;
 	@Mock
 	GroupService groupServiceMock;
+	@Mock
+	LessonService lessonServiceMock;
 
 	@InjectMocks
 	ScheduleController scheduleControllerUnderTest;
@@ -75,10 +76,11 @@ class ScheduleControllerTest {
 
 	@Test
 	void testTeacherResultView() throws Exception {
-		when(teacherServiceMock.findAllLessonsForTeacher(FIRST_NAME, LAST_NAME)).thenReturn(createListOfLessons());
+		List<Event> eventList = createEventList(createListOfLessons());
+		when(lessonServiceMock.eventListForCalendarCreator(teacherServiceMock.findAllLessonsForTeacher(FIRST_NAME, LAST_NAME))).thenReturn(eventList);
 		mockMvc.perform(post("/schedule/teacher/result").param("firstName", FIRST_NAME).param("lastName", LAST_NAME))
 				.andExpect(status().isOk()).andExpect(view().name(SCHEDULE_RESULT))
-				.andExpect(model().attribute("lessons", EVENT_LIST));
+				.andExpect(model().attribute("lessons", eventList));
 	}
 
 	@Test
@@ -91,10 +93,11 @@ class ScheduleControllerTest {
 
 	@Test
 	void testGroupResultView() throws Exception {
-		List<LessonDTO> listOfLessons = createListOfLessons();
-		when(groupServiceMock.findAllLessonsForGroup(FIRST)).thenReturn(listOfLessons);
+		List<Event> eventList = createEventList(createListOfLessons());
+		when(lessonServiceMock.eventListForCalendarCreator(groupServiceMock.findAllLessonsForGroup(FIRST))).thenReturn(eventList);
 		mockMvc.perform(post("/schedule/group/result").param("group", FIRST)).andExpect(status().isOk())
-				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", EVENT_LIST));
+				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", eventList));
+		
 	}
 
 	@Test
@@ -108,10 +111,10 @@ class ScheduleControllerTest {
 
 	@Test
 	void testClassroomResultView() throws Exception {
-		List<LessonDTO> listOfLessons = createListOfLessons();
-		when(classroomServiceMock.findAllLessonsForClassroom(FIRST)).thenReturn(listOfLessons);
+		List<Event> eventList = createEventList(createListOfLessons());
+		when(lessonServiceMock.eventListForCalendarCreator(classroomServiceMock.findAllLessonsForClassroom(FIRST))).thenReturn(eventList);
 		mockMvc.perform(post("/schedule/classroom/result").param("classroom", FIRST)).andExpect(status().isOk())
-				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", EVENT_LIST));
+				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", eventList));
 	}
 
 	@Test
@@ -124,10 +127,10 @@ class ScheduleControllerTest {
 
 	@Test
 	void testCourseResultView() throws Exception {
-		List<LessonDTO> listOfLessons = createListOfLessons();
-		when(courseServiceMock.findAllLessonsForCourse(FIRST)).thenReturn(listOfLessons);
+		List<Event> eventList = createEventList(createListOfLessons());
+		when(lessonServiceMock.eventListForCalendarCreator(courseServiceMock.findAllLessonsForCourse(FIRST))).thenReturn(eventList);
 		mockMvc.perform(post("/schedule/course/result").param("course", FIRST)).andExpect(status().isOk())
-				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", EVENT_LIST));
+				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", eventList));
 	}
 
 	@Test
@@ -135,6 +138,17 @@ class ScheduleControllerTest {
 		mockMvc.perform(get("/schedule/wrong")).andExpect(status().is4xxClientError());
 	}
 
+	private List<Event> createEventList (List<LessonDTO> listOfLessons){
+		List<Event> eventList = new ArrayList<>();
+		listOfLessons.stream().forEach(lesson -> {
+			String title = String.format("Group: %s, Course: %s, Classroom: %s, Teacher: %s %s",
+					lesson.getGroup().getName(), lesson.getCourse().getName(), lesson.getClassroom().getName(),
+					lesson.getCourse().getTeacher().getFirstName(), lesson.getCourse().getTeacher().getLastName());
+				eventList.add(new Event(title, lesson.getStartTime(), lesson.getStartTime() + lesson.getDuration()));
+		});
+		return eventList;
+	}
+	
 	private List<LessonDTO> createListOfLessons() {
 		List<LessonDTO> listOfLessons = new ArrayList<>();
 		LessonDTO firstLessonDTO = new LessonDTO();

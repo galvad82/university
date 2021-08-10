@@ -2,6 +2,7 @@ package ua.com.foxminded.galvad.university.services;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -21,6 +22,7 @@ import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
 import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
 import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
+import ua.com.foxminded.galvad.university.model.Event;
 
 @SpringJUnitWebConfig(SpringConfigTest.class)
 class LessonServiceTest {
@@ -161,6 +163,45 @@ class LessonServiceTest {
 		long resultMillis = lessonService.convertTimeToMil(date);
 		assertEquals(expectedMillis, resultMillis);
 		assertNotEquals(123456l, resultMillis);
+	}
+
+	@Test
+	void testEventListForCalendarCreator() {
+		List<LessonDTO> listOfLessons = new ArrayList<>();
+		listOfLessons.add(lessonService.findAll().get(0));
+		List<Event> expectedEventList = new ArrayList<>();
+		expectedEventList.add(new Event("Group: AB-123, Course: Science, Classroom: ROOM-15, Teacher: Jennie Crigler", 1616510000000l, 1616512700000l));
+		assertEquals(expectedEventList, lessonService.eventListForCalendarCreator(listOfLessons));
+	}
+	
+	@Test
+	void testEventListForCalendarCreator_shouldSkipLessonsWithStartTimeIsNegative() {
+		List<LessonDTO> listOfLessons = new ArrayList<>();
+		LessonDTO lessonDTO = lessonService.findAll().get(0);
+		lessonDTO.setStartTime(-100);
+		listOfLessons.add(lessonDTO);
+		List<Event> expectedEventList = new ArrayList<>();
+		assertEquals(expectedEventList, lessonService.eventListForCalendarCreator(listOfLessons));
+	}
+	
+	@Test
+	void testEventListForCalendarCreator_shouldSkipLessonsWithStartTimeEqualsZero() {
+		List<LessonDTO> listOfLessons = new ArrayList<>();
+		LessonDTO lessonDTO = lessonService.findAll().get(0);
+		lessonDTO.setStartTime(0);
+		listOfLessons.add(lessonDTO);
+		List<Event> expectedEventList = new ArrayList<>();
+		assertEquals(expectedEventList, lessonService.eventListForCalendarCreator(listOfLessons));
+	}
+	
+	@Test
+	void testEventListForCalendarCreator_shouldSkipLessonsWithNegativeDuration() {
+		List<LessonDTO> listOfLessons = new ArrayList<>();
+		LessonDTO lessonDTO = lessonService.findAll().get(0);
+		lessonDTO.setDuration(-1);
+		listOfLessons.add(lessonDTO);
+		List<Event> expectedEventList = new ArrayList<>();
+		assertEquals(expectedEventList, lessonService.eventListForCalendarCreator(listOfLessons));
 	}
 
 }

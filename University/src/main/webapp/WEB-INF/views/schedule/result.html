@@ -29,9 +29,9 @@ document.addEventListener("DOMContentLoaded", function () {
     new FullCalendar.Calendar(e, {
         themeSystem: "standard",
         bootstrapFontAwesome: { close: "fa-times", prev: "fa-chevron-left", next: "fa-chevron-right", prevYear: "fa-angle-double-left", nextYear: "fa-angle-double-right" },
-        events: [ 
-        	[(${lessons})]
-        	 ],
+        events:  
+        	/*[[${lessons}]]*/
+        	 ,
         eventTimeFormat: { hour: "2-digit", minute: "2-digit", meridiem: !1, hour12: !1 },
         slotMinTime: "08:00",
         slotMaxTime: "22:00",

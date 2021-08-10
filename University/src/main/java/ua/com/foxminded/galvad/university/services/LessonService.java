@@ -3,6 +3,7 @@ package ua.com.foxminded.galvad.university.services;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +26,7 @@ import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
 import ua.com.foxminded.galvad.university.model.Course;
+import ua.com.foxminded.galvad.university.model.Event;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Lesson;
 import ua.com.foxminded.galvad.university.model.Teacher;
@@ -73,7 +75,7 @@ public class LessonService {
 		LOGGER.trace("List of ALL LessonDTO retrieved from DB, {} were found", list.size());
 		return list;
 	}
-	
+
 	public void deleteByClassroom(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete LessonDTO by classroomDTO (name={})", classroomDTO.getName());
 		LOGGER.trace("Going to get an entity for classroomDTO (name={})", classroomDTO.getName());
@@ -157,7 +159,7 @@ public class LessonService {
 		return entity;
 	}
 
-	private Lesson convertToEntityWithoutID(LessonDTO lessonDTO) throws DataNotFoundException{
+	private Lesson convertToEntityWithoutID(LessonDTO lessonDTO) throws DataNotFoundException {
 		LOGGER.trace("Starting conversion of LessonDTO to lesson");
 		LOGGER.trace("Converting groupDTO to group");
 		Group group = groupService.convertToEntity(lessonDTO.getGroup());
@@ -170,15 +172,32 @@ public class LessonService {
 		LOGGER.trace("Created a new lesson with converted group, course and classroom");
 		return entity;
 	}
-	
-	public long convertDateToMil(String date) {		
+
+	public long convertDateToMil(String date) {
 		return LocalDateTime.parse(date, DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")).atZone(ZoneId.systemDefault())
 				.toInstant().toEpochMilli();
 	}
-	
-	public long convertTimeToMil(String timeString) {	
-		String[] time=timeString.split(":");
-		return (long) (Integer.parseInt(time[0])*60 + Integer.parseInt(time[1]))*1000*60;
+
+	public long convertTimeToMil(String timeString) {
+		String[] time = timeString.split(":");
+		return (long) (Integer.parseInt(time[0]) * 60 + Integer.parseInt(time[1])) * 1000 * 60;
 	}
-	
+
+	public List<Event> eventListForCalendarCreator(List<LessonDTO> listOfLessons) {
+		LOGGER.trace("Going to create a list of calendar events from the list of lessons");
+		List<Event> eventList = new ArrayList<>();
+		listOfLessons.stream().forEach(lesson -> {
+			String title = String.format("Group: %s, Course: %s, Classroom: %s, Teacher: %s %s",
+					lesson.getGroup().getName(), lesson.getCourse().getName(), lesson.getClassroom().getName(),
+					lesson.getCourse().getTeacher().getFirstName(), lesson.getCourse().getTeacher().getLastName());
+			try {
+				eventList.add(new Event(title, lesson.getStartTime(), lesson.getStartTime() + lesson.getDuration()));
+			} catch (IllegalArgumentException e) {
+				LOGGER.trace("Wrong parameters for calendar event!");
+			}
+		});
+		LOGGER.trace("The list of calendar events from the list of lessons created successfully");
+		return eventList;
+	}
+
 }
