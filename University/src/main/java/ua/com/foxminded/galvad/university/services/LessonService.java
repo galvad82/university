@@ -3,7 +3,6 @@ package ua.com.foxminded.galvad.university.services;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -185,19 +184,15 @@ public class LessonService {
 
 	public List<Event> eventListForCalendarCreator(List<LessonDTO> listOfLessons) {
 		LOGGER.trace("Going to create a list of calendar events from the list of lessons");
-		List<Event> eventList = new ArrayList<>();
-		listOfLessons.stream().forEach(lesson -> {
-			String title = String.format("Group: %s, Course: %s, Classroom: %s, Teacher: %s %s",
-					lesson.getGroup().getName(), lesson.getCourse().getName(), lesson.getClassroom().getName(),
-					lesson.getCourse().getTeacher().getFirstName(), lesson.getCourse().getTeacher().getLastName());
-			try {
-				eventList.add(new Event(title, lesson.getStartTime(), lesson.getStartTime() + lesson.getDuration()));
-			} catch (IllegalArgumentException e) {
-				LOGGER.trace("Wrong parameters for calendar event!");
-			}
-		});
-		LOGGER.trace("The list of calendar events from the list of lessons created successfully");
-		return eventList;
+		return listOfLessons.stream().filter(s -> s.getStartTime() > 0 && s.getDuration() >= 0)
+				.map(this::convertLessonToEvent).collect(Collectors.toList());
+	}
+
+	private Event convertLessonToEvent(LessonDTO lesson) {
+		String title = String.format("Group: %s, Course: %s, Classroom: %s, Teacher: %s %s",
+				lesson.getGroup().getName(), lesson.getCourse().getName(), lesson.getClassroom().getName(),
+				lesson.getCourse().getTeacher().getFirstName(), lesson.getCourse().getTeacher().getLastName());
+		return new Event(title, lesson.getStartTime(), lesson.getStartTime() + lesson.getDuration());
 	}
 
 }
