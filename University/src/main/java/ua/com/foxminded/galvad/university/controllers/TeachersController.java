@@ -89,7 +89,7 @@ public class TeachersController {
 	}
 
 	@PostMapping("/delete/result")
-	public String deleteDTOresult(@ModelAttribute("firstName") String firstName,
+	public String deleteDTOResult(@ModelAttribute("firstName") String firstName,
 			@ModelAttribute("lastName") String lastName, Model model) {
 		TeacherDTO teacherDTO = new TeacherDTO();
 		teacherDTO.setFirstName(firstName);

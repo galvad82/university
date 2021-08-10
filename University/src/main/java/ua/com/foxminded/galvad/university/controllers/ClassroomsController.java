@@ -81,7 +81,7 @@ public class ClassroomsController {
 	}
 
 	@PostMapping("/delete/result")
-	public String deleteDTOresult(@ModelAttribute("name") String name, Model model) {
+	public String deleteDTOResult(@ModelAttribute("name") String name, Model model) {
 		ClassroomDTO classroomDTO = new ClassroomDTO();
 		classroomDTO.setName(name);
 		classroomService.delete(classroomDTO);
