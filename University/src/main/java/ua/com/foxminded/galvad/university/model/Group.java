@@ -32,7 +32,7 @@ public class Group {
 
 	}
 
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
 

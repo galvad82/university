@@ -2,6 +2,7 @@ package ua.com.foxminded.galvad.university.services;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -11,9 +12,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 
-import ua.com.foxminded.galvad.university.SpringJdbcConfig;
+import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dao.impl.ClassroomDAO;
 import ua.com.foxminded.galvad.university.dao.impl.CourseDAO;
 import ua.com.foxminded.galvad.university.dao.impl.GroupDAO;
@@ -21,8 +22,9 @@ import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
 import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
 import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
+import ua.com.foxminded.galvad.university.model.Event;
 
-@SpringJUnitConfig(SpringJdbcConfig.class)
+@SpringJUnitWebConfig(SpringConfigTest.class)
 class LessonServiceTest {
 
 	@Autowired
@@ -79,22 +81,10 @@ class LessonServiceTest {
 	}
 
 	@Test
-	void testRetrieve() {
-		LessonDTO retrievedDTO = lessonService.retrieve(1);
-		assertEquals(classroomService.retrieve(1), retrievedDTO.getClassroom());
-		assertEquals(courseService.retrieve(1), retrievedDTO.getCourse());
-		assertEquals(teacherService.retrieve(1), retrievedDTO.getCourse().getTeacher());
-		assertEquals(groupService.retrieve(1), retrievedDTO.getGroup());
-		assertEquals(studentService.retrieve(1), retrievedDTO.getGroup().getListOfStudent().get(0));
-		assertEquals(2700000L, retrievedDTO.getDuration());
-		assertEquals(1616510000000L, retrievedDTO.getStartTime());
-	}
-
-	@Test
 	void testRetrieveByFindAll() {
 		LessonDTO retrievedDTO = lessonService.findAll().get(0);
 		assertEquals(classroomService.findAll().get(0), retrievedDTO.getClassroom());
-		assertEquals(courseService.findAll().get(0), retrievedDTO.getCourse());
+		assertEquals(courseService.findAll().get(1), retrievedDTO.getCourse());
 		assertEquals(teacherService.findAll().get(0), retrievedDTO.getCourse().getTeacher());
 		assertEquals(groupService.findAll().get(0), retrievedDTO.getGroup());
 		assertEquals(studentService.findAll().get(0), retrievedDTO.getGroup().getListOfStudent().get(0));
@@ -120,65 +110,98 @@ class LessonServiceTest {
 	@Test
 	void testDelete() {
 		List<LessonDTO> list = lessonService.findAll();
-		int count = 1;
-		if (!list.isEmpty()) {
-			count = list.size();
-		}
-		lessonService.delete(lessonService.retrieve(1));
+		int countBeforeDel = list.size();
+		lessonService.delete(list.get(0));
 		list = lessonService.findAll();
-		int countAfterDel = 0;
-		if (!list.isEmpty()) {
-			countAfterDel = list.size();
-		}
-		assertEquals(count - 1, countAfterDel);
+		int countAfterDel = list.size();
+		assertEquals(countBeforeDel - 1, countAfterDel);
 	}
 
 	@Test
 	void testDeleteByClassroom() {
 		List<LessonDTO> list = lessonService.findAll();
-		int count = 1;
-		if (!list.isEmpty()) {
-			count = list.size();
-		}
-		lessonService.deleteByClassroom(classroomService.retrieve(1));
+		int countBeforeDel = list.size();
+		lessonService.deleteByClassroom(classroomService.findAll().get(0));
 		list = lessonService.findAll();
-		int countAfterDel = 0;
-		if (!list.isEmpty()) {
-			countAfterDel = list.size();
-		}
-		assertEquals(count - 1, countAfterDel);
+		int countAfterDel = list.size();
+		assertEquals(countBeforeDel - 1, countAfterDel);
 	}
 
 	@Test
 	void testDeleteByCourse() {
 		List<LessonDTO> list = lessonService.findAll();
-		int count = 1;
-		if (!list.isEmpty()) {
-			count = list.size();
-		}
-		lessonService.deleteByCourse(courseService.retrieve(1));
+		int countBeforeDel = list.size();
+		lessonService.deleteByCourse(courseService.findAll().get(0));
 		list = lessonService.findAll();
-		int countAfterDel = 0;
-		if (!list.isEmpty()) {
-			countAfterDel = list.size();
-		}
-		assertEquals(count - 1, countAfterDel);
+		int countAfterDel = list.size();
+		assertEquals(countBeforeDel - 1, countAfterDel);
 	}
 
 	@Test
 	void testDeleteByGroup() {
 		List<LessonDTO> list = lessonService.findAll();
-		int count = 1;
-		if (!list.isEmpty()) {
-			count = list.size();
-		}
-		lessonService.deleteByGroup(groupService.retrieve(1));
+		int countBeforeDel = list.size();
+		lessonService.deleteByGroup(groupService.findAll().get(0));
 		list = lessonService.findAll();
-		int countAfterDel = 0;
-		if (!list.isEmpty()) {
-			countAfterDel = list.size();
-		}
-		assertEquals(count - 1, countAfterDel);
+		int countAfterDel = list.size();
+		assertEquals(countBeforeDel - 1, countAfterDel);
+	}
+
+	@Test
+	void testConvertDateToMil() {
+		long expectedMillis = 1628011620000l;
+		String date = "03-08-2021 20:27";
+		long resultMillis = lessonService.convertDateToMil(date);
+		assertEquals(expectedMillis, resultMillis);
+		assertNotEquals(123456l, resultMillis);
+	}
+
+	@Test
+	void testConvertTimeToMil() {
+		long expectedMillis = 73620000l;
+		String date = "20:27";
+		long resultMillis = lessonService.convertTimeToMil(date);
+		assertEquals(expectedMillis, resultMillis);
+		assertNotEquals(123456l, resultMillis);
+	}
+
+	@Test
+	void testEventListForCalendarCreator() {
+		List<LessonDTO> listOfLessons = new ArrayList<>();
+		listOfLessons.add(lessonService.findAll().get(0));
+		List<Event> expectedEventList = new ArrayList<>();
+		expectedEventList.add(new Event("Group: AB-123, Course: Science, Classroom: ROOM-15, Teacher: Jennie Crigler", 1616510000000l, 1616512700000l));
+		assertEquals(expectedEventList, lessonService.eventListForCalendarCreator(listOfLessons));
+	}
+	
+	@Test
+	void testEventListForCalendarCreator_shouldSkipLessonsWithStartTimeIsNegative() {
+		List<LessonDTO> listOfLessons = new ArrayList<>();
+		LessonDTO lessonDTO = lessonService.findAll().get(0);
+		lessonDTO.setStartTime(-100);
+		listOfLessons.add(lessonDTO);
+		List<Event> expectedEventList = new ArrayList<>();
+		assertEquals(expectedEventList, lessonService.eventListForCalendarCreator(listOfLessons));
+	}
+	
+	@Test
+	void testEventListForCalendarCreator_shouldSkipLessonsWithStartTimeEqualsZero() {
+		List<LessonDTO> listOfLessons = new ArrayList<>();
+		LessonDTO lessonDTO = lessonService.findAll().get(0);
+		lessonDTO.setStartTime(0);
+		listOfLessons.add(lessonDTO);
+		List<Event> expectedEventList = new ArrayList<>();
+		assertEquals(expectedEventList, lessonService.eventListForCalendarCreator(listOfLessons));
+	}
+	
+	@Test
+	void testEventListForCalendarCreator_shouldSkipLessonsWithNegativeDuration() {
+		List<LessonDTO> listOfLessons = new ArrayList<>();
+		LessonDTO lessonDTO = lessonService.findAll().get(0);
+		lessonDTO.setDuration(-1);
+		listOfLessons.add(lessonDTO);
+		List<Event> expectedEventList = new ArrayList<>();
+		assertEquals(expectedEventList, lessonService.eventListForCalendarCreator(listOfLessons));
 	}
 
 }

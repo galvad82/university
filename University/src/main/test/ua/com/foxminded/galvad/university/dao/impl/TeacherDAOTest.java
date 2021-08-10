@@ -90,6 +90,24 @@ class TeacherDAOTest {
 	}
 
 	@Test
+	void testRetrieveByName_shouldReturnCorrectData() {
+		assertEquals(1, teacherDAO.retrieve("Jennie", "Crigler").getId());
+		assertEquals("Jennie", teacherDAO.retrieve("Jennie", "Crigler").getFirstName());
+		assertEquals("Crigler", teacherDAO.retrieve("Jennie", "Crigler").getLastName());
+	}
+
+	@Test
+	void testRetrieveByNameWithNonexistentID_shouldThrowDataNotFoundException() {
+		assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve("NONE", "NONE"));
+	}
+
+	@Test
+	void testRetrieveByName_shouldThrowDataNotFoundExceptionAfterDropDB() {
+		dropDB();
+		assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve("NONE", "NONE"));
+	}
+	
+	@Test
 	void testUpdate_shouldReturnUpdatedEntity() {
 		Teacher teacher = teacherDAO.retrieve(1);
 		teacher.setFirstName("First Name");

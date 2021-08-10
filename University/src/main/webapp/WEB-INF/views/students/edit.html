@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>University - Edit student information</title>
+</head>
+<body>
+	<div th:insert="templates/navbar :: bootstrap"></div>
+
+	<div th:insert="templates/navbar :: navbar"></div>
+	<h2>
+		<p class="text-center">Edit student information</p>
+	</h2>
+
+	<div class="container">
+		<div class="row align-items-start">
+			<div class="col"></div>
+			<div class="col">
+				<form class="row" th:action="@{/students/edit/result}" th:method="POST" th:object="${studentDTO}">
+					<label><span class="red">*</span> First name:</label>
+					<input type="text" th:field="*{firstName}" th:value="*{firstName}" class="form-control" />
+					<label><span class="red">*</span>Last name:</label>
+					<input type="text" th:field="*{lastName}" th:value="*{lastName}" class="form-control" />
+					<input type="hidden" th:name="initialFirstName" th:value="${studentDTO.firstName}" />
+					<input type="hidden" th:name="initialLastName" th:value="${studentDTO.lastName}" />
+					<input type="hidden" th:name="initialGroup" th:value="${initialGroup}" />
+					 <label>Group:</label>
+					<select th:name="groupName" class="form-select" aria-label="Group List">
+						<option th:each="p : ${listOfGroups}" th:value="${p.name}"
+							th:text="${p.name}" th:selected="${p.name==initialGroup}" />
+					</select>
+					<p class="fs-6">
+						<span class="red">*</span> indicates a required field
+					</p>
+					<button type="submit" class="btn btn-primary mb-3">Update</button>
+				</form>
+			</div>
+			<div class="col"></div>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,6 +1,8 @@
 package ua.com.foxminded.galvad.university.dao.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -26,6 +28,7 @@ public class CourseDAO implements DAO<Integer, Course> {
 
 	private static final String CREATE = "INSERT INTO courses (name, teacher) VALUES (?, ?)";
 	private static final String RETRIEVE = "SELECT * FROM courses WHERE id=?";
+	private static final String RETRIEVE_BY_NAME = "SELECT * FROM courses WHERE name=?";
 	private static final String UPDATE = "UPDATE courses SET name=?,teacher=? WHERE id=?";
 	private static final String DELETE = "DELETE FROM courses WHERE id=?";
 	private static final String FIND_ALL = "SELECT * FROM courses";
@@ -66,6 +69,20 @@ public class CourseDAO implements DAO<Integer, Course> {
 			throw new DataNotFoundException(String.format("A course with ID=%d is not found", id));
 		} catch (DataAccessException e) {
 			throw new DataNotFoundException(String.format("Cannot retrieve a course with ID=%d", id), e);
+		}
+	}
+
+	public Course retrieve(String courseName) throws DataNotFoundException {
+		try {
+			LOGGER.trace("Going to retrieve a course (name={}) from DB", courseName);
+			Course retrievedCourse = jdbcTemplate.query(RETRIEVE_BY_NAME, mapper, courseName).get(0);
+
+			LOGGER.info("Retrieved a course (name={}) from DB", retrievedCourse.getName());
+			return retrievedCourse;
+		} catch (IndexOutOfBoundsException e) {
+			throw new DataNotFoundException(String.format("A course with name=\"%s\" is not found", courseName));
+		} catch (DataAccessException e) {
+			throw new DataNotFoundException(String.format("Cannot retrieve a course with name=\"%s\"", courseName), e);
 		}
 	}
 
@@ -128,6 +145,7 @@ public class CourseDAO implements DAO<Integer, Course> {
 		LOGGER.trace("Going to retrieve a list of courses from DB");
 		try {
 			resultList = jdbcTemplate.query(FIND_ALL, mapper);
+			Collections.sort(resultList, Comparator.comparing(Course::getName));
 			if (resultList.isEmpty()) {
 				throw new DataNotFoundException("None of courses was found in DB");
 			} else {

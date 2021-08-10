@@ -93,6 +93,23 @@ class CourseDAOTest {
 	}
 
 	@Test
+	void testRetrieveByName_shouldReturnCorrectData() {
+		assertEquals(1, courseDAO.retrieve("Science").getId());
+		assertEquals("Science", courseDAO.retrieve("Science").getName());
+	}
+
+	@Test
+	void testRetrieveByNameWithNonexistentName_shouldThrowDataNotFoundException() {
+		assertThrows(DataNotFoundException.class, () -> courseDAO.retrieve("ABCDEF"));
+	}
+
+	@Test
+	void testRetrieveByName_shouldThrowDataNotFoundExceptionAfterDropDB() {
+		dropDB();
+		assertThrows(DataNotFoundException.class, () -> courseDAO.retrieve("ABCDEF"));
+	}
+
+	@Test
 	void testUpdate_shouldReturnUpdatedEntity() {
 		Course course = courseDAO.retrieve(1);
 		course.setName("New Name");
@@ -131,7 +148,7 @@ class CourseDAOTest {
 	}
 
 	@Test
-	void testDelete_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+	void testDeleteByEntity_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
 		Course course = new Course(1, "None");
 		assertThrows(DataAreNotUpdatedException.class, () -> courseDAO.delete(course));
@@ -145,24 +162,14 @@ class CourseDAOTest {
 	}
 
 	@Test
-	void shouldThrowIllegalArgumentExceptionWhenDatasourceIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> courseDAO.setDataSource(null));
-	}
-
-	@Test
-	void shouldThrowIllegalArgumentExceptionWhenMapperIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> courseDAO.setMapper(null));
-	}
-
-	@Test
 	void testFindAll_shouldFindTwoEntities() {
 		List<Course> retrievedList = courseDAO.findAll();
 		List<Course> expectedList = new ArrayList<>();
-		Course course = new Course(1, "Science");
-		course.setTeacher(new Teacher(1));
-		expectedList.add(course);
-		course = new Course(2, "Math");
+		Course course = new Course(2, "Math");
 		course.setTeacher(new Teacher(2));
+		expectedList.add(course);
+		course = new Course(1, "Science");
+		course.setTeacher(new Teacher(1));
 		expectedList.add(course);
 		assertEquals(expectedList, retrievedList);
 	}
@@ -179,6 +186,16 @@ class CourseDAOTest {
 		String query = "DELETE FROM courses";
 		jdbcTemplate.execute(query);
 		assertThrows(DataNotFoundException.class, () -> courseDAO.findAll());
+	}
+
+	@Test
+	void shouldThrowIllegalArgumentExceptionWhenDatasourceIsNull() {
+		Assertions.assertThrows(IllegalArgumentException.class, () -> courseDAO.setDataSource(null));
+	}
+
+	@Test
+	void shouldThrowIllegalArgumentExceptionWhenMapperIsNull() {
+		Assertions.assertThrows(IllegalArgumentException.class, () -> courseDAO.setMapper(null));
 	}
 
 	private void dropDB() {

@@ -45,7 +45,7 @@ public class Course {
 		this.teacher = teacher;
 	}
 
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
 	

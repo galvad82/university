@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>University - Find a student by ID</title>
+</head>
+<body>
+	<div th:insert="templates/navbar :: bootstrap"></div>
+
+	<div th:insert="templates/navbar :: navbar"></div>
+	<h2>
+		<p class="alert alert-dark text-center" role="alert">An exception occurred while processing the request.</p>
+	</h2>
+
+	<div class="alert alert-light" role="alert" th:text="${error}" />
+	<div class="alert alert-light" role="alert" th:text="${cause}" />
+	
+
+
+
+</body>
+</html>

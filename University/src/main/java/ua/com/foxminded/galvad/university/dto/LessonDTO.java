@@ -1,5 +1,8 @@
 package ua.com.foxminded.galvad.university.dto;
 
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+
 public class LessonDTO {
 	
 	private GroupDTO group;
@@ -7,6 +10,9 @@ public class LessonDTO {
 	private ClassroomDTO classroom;
 	private Long startTime;
 	private Long duration;
+	private String startTimeString;
+	private String durationString;
+
 
 	public GroupDTO getGroup() {
 		return group;
@@ -32,12 +38,13 @@ public class LessonDTO {
 		this.classroom = classroom;
 	}
 
-	public long getStartTime() {
+	public Long getStartTime() {
 		return startTime;
 	}
 
 	public void setStartTime(long startTime) {
 		this.startTime = startTime;
+		this.startTimeString = convertMilToDate(startTime);
 	}
 
 	public long getDuration() {
@@ -46,6 +53,15 @@ public class LessonDTO {
 
 	public void setDuration(long duration) {
 		this.duration = duration;
+		this.durationString=convertMilToTime(duration);
+	}
+	
+	public String getStartTimeString() {
+		return startTimeString;
+	}
+
+	public String getDurationString() {
+		return durationString;
 	}
 
 	@Override
@@ -95,6 +111,20 @@ public class LessonDTO {
 		} else if (!startTime.equals(other.startTime))
 			return false;
 		return true;
+	}
+	
+	
+	
+	private String convertMilToDate(long millis) {
+		Instant instance = java.time.Instant.ofEpochMilli(millis);
+		return java.time.LocalDateTime.ofInstant(instance, java.time.ZoneId.systemDefault())
+				.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"));
+	}
+
+	private String convertMilToTime(long millis) {
+		long minutes = (millis / (1000*60)) % 60;
+		long hours   = (millis / (1000*60*60)) % 24;
+		return String.format("%02d:%02d",hours,minutes);
 	}
 	
 }

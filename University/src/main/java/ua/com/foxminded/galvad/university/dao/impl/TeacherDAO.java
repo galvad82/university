@@ -1,6 +1,8 @@
 package ua.com.foxminded.galvad.university.dao.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -26,10 +28,10 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 
 	private static final String CREATE = "INSERT INTO teachers (firstname, lastname) VALUES (?, ?)";
 	private static final String RETRIEVE = "SELECT * FROM teachers WHERE id=?";
+	private static final String RETRIEVE_BY_NAME = "SELECT * FROM teachers WHERE firstname=? AND lastname=?";
 	private static final String UPDATE = "UPDATE teachers SET firstname=?,lastname=? WHERE id=?";
 	private static final String DELETE = "DELETE FROM teachers WHERE id=?";
 	private static final String FIND_ALL = "SELECT * FROM teachers";
-	private static final String FIND_BY_NAMES = "SELECT * FROM teachers WHERE firstname=? AND lastname=?";
 
 	@Autowired
 	public void setDataSource(DataSource ds) {
@@ -72,11 +74,29 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 		}
 	}
 
+	public Teacher retrieve(String firstName, String lastName) throws DataNotFoundException {
+		try {
+			LOGGER.trace("Going to retrieve a teacher entity (First_Name ={}, Last_Name ={})", firstName, lastName);
+			Teacher result = jdbcTemplate.query(RETRIEVE_BY_NAME, mapper, firstName, lastName).get(0);
+			LOGGER.info("A teacher retrieved from DB. First_Name ={}, Last_Name ={}, ID={}", result.getFirstName(),
+					result.getLastName(), result.getId());
+			return result;
+		} catch (IndexOutOfBoundsException e) {
+			throw new DataNotFoundException(String
+					.format("A teacher with FirstName=\"%s\" and LastName=\"%s\" is not found", firstName, lastName));
+		} catch (DataAccessException e) {
+			throw new DataNotFoundException(
+					String.format("Cannot retrieve an ID for a teacher with FirstName=\"%s\" and LastName=\"%s\"",
+							firstName, lastName),
+					e);
+		}
+	}
+
 	public Integer getId(Teacher teacher) throws DataNotFoundException {
 		try {
 			LOGGER.trace("Going to retrieve an ID for a teacher from DB. First_Name ={}, Last_Name ={}",
 					teacher.getFirstName(), teacher.getLastName());
-			Integer result = jdbcTemplate.query(FIND_BY_NAMES, mapper, teacher.getFirstName(), teacher.getLastName())
+			Integer result = jdbcTemplate.query(RETRIEVE_BY_NAME, mapper, teacher.getFirstName(), teacher.getLastName())
 					.get(0).getId();
 			LOGGER.info("Retrieved an ID for a teacher from DB. First_Name ={}, Last_Name ={}, ID={}",
 					teacher.getFirstName(), teacher.getLastName(), result);
@@ -134,6 +154,8 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 		LOGGER.trace("Going to retrieve a list of teachers from DB");
 		try {
 			resultList = jdbcTemplate.query(FIND_ALL, mapper);
+			Collections.sort(resultList,
+					Comparator.comparing(Teacher::getLastName).thenComparing(Teacher::getFirstName));
 			if (resultList.isEmpty()) {
 				throw new DataNotFoundException("None of teachers was found in DB");
 			} else {
