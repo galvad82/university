@@ -1,16 +1,15 @@
 package ua.com.foxminded.galvad.university.config;
 
+import javax.naming.Context;
+import javax.naming.InitialContext;
 import javax.sql.DataSource;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.ViewResolverRegistry;
@@ -21,73 +20,66 @@ import org.thymeleaf.spring5.view.ThymeleafViewResolver;
 
 @Configuration
 @ComponentScan("ua.com.foxminded.galvad.university")
-@PropertySource("classpath:database.properties")
 @EnableWebMvc
-public class SpringConfig implements WebMvcConfigurer{
-	
-	@Value("${url}")
-	private String url;
-	@Value("${dbuser}")
-	private String user;
-	@Value("${driver}")
-	private String driver;
-	@Value("${dbpassword}")
-	private String password;
-	
-	 private final ApplicationContext applicationContext;
+public class SpringConfig implements WebMvcConfigurer {
+
+	private final ApplicationContext applicationContext;
 
 	@Bean
 	public DataSource dataSource() {
-		DriverManagerDataSource driverManagerDataSource = new DriverManagerDataSource();
-		driverManagerDataSource.setUrl(url);
-		driverManagerDataSource.setUsername(user);
-		driverManagerDataSource.setPassword(password);
-		if (driver != null) {
-			driverManagerDataSource.setDriverClassName(driver);
+		DataSource ds = null;
+		try {
+			Context initContext = new InitialContext();
+			Context envContext = (Context) initContext.lookup("java:/comp/env");
+			ds = (DataSource) envContext.lookup("jdbc/postgres");
+
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
-		return driverManagerDataSource;
+
+		return ds;
 	}
-	
+
 	@Bean
 	public ModelMapper getMapper() {
-	    return new ModelMapper();
+		return new ModelMapper();
 	}
-	
+
 	@Autowired
-    public SpringConfig(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-    }
+	public SpringConfig(ApplicationContext applicationContext) {
+		this.applicationContext = applicationContext;
+	}
 
-    @Bean
-    public SpringResourceTemplateResolver templateResolver() {
-        SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
-        templateResolver.setApplicationContext(applicationContext);
-        templateResolver.setCharacterEncoding("UTF-8");
-        templateResolver.setPrefix("/WEB-INF/views/");
-        templateResolver.setTemplateMode("HTML");
-        templateResolver.setSuffix(".html");
-        return templateResolver;
-    }
+	@Bean
+	public SpringResourceTemplateResolver templateResolver() {
+		SpringResourceTemplateResolver templateResolver = new SpringResourceTemplateResolver();
+		templateResolver.setApplicationContext(applicationContext);
+		templateResolver.setCharacterEncoding("UTF-8");
+		templateResolver.setPrefix("/WEB-INF/views/");
+		templateResolver.setTemplateMode("HTML");
+		templateResolver.setSuffix(".html");
+		return templateResolver;
+	}
 
-    @Bean
-    public SpringTemplateEngine templateEngine() {
-        SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-        templateEngine.setTemplateResolver(templateResolver());
-        templateEngine.setEnableSpringELCompiler(true);
-        return templateEngine;
-    }
+	@Bean
+	public SpringTemplateEngine templateEngine() {
+		SpringTemplateEngine templateEngine = new SpringTemplateEngine();
+		templateEngine.setTemplateResolver(templateResolver());
+		templateEngine.setEnableSpringELCompiler(true);
+		return templateEngine;
+	}
 
-    @Override
-    public void configureViewResolvers(ViewResolverRegistry registry) {
-        ThymeleafViewResolver resolver = new ThymeleafViewResolver();
-        resolver.setTemplateEngine(templateEngine());
-        resolver.setCharacterEncoding("UTF-8");
-        registry.viewResolver(resolver);
-    }
-	
-    @Override
-    public void addResourceHandlers(final ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/resources/**").addResourceLocations("/WEB-INF/resources/");
-    }
+	@Override
+	public void configureViewResolvers(ViewResolverRegistry registry) {
+		ThymeleafViewResolver resolver = new ThymeleafViewResolver();
+		resolver.setTemplateEngine(templateEngine());
+		resolver.setCharacterEncoding("UTF-8");
+		registry.viewResolver(resolver);
+	}
+
+	@Override
+	public void addResourceHandlers(final ResourceHandlerRegistry registry) {
+		registry.addResourceHandler("/resources/**").addResourceLocations("/WEB-INF/resources/");
+	}
 
 }
