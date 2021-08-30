@@ -29,7 +29,7 @@ public class GroupsController {
 	private static final String GROUPS_DELETE = "groups/delete";
 	private static final String GROUP = "group";
 	private static final String RESULT = "result";
-	private static final String SHOWTABLE="showTable";
+	private static final String SHOWTABLE = "showTable";
 	private final GroupService groupService;
 	private final StudentService studentService;
 
@@ -48,7 +48,7 @@ public class GroupsController {
 
 	@PostMapping("/edit")
 	public String editDTO(@ModelAttribute("name") String name, Model model) {
-		GroupDTO groupDTO = groupService.retrieveWithListOfStudents(name);
+		GroupDTO groupDTO = groupService.retrieve(name);
 		model.addAttribute("groupDTO", groupDTO);
 		return GROUPS_EDIT;
 	}
@@ -57,13 +57,12 @@ public class GroupsController {
 	public String editDTOResult(@ModelAttribute("groupDTO") GroupDTO groupDTO,
 			@ModelAttribute("initialName") String initialName, Model model) {
 
-		GroupDTO initialGroupDTO = groupService.retrieveWithListOfStudents(initialName);
-
+		GroupDTO initialGroupDTO = groupService.retrieve(initialName);
 		groupDTO.setListOfStudent(groupDTO.getListOfStudent().stream().filter(s -> !s.getFirstName().isEmpty())
 				.collect(Collectors.toList()));
 		groupService.update(initialGroupDTO, groupDTO);
-		Boolean showTable=true;
-		model.addAttribute(SHOWTABLE, showTable);	
+		Boolean showTable = true;
+		model.addAttribute(SHOWTABLE, showTable);
 		model.addAttribute(RESULT, "Group was successfully updated");
 		model.addAttribute(GROUP, groupDTO);
 		return GROUPS_RESULT;
@@ -73,7 +72,7 @@ public class GroupsController {
 	public String create(Model model) {
 		GroupDTO groupDTO = new GroupDTO();
 		groupDTO.setName("");
-		groupDTO.setListOfStudent(studentService.findAllUnassignedStudents());
+		groupDTO.setListOfStudent(new ArrayList<>(studentService.findAllUnassignedStudents()));
 		model.addAttribute("groupDTO", groupDTO);
 		return GROUPS_ADD;
 	}
@@ -83,7 +82,7 @@ public class GroupsController {
 		groupDTO.setListOfStudent(groupDTO.getListOfStudent().stream().filter(s -> !s.getFirstName().isEmpty())
 				.collect(Collectors.toList()));
 		groupService.create(groupDTO);
-		Boolean showTable=true;
+		Boolean showTable = true;
 		model.addAttribute(SHOWTABLE, showTable);
 		model.addAttribute(GROUP, groupDTO);
 		model.addAttribute(RESULT, "A group was successfully added.");
@@ -95,7 +94,7 @@ public class GroupsController {
 		GroupDTO groupDTO = new GroupDTO();
 		groupDTO.setName(groupName);
 		try {
-			groupDTO = groupService.retrieveWithListOfStudents(groupName);
+			groupDTO = groupService.retrieve(groupName);
 		} catch (DataNotFoundException e) {
 			List<StudentDTO> listOfStudent = new ArrayList<>();
 			StudentDTO emptyDto = new StudentDTO();
@@ -110,13 +109,12 @@ public class GroupsController {
 
 	@PostMapping("/delete/result")
 	public String deleteDTOResult(@ModelAttribute("name") String groupName, Model model) {
-		GroupDTO groupDTO = new GroupDTO();
-		groupDTO.setName(groupName);
+		GroupDTO groupDTO = groupService.retrieve(groupName);
 		groupService.delete(groupDTO);
-		Boolean showTable=false;
+		Boolean showTable = false;
 		model.addAttribute("groupName", groupName);
 		model.addAttribute(SHOWTABLE, showTable);
-		model.addAttribute(RESULT, "The group was successfully deleted.");
+		model.addAttribute(RESULT, String.format("The group %s was successfully deleted.", groupName));
 		return GROUPS_RESULT;
 	}
 

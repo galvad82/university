@@ -2,151 +2,181 @@ package ua.com.foxminded.galvad.university.dao.impl;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
-import javax.sql.DataSource;
-
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import ua.com.foxminded.galvad.university.dao.DAO;
-import ua.com.foxminded.galvad.university.dao.impl.mappers.ClassroomMapper;
 import ua.com.foxminded.galvad.university.model.Classroom;
 
 @Repository
 public class ClassroomDAO implements DAO<Integer, Classroom> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClassroomDAO.class);
-
-	private JdbcTemplate jdbcTemplate;
-	private ClassroomMapper mapper;
-
-	private static final String CREATE = "INSERT INTO classrooms (name) VALUES (?)";
-	private static final String RETRIEVE = "SELECT * FROM classrooms WHERE id=?";
-	private static final String UPDATE = "UPDATE classrooms SET name=? WHERE id=?";
-	private static final String DELETE = "DELETE FROM classrooms WHERE id=?";
-	private static final String FIND_ALL = "SELECT * FROM classrooms";
-	private static final String FIND_BY_NAME = "SELECT * FROM classrooms WHERE name=?";
+	private static final String GENERAL_ERROR = "Cannot process data in the DB!";
 
 	@Autowired
-	public void setMapper(ClassroomMapper mapper) {
-		if (mapper != null) {
-			this.mapper = mapper;
-		} else {
-			throw new IllegalArgumentException("Mapper cannot be null!");
-		}
-	}
+	private SessionFactory sessionFactory;
 
-	@Autowired
-	public void setDataSource(DataSource ds) {
-		this.jdbcTemplate = new JdbcTemplate(ds);
-	}
+	private Session currentSession;
+	private Transaction currentTransaction;
 
 	public void create(Classroom classroom) throws DataAreNotUpdatedException {
+		LOGGER.trace("Going to add a classroom to DB. Name={}", classroom.getName());
+		openCurrentSessionWithTransaction();
 		try {
-			LOGGER.trace("Going to add a classroom to DB. Name={}", classroom.getName());
-			jdbcTemplate.update(CREATE, classroom.getName());
-			LOGGER.info("Classroom with name={} successfully added to DB.", classroom.getName());
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(
-					String.format("Cannot add a classroom with name=%s to DB", classroom.getName()), e);
+			currentSession.persist(classroom);
+		} catch (Exception e) {
+			LOGGER.info("A classroom wasn't added to DB because of GENERAL ERROR. Name=\"{}\"", classroom.getName());
+			throw new DataAreNotUpdatedException(GENERAL_ERROR);
+		} finally {
+			closeCurrentSessionwithTransaction();
 		}
+		LOGGER.info("Classroom with name={} successfully added to DB.", classroom.getName());
 	}
 
 	public Classroom retrieve(Integer id) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a classroom from DB. ID={}", id);
+		openCurrentSession();
+		Classroom classroom = null;
+		String hqlQuery = "from Classroom where id = :id";
+		@SuppressWarnings("rawtypes")
+		Query query = currentSession.createQuery(hqlQuery);
+		query.setParameter("id", id);
 		try {
-			LOGGER.trace("Going to retrieve a classroom from DB. ID={}", id);
-			Classroom retrievedClassroom = jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
-			LOGGER.info("Retrieved a classroom with ID={} from DB", id);
-			return retrievedClassroom;
+			classroom = (Classroom) query.list().get(0);
 		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(String.format("A classroom with ID=%d is not found", id));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(String.format("Cannot retrieve a classroom with ID=%d", id), e);
+			LOGGER.info("Classroom with id={} is not found", id);
+			throw new DataNotFoundException(String.format("Classroom with id=%d is not found", id));
+		} catch (Exception e) {
+			LOGGER.info("A classroom wasn't retrieved from DB because of GENERAL ERROR. ID={}", id);
+			throw new DataNotFoundException(GENERAL_ERROR);
+		} finally {
+			closeCurrentSession();
 		}
+		LOGGER.trace("The classroom with id={} retrieved from DB successfully", id);
+		return classroom;
 	}
 
 	public Classroom retrieve(String classroomName) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a classroom from DB. Name={}", classroomName);
+		openCurrentSession();
+		Classroom classroom = null;
+		String hqlQuery = "from Classroom where name=:name";
+		@SuppressWarnings("rawtypes")
+		Query query = currentSession.createQuery(hqlQuery);
+		query.setParameter("name", classroomName);
 		try {
-			LOGGER.trace("Going to retrieve a classroom from DB. Name={}", classroomName);
-			Classroom retrievedClassroom = jdbcTemplate.query(FIND_BY_NAME, mapper, classroomName).get(0);
-			LOGGER.info("Retrieved a classroom with name={} from DB", classroomName);
-			return retrievedClassroom;
+			classroom = (Classroom) query.list().get(0);
 		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(String.format("A classroom with name=%s is not found", classroomName));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(String.format("Cannot retrieve a classroom with name=%s", classroomName),
-					e);
+			LOGGER.info("Classroom with name={} is not found", classroomName);
+			throw new DataNotFoundException(String.format("Classroom with name=%s is not found", classroomName));
+		} catch (Exception e) {
+			LOGGER.info("A classroom wasn't retrieved from DB because of GENERAL ERROR. Name={}", classroomName);
+			throw new DataNotFoundException(GENERAL_ERROR);
+		} finally {
+			closeCurrentSession();
 		}
+		LOGGER.trace("The classroom with name={} retrieved from DB successfully", classroomName);
+		return classroom;
 	}
 
 	public Integer getId(Classroom classroom) throws DataNotFoundException {
-		try {
-			LOGGER.trace("Going to retrieve an ID for a classroom (name={}) from DB. ", classroom.getName());
-			Integer result = jdbcTemplate.query(FIND_BY_NAME, mapper, classroom.getName()).get(0).getId();
-			LOGGER.info("Retrieved an ID for a classroom (name ={}, ID={})", classroom.getName(), result);
-			return result;
-		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(
-					String.format("A classroom with name=%s is not found", classroom.getName()));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(
-					String.format("Cannot retrieve an ID for a classroom with name=%s", classroom.getName()), e);
-		}
+		return retrieve(classroom.getName()).getId();
 	}
 
 	public void update(Classroom classroom) throws DataAreNotUpdatedException {
+		LOGGER.trace("Going to update a classroom (ID={})", classroom.getId());
+		openCurrentSessionWithTransaction();
 		try {
-			Integer result = jdbcTemplate.update(UPDATE, classroom.getName(), classroom.getId());
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(
-						String.format("A classroom with ID=%d was not updated", classroom.getId()));
-			} else {
-				LOGGER.info("A classroom with ID={} was updated, new Name={}", classroom.getId(), classroom.getName());
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(
-					String.format("Cannot update a classroom with ID=%d", classroom.getId()), e);
+			currentSession.merge(classroom);
+			closeCurrentSessionwithTransaction();
+		} catch (Exception e) {
+			LOGGER.info("A classroom wasn't updated because of GENERAL ERROR. ID={}", classroom.getId());
+			throw new DataAreNotUpdatedException(GENERAL_ERROR);
 		}
+		LOGGER.trace("The teacher (ID={}) updated successfully", classroom.getId());
 	}
 
 	public void delete(Integer id) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete a classroom (ID={})", id);
-		try {
-			Integer result = jdbcTemplate.update(DELETE, id);
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(String.format("A classroom with ID=%d was not deleted", id));
-			} else {
-				LOGGER.info("A classroom with ID={} was deleted successfully", id);
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot delete a classroom with ID=%d", id), e);
+		LOGGER.trace("Going to delete a classroom by ID={}", id);
+		LOGGER.trace("Going to retrieve an entity for a classroom (ID={})", id);
+		openCurrentSession();
+		Classroom classroom = currentSession.get(Classroom.class, id);
+		LOGGER.trace("The entity retrieved for a classroom (ID={})", id);
+		closeCurrentSession();
+		if (classroom != null) {
+			delete(classroom);
+		} else {
+			throw new DataAreNotUpdatedException(String.format("A classroom with ID=%d is not found", id));
 		}
 	}
 
 	public void delete(Classroom classroom) throws DataAreNotUpdatedException {
-		delete(classroom.getId());
+		LOGGER.trace("Going to delete a classroom entity, ID={}", classroom.getId());
+		openCurrentSessionWithTransaction();
+		try {
+			currentSession.remove(classroom);
+			closeCurrentSessionwithTransaction();
+			LOGGER.trace("The classroom entity deleted, ID={}", classroom.getId());
+		} catch (Exception e) {
+			throw new DataAreNotUpdatedException(GENERAL_ERROR);
+		}
 	}
 
 	public List<Classroom> findAll() throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a list of Classrooms from DB");
 		List<Classroom> resultList = new ArrayList<>();
-		LOGGER.trace("Going to retrieve a list of classrooms from DB");
+		openCurrentSession();
 		try {
-			resultList = jdbcTemplate.query(FIND_ALL, mapper);
-			Collections.sort(resultList, (o1, o2) -> o1.getId().compareTo(o2.getId()));
-			if (resultList.isEmpty()) {
-				throw new DataNotFoundException("None of classrooms was found in DB");
-			} else {
-				LOGGER.info("Retrieved a list of classrooms successfully. {} classrooms were found", resultList.size());
-				return resultList;
-			}
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException("Cannot retrieve a list of classrooms from DB", e);
+			resultList = currentSession.createQuery("from Classroom", Classroom.class).list();
+		} catch (Exception e) {
+			LOGGER.info("A list of Classrooms wasn't retrieved because of GENERAL ERROR");
+			throw new DataNotFoundException(GENERAL_ERROR);
+		} finally {
+			closeCurrentSession();
 		}
+
+		if (resultList.isEmpty()) {
+			LOGGER.info("Retrieved an EMPTY list of Classrooms");
+		} else {
+			LOGGER.info("Sorting the list by ID");
+			Collections.sort(resultList, Comparator.comparing(Classroom::getId));
+			LOGGER.info("Retrieved a list of Classrooms successfully. {} Classrooms were found", resultList.size());
+		}
+		return resultList;
+	}
+
+	private void openCurrentSession() {
+		currentSession = sessionFactory.openSession();
+	}
+
+	private void closeCurrentSession() {
+		currentSession.close();
+		currentSession = null;
+	}
+
+	private void openCurrentSessionWithTransaction() {
+		if (currentSession == null) {
+			currentSession = sessionFactory.openSession();
+			currentTransaction = currentSession.getTransaction();
+			currentTransaction.begin();
+		}
+	}
+
+	private void closeCurrentSessionwithTransaction() {
+		currentTransaction.commit();
+		currentSession.close();
+		currentTransaction = null;
+		currentSession = null;
 	}
 
 }

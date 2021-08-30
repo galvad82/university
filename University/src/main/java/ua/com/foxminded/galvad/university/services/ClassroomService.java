@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import ua.com.foxminded.galvad.university.dao.impl.ClassroomDAO;
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
+import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
@@ -26,6 +27,8 @@ public class ClassroomService {
 	private ModelMapper modelMapper;
 	@Autowired
 	private ClassroomDAO classroomDAO;
+	@Autowired
+	private LessonDAO lessonDAO;
 	@Autowired
 	private LessonService lessonService;
 
@@ -51,6 +54,8 @@ public class ClassroomService {
 	}
 
 	public void delete(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+		LOGGER.trace("Going to delete all the lessons for classroomDTO (name={})", classroomDTO.getName());	
+		lessonDAO.deleteByClassroomID(convertToEntity(classroomDTO).getId());
 		LOGGER.trace("Going to delete ClassroomDTO (name={})", classroomDTO.getName());
 		classroomDAO.delete(convertToEntity(classroomDTO));
 	}

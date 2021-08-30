@@ -1,12 +1,33 @@
 package ua.com.foxminded.galvad.university.model;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "lessons")
 public class Lesson {
 
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Integer id;
+	@ManyToOne
+	@JoinColumn(name = "group_id")
 	private Group group;
+	@ManyToOne
+	@JoinColumn(name = "course_id")
 	private Course course;
+	@ManyToOne
+	@JoinColumn(name = "classroom_id")
 	private Classroom classroom;
+	@Column(name = "starttime")
 	private Long startTime;
+	@Column(name = "duration")
 	private Long duration;
 
 	public Lesson(Integer id, Group group, Course course, Classroom classroom, Long startTime, Long duration) {
@@ -22,8 +43,8 @@ public class Lesson {
 	}
 
 	public Lesson(Group group, Course course, Classroom classroom, Long startTime, Long duration) {
-		if ((startTime != null) && (startTime > 0) && (duration != null) && (duration > 0)
-				&& (group != null) && (course != null) && (classroom != null)) {
+		if ((startTime != null) && (startTime > 0) && (duration != null) && (duration > 0) && (group != null)
+				&& (course != null) && (classroom != null)) {
 			this.group = group;
 			this.course = course;
 			this.classroom = classroom;
@@ -31,7 +52,10 @@ public class Lesson {
 			this.duration = duration;
 		}
 	}
-	
+
+	public Lesson() {
+	}
+
 	public Group getGroup() {
 		return group;
 	}

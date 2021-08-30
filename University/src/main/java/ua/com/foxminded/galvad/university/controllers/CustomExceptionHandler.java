@@ -12,21 +12,21 @@ import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 public class CustomExceptionHandler {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CustomExceptionHandler.class);
-	
-	@ExceptionHandler({DataAreNotUpdatedException.class})
+
+	@ExceptionHandler({ DataAreNotUpdatedException.class })
 	public String databaseError(Model model, DataAreNotUpdatedException exception) {
 		LOGGER.error(exception.getMessage());
 		LOGGER.error(exception.getCauseDescription());
-		model.addAttribute("error", exception.getErrorMessage() );
-	    return "/exception";
-	  }
-	
-	@ExceptionHandler({DataNotFoundException.class})
+		model.addAttribute("error", exception.getErrorMessage());
+		return "/exception";
+	}
+
+	@ExceptionHandler({ DataNotFoundException.class })
 	public String databaseError(Model model, DataNotFoundException exception) {
 		LOGGER.error(exception.getErrorMessage());
 		LOGGER.error(exception.getCauseDescription());
 		model.addAttribute("error", exception.getErrorMessage());
 		model.addAttribute("cause", exception.getCauseDescription());
-	    return "/exception";
-	  }
+		return "/exception";
+	}
 }

@@ -17,12 +17,12 @@ import ua.com.foxminded.galvad.university.services.TeacherService;
 @Controller
 @RequestMapping("/schedule")
 public class ScheduleController {
-	
+
 	private static final String SCHEDULE_TEACHER = "schedule/teacher";
 	private static final String SCHEDULE_GROUP = "schedule/group";
 	private static final String SCHEDULE_CLASSROOM = "schedule/classroom";
 	private static final String SCHEDULE_COURSE = "schedule/course";
-	
+
 	private static final String LESSONS = "lessons";
 	private static final String SCHEDULE_RESULT = "schedule/result";
 
@@ -53,19 +53,21 @@ public class ScheduleController {
 	@PostMapping("/teacher/result")
 	public String forTeacherResult(@ModelAttribute("firstName") String firstName,
 			@ModelAttribute("lastName") String lastName, Model model) {
-		model.addAttribute(LESSONS, lessonService.eventListForCalendarCreator(teacherService.findAllLessonsForTeacher(firstName, lastName)));
+		model.addAttribute(LESSONS, lessonService
+				.eventListForCalendarCreator(teacherService.findAllLessonsForTeacher(firstName, lastName)));
 		return SCHEDULE_RESULT;
 	}
 
 	@GetMapping("/group")
 	public String forGroup(Model model) {
-		model.addAttribute("listOfGroups", groupService.findAllWithoutStudentList());
+		model.addAttribute("listOfGroups", groupService.findAll());
 		return SCHEDULE_GROUP;
 	}
 
 	@PostMapping("/group/result")
 	public String forGroupResult(@ModelAttribute("group") String groupName, Model model) {
-		model.addAttribute(LESSONS, lessonService.eventListForCalendarCreator(groupService.findAllLessonsForGroup(groupName)));
+		model.addAttribute(LESSONS,
+				lessonService.eventListForCalendarCreator(groupService.findAllLessonsForGroup(groupName)));
 		return SCHEDULE_RESULT;
 	}
 
@@ -77,7 +79,8 @@ public class ScheduleController {
 
 	@PostMapping("/classroom/result")
 	public String forClassroomResult(@ModelAttribute("classroom") String classrooomName, Model model) {
-		model.addAttribute(LESSONS, lessonService.eventListForCalendarCreator(classroomService.findAllLessonsForClassroom(classrooomName)));
+		model.addAttribute(LESSONS,
+				lessonService.eventListForCalendarCreator(classroomService.findAllLessonsForClassroom(classrooomName)));
 		return SCHEDULE_RESULT;
 	}
 
@@ -89,7 +92,8 @@ public class ScheduleController {
 
 	@PostMapping("/course/result")
 	public String forCourseResult(@ModelAttribute("course") String courseName, Model model) {
-		model.addAttribute(LESSONS, lessonService.eventListForCalendarCreator(courseService.findAllLessonsForCourse(courseName)));
+		model.addAttribute(LESSONS,
+				lessonService.eventListForCalendarCreator(courseService.findAllLessonsForCourse(courseName)));
 		return SCHEDULE_RESULT;
 	}
 }

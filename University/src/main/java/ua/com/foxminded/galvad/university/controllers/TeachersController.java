@@ -16,7 +16,7 @@ import ua.com.foxminded.galvad.university.services.TeacherService;
 @Controller
 @RequestMapping("/teachers")
 public class TeachersController {
-	
+
 	private static final String TEACHERS_RESULT = "teachers/result";
 	private static final String TEACHERS_LIST = "teachers/list";
 	private static final String TEACHERS_ADD = "teachers/add";

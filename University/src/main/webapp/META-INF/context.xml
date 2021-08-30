@@ -4,6 +4,6 @@
 			type="javax.sql.DataSource"
 			driverClassName="org.postgresql.Driver"
 			url="jdbc:postgresql://127.0.0.1:5432/university"
-			username="user_university" password="1234" maxTotal="20"
+			username="postgres" password="123456" maxTotal="20"
 			maxIdle="10" maxWaitMillis="-1" />
 </Context>

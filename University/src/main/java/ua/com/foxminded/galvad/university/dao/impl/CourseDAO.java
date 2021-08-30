@@ -5,156 +5,169 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import javax.sql.DataSource;
-
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.Transaction;
+import org.hibernate.query.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import ua.com.foxminded.galvad.university.dao.DAO;
-import ua.com.foxminded.galvad.university.dao.impl.mappers.CourseMapper;
 import ua.com.foxminded.galvad.university.model.Course;
 
 @Repository
 public class CourseDAO implements DAO<Integer, Course> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CourseDAO.class);
-
-	private JdbcTemplate jdbcTemplate;
-	private CourseMapper mapper;
-
-	private static final String CREATE = "INSERT INTO courses (name, teacher) VALUES (?, ?)";
-	private static final String RETRIEVE = "SELECT * FROM courses WHERE id=?";
-	private static final String RETRIEVE_BY_NAME = "SELECT * FROM courses WHERE name=?";
-	private static final String UPDATE = "UPDATE courses SET name=?,teacher=? WHERE id=?";
-	private static final String DELETE = "DELETE FROM courses WHERE id=?";
-	private static final String FIND_ALL = "SELECT * FROM courses";
-	private static final String FIND_ID = "SELECT * FROM courses WHERE name=? AND teacher=?";
+	private static final String GENERAL_ERROR = "Cannot process data in the DB!";
 
 	@Autowired
-	public void setMapper(CourseMapper mapper) {
-		if (mapper != null) {
-			this.mapper = mapper;
-		} else {
-			throw new IllegalArgumentException("Mapper cannot be null!");
-		}
-	}
+	private SessionFactory sessionFactory;
 
-	@Autowired
-	public void setDataSource(DataSource ds) {
-		this.jdbcTemplate = new JdbcTemplate(ds);
-	}
+	private Session currentSession;
+	private Transaction currentTransaction;
 
 	public void create(Course course) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to add a course (name={}) to DB", course.getName());
+		openCurrentSessionWithTransaction();
 		try {
-			jdbcTemplate.update(CREATE, course.getName(), course.getTeacher().getId());
-			LOGGER.info("Added a course (name={}) to DB", course.getName());
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot add a course (name=%s) to DB", course.getName()),
-					e);
+			currentSession.persist(course);
+			closeCurrentSessionwithTransaction();
+		} catch (Exception e) {
+			LOGGER.info("A course wasn't added to DB because of GENERAL ERROR. Name=\"{}\"", course.getName());
+			throw new DataAreNotUpdatedException(GENERAL_ERROR);
 		}
+		LOGGER.info("Added a course to DB. Name=\"{}\"", course.getName());
 	}
 
 	public Course retrieve(Integer id) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a course from DB. ID={}", id);
+		openCurrentSession();
 		try {
-			LOGGER.trace("Going to retrieve a course (ID={}) from DB", id);
-			Course retrievedCourse = jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
-			LOGGER.info("Retrieved a course (ID={}) from DB", retrievedCourse.getId());
-			return retrievedCourse;
+			return currentSession.get(Course.class, id);
 		} catch (IndexOutOfBoundsException e) {
+			LOGGER.trace("A course with id={}) is not found", id);
 			throw new DataNotFoundException(String.format("A course with ID=%d is not found", id));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(String.format("Cannot retrieve a course with ID=%d", id), e);
+		} catch (Exception e) {
+			LOGGER.info("A course wasn't retrieved from DB because of GENERAL ERROR. ID={}", id);
+			throw new DataNotFoundException(GENERAL_ERROR);
+		} finally {
+			LOGGER.info("Retrieved a course with ID={} from DB", id);
+			closeCurrentSession();
 		}
 	}
 
 	public Course retrieve(String courseName) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a course (name={}) from DB", courseName);
+		openCurrentSession();
+		String hqlQuery = "from Course where name=:name";
+		@SuppressWarnings("rawtypes")
+		Query query = currentSession.createQuery(hqlQuery);
+		query.setParameter("name", courseName);
 		try {
-			LOGGER.trace("Going to retrieve a course (name={}) from DB", courseName);
-			Course retrievedCourse = jdbcTemplate.query(RETRIEVE_BY_NAME, mapper, courseName).get(0);
-
-			LOGGER.info("Retrieved a course (name={}) from DB", retrievedCourse.getName());
-			return retrievedCourse;
+			Course course = (Course) query.list().get(0);
+			LOGGER.trace("A course entity (name ={}) was retrieved successfully", courseName);
+			return course;
 		} catch (IndexOutOfBoundsException e) {
+			LOGGER.trace("A course with name={} is not found", courseName);
 			throw new DataNotFoundException(String.format("A course with name=\"%s\" is not found", courseName));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(String.format("Cannot retrieve a course with name=\"%s\"", courseName), e);
+		} catch (Exception e) {
+			LOGGER.info("A course wasn't retrieved from DB because of GENERAL ERROR. Name ={}", courseName);
+			throw new DataNotFoundException(GENERAL_ERROR);
+		} finally {
+			closeCurrentSession();
 		}
 	}
 
 	public Integer getId(Course course) throws DataNotFoundException {
-		try {
-			LOGGER.trace("Going to retrieve an ID for a course (name={}, teacherID={}) from DB", course.getName(),
-					course.getTeacher().getId());
-			Integer result = jdbcTemplate.query(FIND_ID, mapper, course.getName(), course.getTeacher().getId()).get(0)
-					.getId();
-			LOGGER.info("Retrieved an ID={} for a course (name={}, teacherID={}) from DB", result, course.getName(),
-					course.getTeacher().getId());
-			return result;
-		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(String.format("A course (name=%s, teacherID=%s) is not found",
-					course.getName(), course.getTeacher().getId()));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(
-					String.format("Cannot retrieve an ID for a course (name=%s, teacherID=%d) is not found",
-							course.getName(), course.getTeacher().getId()),
-					e);
-		}
+		return retrieve(course.getName()).getId();
 	}
 
 	public void update(Course course) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to update a course (name={})", course.getName());
+		LOGGER.trace("Going to update a course (ID={})", course.getId());
+		openCurrentSessionWithTransaction();
 		try {
-			Integer result = jdbcTemplate.update(UPDATE, course.getName(), course.getTeacher().getId(), course.getId());
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(
-						String.format("A course with ID=%d was not updated", course.getId()));
-			} else {
-				LOGGER.info("A course with ID={} was updated, new Name={}, new TeacherID={}", course.getId(),
-						course.getName(), course.getTeacher().getId());
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot update a course with ID=%d", course.getId()), e);
+			currentSession.merge(course);
+			closeCurrentSessionwithTransaction();
+		} catch (Exception e) {
+			LOGGER.info("A course wasn't updated because of GENERAL ERROR. ID={}", course.getId());
+			throw new DataAreNotUpdatedException(GENERAL_ERROR);
 		}
+		LOGGER.trace("The course (ID={}) updated successfully", course.getId());
 	}
 
 	public void delete(Integer id) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete a course (ID={})", id);
-		try {
-			Integer result = jdbcTemplate.update(DELETE, id);
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(String.format("A course with ID=%d was not deleted", id));
-			} else {
-				LOGGER.info("A course with ID={} was deleted successfully", id);
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot delete a course with ID=%d", id), e);
+		LOGGER.trace("Going to delete a course by ID={}", id);
+		LOGGER.trace("Going to retrieve an entity for a course (ID={})", id);
+		openCurrentSession();
+		Course course = currentSession.get(Course.class, id);
+		LOGGER.trace("The entity retrieved for a course (ID={})", id);
+		closeCurrentSession();
+		if (course != null) {
+			delete(course);
+		} else {
+			throw new DataAreNotUpdatedException(String.format("A course with ID=%d is not found", id));
 		}
 	}
 
 	public void delete(Course course) throws DataAreNotUpdatedException {
-		delete(course.getId());
-	}
-
-	public List<Course> findAll() throws DataNotFoundException {
-		List<Course> resultList = new ArrayList<>();
-		LOGGER.trace("Going to retrieve a list of courses from DB");
+		LOGGER.trace("Going to delete a course entity, ID={}", course.getId());
+		openCurrentSessionWithTransaction();
 		try {
-			resultList = jdbcTemplate.query(FIND_ALL, mapper);
-			Collections.sort(resultList, Comparator.comparing(Course::getName));
-			if (resultList.isEmpty()) {
-				throw new DataNotFoundException("None of courses was found in DB");
-			} else {
-				LOGGER.info("Retrieved a list of courses successfully. {} courses were found", resultList.size());
-				return resultList;
-			}
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException("Cannot retrieve a list of courses from DB", e);
+			currentSession.remove(course);
+			closeCurrentSessionwithTransaction();
+			LOGGER.trace("The course entity deleted, ID={}", course.getId());
+		} catch (Exception e) {
+			throw new DataAreNotUpdatedException(GENERAL_ERROR);
 		}
 	}
 
+	public List<Course> findAll() throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a list of courses from DB");
+		List<Course> resultList = new ArrayList<>();
+		openCurrentSession();
+		try {
+			resultList = currentSession.createQuery("from Course", Course.class).list();
+		} catch (Exception e) {
+			LOGGER.info("A list of courses wasn't retrieved because of GENERAL ERROR");
+			throw new DataNotFoundException(GENERAL_ERROR);
+		} finally {
+			closeCurrentSession();
+		}
+
+		if (resultList.isEmpty()) {
+			LOGGER.info("Retrieved an EMPTY list of courses");
+		} else {
+			LOGGER.info("Sorting the list by name");
+			Collections.sort(resultList, Comparator.comparing(Course::getName));
+			LOGGER.info("Retrieved a list of courses successfully. {} courses were found", resultList.size());
+		}
+		return resultList;
+	}
+
+	private void openCurrentSession() {
+		currentSession = sessionFactory.openSession();
+	}
+
+	private void closeCurrentSession() {
+		currentSession.close();
+		currentSession = null;
+	}
+
+	private void openCurrentSessionWithTransaction() {
+		if (currentSession == null) {
+			currentSession = sessionFactory.openSession();
+			currentTransaction = currentSession.getTransaction();
+			currentTransaction.begin();
+		}
+	}
+
+	private void closeCurrentSessionwithTransaction() {
+		currentTransaction.commit();
+		currentSession.close();
+		currentTransaction = null;
+		currentSession = null;
+	}
 }
