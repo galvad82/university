@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+//import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
+
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +35,7 @@ public class StudentService {
 	@Autowired
 	private GroupService groupService;
 
+	@Transactional
 	public void create(StudentDTO studentDTO) throws DataAreNotUpdatedException {
 		studentDAO.create(convertToEntityWithoutID(studentDTO));
 	}
@@ -48,6 +52,7 @@ public class StudentService {
 		return resultDTO;
 	}
 
+	@Transactional
 	public void update(StudentDTO oldDTO, StudentDTO newDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to update StudentDTO, firstName={}, lastName={}", newDTO.getFirstName(),
 				newDTO.getLastName());
@@ -62,6 +67,7 @@ public class StudentService {
 		LOGGER.trace("StudentDTO was assigned successfully.");
 	}
 
+	@Transactional
 	public void delete(StudentDTO studentDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete StudentDTO by entity, firstName={}, lastName={}", studentDTO.getFirstName(),
 				studentDTO.getLastName());
@@ -97,10 +103,12 @@ public class StudentService {
 		return setOfUnassignedStudents;
 	}
 
+	@Transactional
 	public void addToGroup(StudentDTO studentDTO, GroupDTO groupDTO) throws DataAreNotUpdatedException {
 		studentDAO.addStudentToGroup(convertToEntity(studentDTO), groupService.convertToEntity(groupDTO));
 	}
 
+	@Transactional
 	public void removeStudentFromGroup(StudentDTO studentDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to remove a studentDTO(firstName={}, lastName={}) from group", studentDTO.getFirstName(),
 				studentDTO.getLastName());

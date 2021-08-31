@@ -5,13 +5,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import ua.com.foxminded.galvad.university.dao.DAO;
@@ -21,73 +20,54 @@ import ua.com.foxminded.galvad.university.model.Teacher;
 public class TeacherDAO implements DAO<Integer, Teacher> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TeacherDAO.class);
-	private static final String GENERAL_ERROR = "Cannot process data in the DB!";
 
-	@Autowired
-	private SessionFactory sessionFactory;
-
-	private Session currentSession;
-	private Transaction currentTransaction;
+	@PersistenceContext
+	private EntityManager entityManager;
 
 	public void create(Teacher teacher) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to add a teacher to DB. FirstName=\"{}\", LastName =\"{}\"", teacher.getFirstName(),
 				teacher.getLastName());
-		openCurrentSessionWithTransaction();
 		try {
-			currentSession.persist(teacher);
-			closeCurrentSessionwithTransaction();
+			entityManager.persist(teacher);
 		} catch (Exception e) {
-			LOGGER.info("A teacher wasn't added to DB because of GENERAL ERROR. FirstName=\"{}\", LastName =\"{}\"",
-					teacher.getFirstName(), teacher.getLastName());
-			throw new DataAreNotUpdatedException(GENERAL_ERROR);
+			LOGGER.info("Teacher with firstName={}, lastName={} wasn't added to DB.", teacher.getFirstName(),
+					teacher.getLastName());
+			throw new DataAreNotUpdatedException(
+					String.format("Teacher with firstName=%s, lastName=%s wasn't added to DB.", teacher.getFirstName(),
+							teacher.getLastName()));
 		}
-		LOGGER.info("Added a teacher to DB. FirstName=\"{}\", LastName =\"{}\"", teacher.getFirstName(),
+		LOGGER.info("Teacher with firstName={}, lastName={} successfully added to DB.", teacher.getFirstName(),
 				teacher.getLastName());
 	}
 
 	public Teacher retrieve(Integer id) throws DataNotFoundException {
 		LOGGER.trace("Going to retrieve a teacher from DB. ID={}", id);
-		openCurrentSession();
 		Teacher teacher = null;
 		try {
-			teacher = currentSession.get(Teacher.class, id);
-		} catch (IndexOutOfBoundsException e) {
-			LOGGER.trace("A teacher with id={}) is not found", id);
-			throw new DataNotFoundException(String.format("A teacher with ID=%d is not found", id));
+			teacher = entityManager.find(Teacher.class, id);
 		} catch (Exception e) {
-			LOGGER.info("A teacher wasn't retrieved from DB because of GENERAL ERROR. ID={}", id);
-			throw new DataNotFoundException(GENERAL_ERROR);
-		} finally {
-			closeCurrentSession();
+			LOGGER.info("Can't retrieve a teacher from DB. ID={}", id);
+			throw new DataAreNotUpdatedException(String.format("Can't retrieve a teacher from DB. ID=%d", id));
 		}
-		LOGGER.info("Retrieved a teacher with ID={} from DB", id);
+		LOGGER.trace("The teacher with id={} retrieved from DB successfully", id);
 		return teacher;
 	}
 
 	public Teacher retrieve(String firstName, String lastName) throws DataNotFoundException {
-		LOGGER.trace("Going to retrieve a teacher entity (First_Name ={}, Last_Name ={})", firstName, lastName);
-		openCurrentSession();
-		String hqlQuery = "from Teacher where firstName=:firstName AND lastName=:lastName";
-		@SuppressWarnings("rawtypes")
-		Query query = currentSession.createQuery(hqlQuery);
-		query.setParameter("firstName", firstName);
-		query.setParameter("lastName", lastName);
+		LOGGER.trace("Going to retrieve a teacher entity (First_Name={}, Last_Name={})", firstName, lastName);
+		Teacher teacher = null;
 		try {
-			Teacher teacher = (Teacher) query.list().get(0);
-			LOGGER.trace("A teacher entity (First_Name ={}, Last_Name ={}) was retrieved successfully", firstName,
-					lastName);
-			return teacher;
-		} catch (IndexOutOfBoundsException e) {
-			LOGGER.trace("A teacher with FirstName={}, LastName ={}) is not found", firstName, lastName);
-			throw new DataNotFoundException(String
-					.format("A teacher with FirstName=\"%s\" and LastName=\"%s\" is not found", firstName, lastName));
+			teacher = (Teacher) entityManager
+					.createQuery("from Teacher where firstName=:firstName and lastName=:lastName")
+					.setParameter("firstName", firstName).setParameter("lastName", lastName).getSingleResult();
 		} catch (Exception e) {
-			LOGGER.info("A teacher wasn't retrieved from DB because of GENERAL ERROR. First_Name ={}, Last_Name ={}",
-					firstName, lastName);
-			throw new DataNotFoundException(GENERAL_ERROR);
-		} finally {
-			closeCurrentSession();
+			LOGGER.info("Can't retrieve a teacher from DB. First_Name={}, Last_Name={}", firstName, lastName);
+			throw new DataAreNotUpdatedException(String
+					.format("Can't retrieve a teacher from DB. First_Name=%s, Last_Name=%s", firstName, lastName));
 		}
+		LOGGER.trace("The teacher with First_Name={}, Last_Name={} retrieved from DB successfully", firstName,
+				lastName);
+		return teacher;
 	}
 
 	public Integer getId(Teacher teacher) throws DataNotFoundException {
@@ -96,90 +76,60 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 
 	public void update(Teacher teacher) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to update a teacher (ID={})", teacher.getId());
-		openCurrentSessionWithTransaction();
 		try {
-			currentSession.merge(teacher);
-			closeCurrentSessionwithTransaction();
+			entityManager.merge(teacher);
 		} catch (Exception e) {
-			LOGGER.info("A teacher wasn't updated because of GENERAL ERROR. ID={}", teacher.getId());
-			throw new DataAreNotUpdatedException(GENERAL_ERROR);
+			LOGGER.info("Can't update a teacher. ID={}", teacher.getId());
+			throw new DataAreNotUpdatedException(String.format("Can't update a teacher. ID=%d", teacher.getId()));
 		}
 		LOGGER.trace("The teacher (ID={}) updated successfully", teacher.getId());
 	}
 
 	public void delete(Integer id) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete a teacher by ID={}", id);
-		LOGGER.trace("Going to retrieve an entity for a teacher (ID={})", id);
-		openCurrentSession();
-		Teacher teacher = currentSession.get(Teacher.class, id);
-		LOGGER.trace("The entity retrieved for a teacher (ID={})", id);
-		closeCurrentSession();
-		if (teacher != null) {
-			delete(teacher);
+		LOGGER.trace("Going to delete a teacher entity, ID={}", id);
+		Integer isDeleted;
+		try {
+			isDeleted = entityManager.createQuery("delete from Teacher teacher where teacher.id=:id")
+					.setParameter("id", id).executeUpdate();
+		} catch (Exception e) {
+			if (e.getCause() instanceof ConstraintViolationException) {
+				LOGGER.info("Can't delete a teacher as the entity is connected to a Course. ID={}", id);
+				throw new DataAreNotUpdatedException(
+						String.format("Can't delete a teacher (ID=%d) because of Course-Teacher connection", id));
+			} else {
+				LOGGER.info("Can't delete a teacher. ID={}", id);
+				throw new DataAreNotUpdatedException(String.format("Can't delete a teacher. ID=%d", id));
+			}
+		}
+		if (isDeleted != 0) {
+			LOGGER.trace("The teacher entity deleted, ID={}", id);
 		} else {
-			throw new DataAreNotUpdatedException(String.format("A teacher with ID=%d is not found", id));
+			throw new DataAreNotUpdatedException(String.format("A teacher with ID=%d is not found!", id));
 		}
 	}
 
 	public void delete(Teacher teacher) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete a teacher entity, ID={}", teacher.getId());
-		openCurrentSessionWithTransaction();
-		try {
-			currentSession.remove(teacher);
-			closeCurrentSessionwithTransaction();
-			LOGGER.trace("The teacher entity deleted, ID={}", teacher.getId());
-		} catch (Exception e) {
-			throw new DataAreNotUpdatedException(GENERAL_ERROR);
-		}
+		delete(teacher.getId());
 	}
 
+	@SuppressWarnings("unchecked")
 	public List<Teacher> findAll() throws DataNotFoundException {
-		LOGGER.trace("Going to retrieve a list of teachers from DB");
+		LOGGER.trace("Going to retrieve a list of Teachers from DB");
 		List<Teacher> resultList = new ArrayList<>();
-		openCurrentSession();
 		try {
-			resultList = currentSession.createQuery("from Teacher", Teacher.class).list();
+			resultList = entityManager.createQuery("from Teacher").getResultList();
 		} catch (Exception e) {
-			LOGGER.info("A list of teachers wasn't retrieved because of GENERAL ERROR");
-			throw new DataNotFoundException(GENERAL_ERROR);
-		} finally {
-			closeCurrentSession();
+			LOGGER.info("Can't retrieve a list of teachers.");
+			throw new DataAreNotUpdatedException("Can't retrieve a list of teachers.");
 		}
-
 		if (resultList.isEmpty()) {
-			LOGGER.info("Retrieved an EMPTY list of teachers");
-			throw new DataNotFoundException("None of teachers was found in DB");
+			LOGGER.info("Retrieved an EMPTY list of Teachers");
 		} else {
-			LOGGER.info("Sorting the list by Last Name and then by First Name");
+			LOGGER.info("Sorting the list by Name");
 			Collections.sort(resultList,
 					Comparator.comparing(Teacher::getLastName).thenComparing(Teacher::getFirstName));
-			LOGGER.info("Retrieved a list of teachers successfully. {} teachers were found", resultList.size());
+			LOGGER.info("Retrieved a list of Teachers successfully. {} Teachers were found", resultList.size());
 		}
 		return resultList;
 	}
-
-	private void openCurrentSession() {
-		currentSession = sessionFactory.openSession();
-	}
-
-	private void closeCurrentSession() {
-		currentSession.close();
-		currentSession = null;
-	}
-
-	private void openCurrentSessionWithTransaction() {
-		if (currentSession == null) {
-			currentSession = sessionFactory.openSession();
-			currentTransaction = currentSession.getTransaction();
-			currentTransaction.begin();
-		}
-	}
-
-	private void closeCurrentSessionwithTransaction() {
-		currentTransaction.commit();
-		currentSession.close();
-		currentTransaction = null;
-		currentSession = null;
-	}
-
 }

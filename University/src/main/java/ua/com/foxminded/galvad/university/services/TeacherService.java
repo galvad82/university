@@ -4,6 +4,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.transaction.Transactional;
+
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +31,7 @@ public class TeacherService {
 	@Autowired
 	private LessonService lessonService;
 
+	@Transactional
 	public void create(TeacherDTO teacherDTO) throws DataAreNotUpdatedException {
 		teacherDAO.create(convertToEntityWithoutID(teacherDTO));
 	}
@@ -38,12 +41,14 @@ public class TeacherService {
 		
 	}
 	
+	@Transactional
 	public void update(TeacherDTO oldDTO, TeacherDTO newDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to update TeacherDTO, firstName={}, lastName={}", newDTO.getFirstName(),
 				newDTO.getLastName());
 		teacherDAO.update(convertToEntity(oldDTO, newDTO));
 	}
 
+	@Transactional
 	public void delete(TeacherDTO teacherDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete TeacherDTO by entity, firstName={}, lastName={}", teacherDTO.getFirstName(),
 				teacherDTO.getLastName());

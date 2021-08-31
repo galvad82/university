@@ -4,7 +4,6 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
@@ -16,11 +15,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 public class HibernateConfig {
 
-	@Autowired
-	DataSource dataSource;
 
 	@Bean
-	public LocalSessionFactoryBean sessionFactory() {
+	public LocalSessionFactoryBean sessionFactory(DataSource dataSource) {
 		LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
 		sessionFactory.setDataSource(dataSource);
 		sessionFactory.setPackagesToScan("ua.com.foxminded.galvad.university.model");
@@ -29,9 +26,9 @@ public class HibernateConfig {
 	}
 
 	@Bean
-	public PlatformTransactionManager hibernateTransactionManager() {
+	public PlatformTransactionManager hibernateTransactionManager(DataSource dataSource) {
 		HibernateTransactionManager transactionManager = new HibernateTransactionManager();
-		transactionManager.setSessionFactory(sessionFactory().getObject());
+		transactionManager.setSessionFactory(sessionFactory(dataSource).getObject());
 		return transactionManager;
 	}
 

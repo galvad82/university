@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
@@ -25,6 +26,7 @@ import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
 
 @Service
+@Transactional
 public class GroupService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GroupService.class);
@@ -71,6 +73,7 @@ public class GroupService {
 		LOGGER.trace("Updated GroupDTO with newName={} ", newDTO.getName());
 	}
 
+	@Transactional
 	public void delete(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {	
 		if (!groupDTO.getListOfStudent().isEmpty()) {
 			LOGGER.trace("Going to delete students of GroupDTO (name={}) from the group", groupDTO.getName());

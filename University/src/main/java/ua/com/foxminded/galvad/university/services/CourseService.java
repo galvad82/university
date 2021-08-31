@@ -3,6 +3,8 @@ package ua.com.foxminded.galvad.university.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.transaction.Transactional;
+
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,7 @@ public class CourseService {
 	@Autowired
 	private LessonService lessonService;
 
+	@Transactional
 	public void create(CourseDTO courseDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		Course course = convertToEntityWithoutID(courseDTO);
 		courseDAO.create(course);
@@ -58,12 +61,14 @@ public class CourseService {
 		return courseDTO;
 	}
 
+	@Transactional
 	public void update(CourseDTO oldDTO, CourseDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update CourseDTO with newName={} ", newDTO.getName());
 		courseDAO.update(convertToEntity(oldDTO, newDTO));
 		LOGGER.trace("Updated CourseDTO with newName={} ", newDTO.getName());
 	}
 
+	@Transactional
 	public void delete(CourseDTO courseDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete all the lessons for courseDTO (name={})", courseDTO.getName());	
 		lessonDAO.deleteByCourseID(convertToEntity(courseDTO).getId());		
