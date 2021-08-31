@@ -1,11 +1,28 @@
 package ua.com.foxminded.galvad.university.model;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
+import javax.persistence.Table;
+
 import org.apache.commons.lang3.StringUtils;
 
+@Entity
+@Table(name = "courses")
 public class Course {
-
+	
+	@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
 	private Integer id;
+	@Column(name = "name")
 	private String name;
+    @OneToOne
+    @JoinColumn(name = "teacher", referencedColumnName = "id")
 	private Teacher teacher;
 
 	public Course(Integer id, String name) {

@@ -20,20 +20,20 @@ import ua.com.foxminded.galvad.university.services.StudentService;
 @Controller
 @RequestMapping("/students")
 public class StudentsController {
-	
+
 	private static final String STUDENTS_RESULT = "students/result";
 	private static final String STUDENTS_LIST = "students/list";
 	private static final String STUDENTS_ADD = "students/add";
 	private static final String STUDENTS_EDIT = "students/edit";
 	private static final String STUDENTS_DELETE = "students/delete";
 	private static final String STUDENT = "student";
-	private static final String RESULT="result";	
-	private static final String STUDENTDTO="studentDTO";
-	private static final String GROUP_NAME="groupName";
-	
+	private static final String RESULT = "result";
+	private static final String STUDENTDTO = "studentDTO";
+	private static final String GROUP_NAME = "groupName";
+
 	private final GroupService groupService;
 	private final StudentService studentService;
-	private static final String NONE="NONE";
+	private static final String NONE = "NONE";
 
 	@Autowired
 	public StudentsController(StudentService studentService, GroupService groupService) {
@@ -56,7 +56,7 @@ public class StudentsController {
 		model.addAttribute(STUDENTDTO, studentDTO);
 		List<String> listGroupNames = new ArrayList<>();
 		listGroupNames.add(NONE);
-		groupService.findAllWithoutStudentList().stream().forEach(s -> listGroupNames.add(s.getName()));
+		groupService.findAll().stream().forEach(s -> listGroupNames.add(s.getName()));
 		model.addAttribute("listGroupNames", listGroupNames);
 		return STUDENTS_ADD;
 	}
@@ -77,7 +77,7 @@ public class StudentsController {
 	@PostMapping("/edit")
 	public String editDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
 			@ModelAttribute("groupName") String groupName, Model model) {
-		List<GroupDTO> listOfGroups = groupService.findAllWithoutStudentList();
+		List<GroupDTO> listOfGroups = groupService.findAll();
 		GroupDTO noneDto = new GroupDTO();
 		noneDto.setName(NONE);
 		listOfGroups.add(0, noneDto);

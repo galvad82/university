@@ -1,19 +1,18 @@
 package ua.com.foxminded.galvad.university.dao.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
-import javax.sql.DataSource;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import ua.com.foxminded.galvad.university.dao.DAO;
-import ua.com.foxminded.galvad.university.dao.impl.mappers.LessonMapper;
 import ua.com.foxminded.galvad.university.model.Lesson;
 
 @Repository
@@ -21,111 +20,96 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LessonDAO.class);
 
-	private JdbcTemplate jdbcTemplate;
-	private LessonMapper mapper;
-
-	private static final String CREATE = "INSERT INTO lessons (group_id,course,classroom,starttime,duration) VALUES (?,?,?,?,?)";
-	private static final String RETRIEVE = "SELECT * FROM lessons WHERE id=?";
-	private static final String UPDATE = "UPDATE lessons SET group_id=?, course=?, classroom=?, starttime=?, duration=? WHERE id=?";
-	private static final String DELETE = "DELETE FROM lessons WHERE id=?";
-	private static final String FIND_ALL = "SELECT * FROM lessons";
-	private static final String FIND_ID = "SELECT * FROM lessons WHERE group_id=? AND course=? AND classroom=? AND starttime=? AND duration=?";
-	private static final String DELETE_BY_CLASSROOM_ID = "DELETE FROM lessons WHERE classroom=?";
-	private static final String DELETE_BY_COURSE_ID = "DELETE FROM lessons WHERE course=?";
-	private static final String DELETE_BY_GROUP_ID = "DELETE FROM lessons WHERE group_id=?";
-
-	@Autowired
-	public void setMapper(LessonMapper mapper) {
-		if (mapper != null) {
-			this.mapper = mapper;
-		} else {
-			throw new IllegalArgumentException("Mapper cannot be null!");
-		}
-	}
-
-	@Autowired
-	public void setDataSource(DataSource ds) {
-		this.jdbcTemplate = new JdbcTemplate(ds);
-	}
+	@PersistenceContext
+	private EntityManager entityManager;
 
 	public void create(Lesson lesson) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to add a lesson (groupID={}, courseID={},classroomID={}, startTime={}, duration={}) to DB",
 				lesson.getGroup().getId(), lesson.getCourse().getId(), lesson.getClassroom().getId(),
 				lesson.getStartTime(), lesson.getDuration());
 		try {
-			jdbcTemplate.update(CREATE, lesson.getGroup().getId(), lesson.getCourse().getId(),
-					lesson.getClassroom().getId(), lesson.getStartTime(), lesson.getDuration());
-			LOGGER.info("Added a lesson (groupID={}, courseID={},classroomID={}, startTime={}, duration={}) to DB",
+			entityManager.persist(lesson);
+		} catch (Exception e) {
+			LOGGER.info(
+					"A lesson wasn't added to DB. (groupID={}, courseID={},classroomID={}, startTime={}, duration={})",
 					lesson.getGroup().getId(), lesson.getCourse().getId(), lesson.getClassroom().getId(),
 					lesson.getStartTime(), lesson.getDuration());
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException("Cannot add a lesson to DB", e);
+			throw new DataAreNotUpdatedException(String.format(
+					"A lesson wasn't added to DB. (groupID=%d, courseID=%d,classroomID=%d, startTime=%d, duration=%d)",
+					lesson.getGroup().getId(), lesson.getCourse().getId(), lesson.getClassroom().getId(),
+					lesson.getStartTime(), lesson.getDuration()));
 		}
+		LOGGER.info("Added a lesson (groupID={}, courseID={},classroomID={}, startTime={}, duration={}) to DB",
+				lesson.getGroup().getId(), lesson.getCourse().getId(), lesson.getClassroom().getId(),
+				lesson.getStartTime(), lesson.getDuration());
 	}
 
 	public Lesson retrieve(Integer id) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a lesson from DB. ID={}", id);
+		Lesson lesson = null;
 		try {
-			LOGGER.trace("Going to retrieve a lesson (ID={}) from DB", id);
-			Lesson retrievedLesson = jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
-			LOGGER.info("Retrieved a lesson (ID={}) from DB", retrievedLesson.getId());
-			return retrievedLesson;
-		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(String.format("A lesson with ID=%d is not found", id));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(String.format("Cannot retrieve a lesson with ID=%d", id), e);
+			lesson = entityManager.find(Lesson.class, id);
+		} catch (Exception e) {
+			LOGGER.info("Can't retrieve a lesson from DB. ID={}", id);
+			throw new DataAreNotUpdatedException(String.format("Can't retrieve a lesson from DB. ID=%d", id));
 		}
+		LOGGER.trace("The lesson with id={} retrieved from DB successfully", id);
+		return lesson;
 	}
 
 	public Integer getId(Lesson lesson) throws DataNotFoundException {
+		Integer groupID = lesson.getGroup().getId();
+		Integer courseID = lesson.getCourse().getId();
+		Integer classroomID = lesson.getClassroom().getId();
+		Long startTime = lesson.getStartTime();
+		Long duration = lesson.getDuration();
+		LOGGER.trace(
+				"Going to retrieve an ID for a lesson (groupID={}, courseID={},classroomID={}, startTime={}, duration={})  from DB",
+				groupID, courseID, classroomID, startTime, duration);
+		Lesson resultLesson = null;
 		try {
-			LOGGER.trace(
-					"Going to retrieve an ID for a lesson (groupID={}, courseID={},classroomID={}, startTime={}, duration={})  from DB",
-					lesson.getGroup().getId(), lesson.getCourse().getId(), lesson.getClassroom().getId(),
-					lesson.getStartTime(), lesson.getDuration());
-			Integer result = jdbcTemplate.query(FIND_ID, mapper, lesson.getGroup().getId(), lesson.getCourse().getId(),
-					lesson.getClassroom().getId(), lesson.getStartTime(), lesson.getDuration()).get(0).getId();
-			LOGGER.info(
-					"Retrieved an ID={} for a lesson (groupID={}, courseID={},classroomID={}, startTime={}, duration={})  from DB",
-					result, lesson.getGroup().getId(), lesson.getCourse().getId(), lesson.getClassroom().getId(),
-					lesson.getStartTime(), lesson.getDuration());
-			return result;
-		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException("A lesson is not found");
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException("Cannot retrieve an ID for a lesson", e);
+			resultLesson = (Lesson) entityManager.createQuery(
+					"from Lesson where group_id = :groupID and course_id=:courseID and classroom_id=:classroomID and starttime=:startTime and duration=:duration")
+					.setParameter("groupID", groupID).setParameter("courseID", courseID)
+					.setParameter("classroomID", classroomID).setParameter("startTime", startTime)
+					.setParameter("duration", duration).getSingleResult();
+		} catch (Exception e) {
+			LOGGER.trace("A lesson (groupID={}, courseID={},classroomID={}, startTime={}, duration={}) is not found!",
+					groupID, courseID, classroomID, startTime, duration);
+			throw new DataNotFoundException(String.format(
+					"A lesson (groupID=%d, courseID=%d,classroomID=%d, startTime=%d, duration=%d) is not found!",
+					groupID, courseID, classroomID, startTime, duration));
 		}
+		LOGGER.trace("The lesson retrieved from DB (groupID={}, courseID={},classroomID={}, startTime={}, duration={})",
+				groupID, courseID, classroomID, startTime, duration);
+		return resultLesson.getId();
 	}
 
 	public void update(Lesson lesson) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to update a lesson with ID={}", lesson.getId());
+		LOGGER.trace("Going to update a lesson (ID={})", lesson.getId());
 		try {
-			Integer result = jdbcTemplate.update(UPDATE, lesson.getGroup().getId(), lesson.getCourse().getId(),
-					lesson.getClassroom().getId(), lesson.getStartTime(), lesson.getDuration(), lesson.getId());
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(
-						String.format("A lesson with ID=%d was not updated", lesson.getId()));
-			} else {
-				LOGGER.info(
-						"A lesson (ID={}) was updated (groupID={}, courseID={},classroomID={}, startTime={}, duration={})  from DB",
-						lesson.getId(), lesson.getGroup().getId(), lesson.getCourse().getId(),
-						lesson.getClassroom().getId(), lesson.getStartTime(), lesson.getDuration());
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot update a lesson with ID=%d", lesson.getId()), e);
+			entityManager.merge(lesson);
+		} catch (Exception e) {
+			LOGGER.info("Can't update a lesson. ID={}", lesson.getId());
+			throw new DataAreNotUpdatedException(String.format("Can't update a lesson. ID=%d", lesson.getId()));
 		}
+		LOGGER.trace("The lesson (ID={}) updated successfully", lesson.getId());
 	}
 
 	public void delete(Integer id) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete a lesson (ID={})", id);
+		LOGGER.trace("Going to delete a lesson entity, ID={}", id);
+		Integer isDeleted;
 		try {
-			Integer result = jdbcTemplate.update(DELETE, id);
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(String.format("A lesson with ID=%d was not deleted", id));
-			} else {
-				LOGGER.info("A lesson with ID={} was deleted successfully", id);
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot delete a lesson with ID=%d", id), e);
+			isDeleted = entityManager.createQuery("delete from Lesson lesson where lesson.id=:id")
+					.setParameter("id", id).executeUpdate();
+		} catch (Exception e) {
+			LOGGER.info("Can't delete a lesson. ID={}", id);
+			throw new DataAreNotUpdatedException(String.format("Can't delete a lesson. ID=%d", id));
+		}
+		if (isDeleted != 0) {
+			LOGGER.trace("The lesson entity deleted, ID={}", id);
+		} else {
+			throw new DataAreNotUpdatedException(String.format("A lesson with ID=%d is not found!", id));
 		}
 	}
 
@@ -133,62 +117,48 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 		delete(lesson.getId());
 	}
 
+	@SuppressWarnings("unchecked")
 	public List<Lesson> findAll() throws DataNotFoundException {
-		LOGGER.trace("Going to retrieve a list of lessons from DB");
+		LOGGER.trace("Going to retrieve a list of Lessons from DB");
 		List<Lesson> resultList = new ArrayList<>();
 		try {
-			resultList = jdbcTemplate.query(FIND_ALL, mapper);
-			if (resultList.isEmpty()) {
-				throw new DataNotFoundException("None of lessons was found in DB");
-			} else {
-				LOGGER.info("Retrieved a list of lessons successfully. {} lessons were found", resultList.size());
-				return resultList;
-			}
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException("Cannot retrieve a list of lessons from DB", e);
+			resultList = entityManager.createQuery("from Lesson").getResultList();
+		} catch (Exception e) {
+			LOGGER.info("Can't retrieve a list of lessons.");
+			throw new DataAreNotUpdatedException("Can't retrieve a list of lessons.");
 		}
+		if (resultList.isEmpty()) {
+			LOGGER.info("Retrieved an EMPTY list of Lessons");
+		} else {
+			LOGGER.info("Sorting the list by Name");
+			Collections.sort(resultList, Comparator.comparing(Lesson::getId));
+			LOGGER.info("Retrieved a list of Lessons successfully. {} Lessons were found", resultList.size());
+		}
+		return resultList;
 	}
 
 	public void deleteByClassroomID(Integer id) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete a lesson (classroomID={})", id);
-		try {
-			Integer result = jdbcTemplate.update(DELETE_BY_CLASSROOM_ID, id);
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(String.format("Didn't find any lesson with classroomID=%d", id));
-			} else {
-				LOGGER.info("All lessons with classroomID={} were deleted successfully ({} in total)", id, result);
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot delete a lesson with classroomID=%d", id), e);
-		}
+		deleteByEntityID("classroom", id);
 	}
 
 	public void deleteByCourseID(Integer id) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete a lesson (courseID={})", id);
-		try {
-			Integer result = jdbcTemplate.update(DELETE_BY_COURSE_ID, id);
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(String.format("Didn't find any lesson with courseID=%d", id));
-			} else {
-				LOGGER.info("All lessons with courseID={} were deleted successfully ({} in total)", id, result);
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot delete a lesson with courseID=%d", id), e);
-		}
+		deleteByEntityID("course", id);
 	}
 
 	public void deleteByGroupID(Integer id) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete a lesson (groupID={})", id);
-		try {
-			Integer result = jdbcTemplate.update(DELETE_BY_GROUP_ID, id);
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(String.format("Didn't find any lesson with groupID=%d", id));
-			} else {
-				LOGGER.info("All lessons with groupID={} were deleted successfully ({} in total)", id, result);
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot delete a lesson with groupID=%d", id), e);
-		}
+		deleteByEntityID("group", id);
 	}
 
+	private void deleteByEntityID(String entityClassName, Integer id) throws DataAreNotUpdatedException {
+		LOGGER.trace("Going to delete lessons with {}ID={}", entityClassName, id);
+		try {
+			entityManager.createQuery(String.format("DELETE FROM Lesson WHERE %s_id= :id", entityClassName))
+					.setParameter("id", id).executeUpdate();
+			LOGGER.trace("The lessons with {}ID={} were deleted", entityClassName, id);
+		} catch (Exception e) {
+			LOGGER.info("Cannot delete lessons with {}ID={}", entityClassName, id);
+			throw new DataAreNotUpdatedException(
+					String.format("Cannot delete lessons with %sID=%d", entityClassName, id));
+		}
+	}
 }

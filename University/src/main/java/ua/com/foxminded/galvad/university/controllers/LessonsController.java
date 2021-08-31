@@ -61,7 +61,7 @@ public class LessonsController {
 
 		List<String> listOfGroupNames = new ArrayList<>();
 		listOfGroupNames.add("");
-		groupService.findAllWithoutStudentList().stream().forEach(s -> listOfGroupNames.add(s.getName()));
+		groupService.findAll().stream().forEach(s -> listOfGroupNames.add(s.getName()));
 		model.addAttribute("groups", listOfGroupNames);
 
 		List<String> listOfCourseNames = new ArrayList<>();
@@ -100,7 +100,7 @@ public class LessonsController {
 			Model model) {
 
 		List<String> listOfGroupNames = new ArrayList<>();
-		groupService.findAllWithoutStudentList().stream().forEach(s -> listOfGroupNames.add(s.getName()));
+		groupService.findAll().stream().forEach(s -> listOfGroupNames.add(s.getName()));
 		model.addAttribute("groups", listOfGroupNames);
 
 		List<String> listOfCourseNames = new ArrayList<>();

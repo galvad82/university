@@ -4,17 +4,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import javax.sql.DataSource;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import ua.com.foxminded.galvad.university.dao.DAO;
-import ua.com.foxminded.galvad.university.dao.impl.mappers.StudentMapper;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
 
@@ -22,209 +19,124 @@ import ua.com.foxminded.galvad.university.model.Student;
 public class StudentDAO implements DAO<Integer, Student> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(StudentDAO.class);
-	private JdbcTemplate jdbcTemplate;
-	private StudentMapper mapper;
 
-	private static final String CREATE = "INSERT INTO students (firstname, lastname) VALUES (?, ?)";
-	private static final String RETRIEVE = "SELECT * FROM students WHERE id=?";
-	private static final String RETRIEVE_BY_NAME = "SELECT * FROM students WHERE firstname=? AND lastname=?";
-	private static final String UPDATE = "UPDATE students SET firstname=?,lastname=? WHERE id=?";
-	private static final String DELETE = "DELETE FROM students WHERE id=?";
-	private static final String FIND_ALL = "SELECT * FROM students";
-	private static final String ADD_STUDENT_TO_GROUP = "INSERT INTO groups_students (group_id,student_id) VALUES(?,?)";
-	private static final String ADD_STUDENT_TO_ANOTHER_GROUP = "UPDATE groups_students SET group_id=? WHERE student_id=?";
-	private static final String REMOVE_STUDENT_FROM_GROUPS = "DELETE FROM groups_students WHERE student_id=?";
-	private static final String FIND_GROUP_ID_FOR_STUDENT = "SELECT group_id FROM groups_students WHERE student_id=?";
-
-	@Autowired
-	public void setMapper(StudentMapper mapper) {
-		if (mapper != null) {
-			this.mapper = mapper;
-		} else {
-			throw new IllegalArgumentException("Mapper cannot be null!");
-		}
-	}
-
-	@Autowired
-	public void setDataSource(DataSource ds) {
-		this.jdbcTemplate = new JdbcTemplate(ds);
-	}
+	@PersistenceContext
+	private EntityManager entityManager;
 
 	public void create(Student student) throws DataAreNotUpdatedException {
+		LOGGER.trace("Going to add a student to DB. FirstName=\"{}\", LastName =\"{}\"", student.getFirstName(),
+				student.getLastName());
 		try {
-			LOGGER.trace("Going to add a student to DB. FirstName=\"{}\", LastName =\"{}\"", student.getFirstName(),
+			entityManager.persist(student);
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOGGER.info("Student with firstName={}, lastName={} wasn't added to DB.", student.getFirstName(),
 					student.getLastName());
-			jdbcTemplate.update(CREATE, student.getFirstName(), student.getLastName());
-			LOGGER.info("Student \"{}\" \"{}\" successfully added to DB.", student.getFirstName(),
-					student.getLastName());
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot add a student \"%s\" \"%s\" to DB",
-					student.getFirstName(), student.getLastName()), e);
+			throw new DataAreNotUpdatedException(
+					String.format("Student with firstName=%s, lastName=%s wasn't added to DB.", student.getFirstName(),
+							student.getLastName()));
 		}
+		LOGGER.info("Student with firstName={}, lastName={} successfully added to DB.", student.getFirstName(),
+				student.getLastName());
 	}
 
 	public Student retrieve(Integer id) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a student from DB. ID={}", id);
+		Student student = null;
 		try {
-			LOGGER.trace("Going to retrieve a student from DB. ID={}", id);
-			Student retrievedStudent = jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
-			LOGGER.info("Retrieved a student with ID={} from DB", id);
-			return retrievedStudent;
-		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(String.format("A student with ID=%d is not found", id));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(String.format("Cannot retrieve a student with ID=%d", id), e);
+			student = entityManager.find(Student.class, id);
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOGGER.info("Can't retrieve a student from DB. ID={}", id);
+			throw new DataAreNotUpdatedException(String.format("Can't retrieve a student from DB. ID=%d", id));
 		}
+		LOGGER.trace("The student with id={} retrieved from DB successfully", id);
+		return student;
 	}
 
 	public Student retrieve(String firstName, String lastName) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a student entity (First_Name={}, Last_Name={})", firstName, lastName);
+		Student student = null;
 		try {
-			LOGGER.trace("Going to retrieve a student entity (First_Name ={}, Last_Name ={})", firstName, lastName);
-			Student result = jdbcTemplate.query(RETRIEVE_BY_NAME, mapper, firstName, lastName).get(0);
-			LOGGER.info("A student retrieved from DB. First_Name ={}, Last_Name ={}, ID={}", result.getFirstName(),
-					result.getLastName(), result.getId());
-			return result;
-		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(String
-					.format("A student with FirstName=\"%s\" and LastName=\"%s\" is not found", firstName, lastName));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(String.format(
-					"Cannot retrieve a student with FirstName=\"%s\" and LastName=\"%s\"", firstName, lastName), e);
+			student = (Student) entityManager.createQuery("from Student where firstName=:firstName and lastName=:lastName")
+					.setParameter("firstName", firstName).setParameter("lastName", lastName).getSingleResult();
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOGGER.info("Can't retrieve a student from DB. First_Name={}, Last_Name={}", firstName, lastName);
+			throw new DataAreNotUpdatedException(
+					String.format("Can't retrieve a student from DB. First_Name=%s, Last_Name=%s", firstName, lastName));
 		}
-	}
-
-	public Integer getGroupId(Student student) throws DataNotFoundException {
-		try {
-			LOGGER.trace("Going to retrieve a Group ID for a student from DB. First_Name ={}, Last_Name ={}",
-					student.getFirstName(), student.getLastName());
-			Integer result = (Integer) jdbcTemplate.queryForMap(FIND_GROUP_ID_FOR_STUDENT, student.getId())
-					.get("GROUP_ID");
-			LOGGER.info("Retrieved a Group ID for a student from DB. First_Name ={}, Last_Name ={}, ID={}",
-					student.getFirstName(), student.getLastName(), result);
-			return result;
-		} catch (DataAccessException e) {
-			LOGGER.info("A student (First_Name ={}, Last_Name ={}) is not assigned to any group!",
-					student.getFirstName(), student.getLastName());
-			return 0;
-		}
+		LOGGER.trace("The student with First_Name={}, Last_Name={} retrieved from DB successfully", firstName, lastName);
+		return student;
 	}
 
 	public Integer getId(Student student) throws DataNotFoundException {
-		try {
-			LOGGER.trace("Going to retrieve an ID for a student from DB. First_Name ={}, Last_Name ={}",
-					student.getFirstName(), student.getLastName());
-			Integer result = jdbcTemplate.query(RETRIEVE_BY_NAME, mapper, student.getFirstName(), student.getLastName())
-					.get(0).getId();
-			LOGGER.info("Retrieved an ID for a student from DB. First_Name ={}, Last_Name ={}, ID={}",
-					student.getFirstName(), student.getLastName(), result);
-			return result;
-		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(String.format("A student with FirstName=%s and LastName=%s is not found",
-					student.getFirstName(), student.getLastName()));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(
-					String.format("Cannot retrieve an ID for a student with FirstName=%s and LastName=%s",
-							student.getFirstName(), student.getLastName()),
-					e);
-		}
+		return retrieve(student.getFirstName(), student.getLastName()).getId();
 	}
 
 	public void update(Student student) throws DataAreNotUpdatedException {
+		LOGGER.trace("Going to update a student (ID={})", student.getId());
 		try {
-
-			Integer result = jdbcTemplate.update(UPDATE, student.getFirstName(), student.getLastName(),
-					student.getId());
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(
-						String.format("A student with ID=%d was not updated", student.getId()));
-			} else {
-				LOGGER.info("A student with ID={} was updated, new FirstName={}, new LastName={}", student.getId(),
-						student.getFirstName(), student.getLastName());
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot update a student with ID=%d", student.getId()),
-					e);
+			entityManager.merge(student);
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOGGER.info("Can't update a student. ID={}", student.getId());
+			throw new DataAreNotUpdatedException(String.format("Can't update a student. ID=%d", student.getId()));
 		}
-	}
-
-	public void updateGroupForStudent(Student student, Group group) throws DataAreNotUpdatedException {
-		try {
-			Integer result = jdbcTemplate.update(ADD_STUDENT_TO_ANOTHER_GROUP, group.getId(), student.getId());
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(
-						String.format("A group for student with ID=%d was not updated to groupID=%d", student.getId(),
-								group.getId()));
-			} else {
-				LOGGER.info("A student with ID={} was assigned to the group (ID={})", student.getId(), group.getId());
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot update a student with ID=%d", student.getId()),
-					e);
-		}
+		LOGGER.trace("The student (ID={}) updated successfully", student.getId());
 	}
 
 	public void delete(Integer id) throws DataAreNotUpdatedException {
-
-		LOGGER.trace("Going to delete a student (ID={})", id);
+		LOGGER.trace("Going to delete a student entity, ID={}", id);
+		Integer isDeleted;
 		try {
-			Integer result = jdbcTemplate.update(DELETE, id);
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(String.format("A student with ID=%d was not deleted", id));
-			} else {
-				LOGGER.info("A student with ID={} was deleted successfully", id);
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot delete a student with ID=%d", id), e);
+			isDeleted = entityManager.createQuery("DELETE FROM Student student WHERE student.id=:id")
+					.setParameter("id", id).executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOGGER.info("Can't delete a student. ID={}", id);
+			throw new DataAreNotUpdatedException(String.format("Can't delete a student. ID=%d", id));
+		}
+		System.out.println(isDeleted);
+		if (isDeleted != 0) {
+			LOGGER.trace("The student entity deleted, ID={}", id);
+		} else {
+			throw new DataAreNotUpdatedException(String.format("A student with ID=%d is not found!", id));
 		}
 	}
 
 	public void delete(Student student) throws DataAreNotUpdatedException {
-		removeStudentFromGroups(student);
 		delete(student.getId());
 	}
 
+	@SuppressWarnings("unchecked")
 	public List<Student> findAll() throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a list of Students from DB");
 		List<Student> resultList = new ArrayList<>();
-
-		LOGGER.trace("Going to retrieve a list of students from DB");
 		try {
-			resultList = jdbcTemplate.query(FIND_ALL, mapper);
-			Collections.sort(resultList,
-					Comparator.comparing(Student::getLastName).thenComparing(Student::getFirstName));
-			if (resultList.isEmpty()) {
-				throw new DataNotFoundException("None of students was found in DB");
-			} else {
-				LOGGER.info("Retrieved a list of students successfully. {} students were found", resultList.size());
-				return resultList;
-			}
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException("Cannot retrieve a list of students from DB", e);
+			resultList = entityManager.createQuery("from Student").getResultList();
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOGGER.info("Can't retrieve a list of students.");
+			throw new DataAreNotUpdatedException("Can't retrieve a list of students.");
 		}
+		if (resultList.isEmpty()) {
+			LOGGER.info("Retrieved an EMPTY list of Students");
+		} else {
+			LOGGER.info("Sorting the list by Name");
+			Collections.sort(resultList, Comparator.comparing(Student::getLastName).thenComparing(Student::getFirstName));
+			LOGGER.info("Retrieved a list of Students successfully. {} Students were found", resultList.size());
+		}
+		return resultList;
 	}
 
 	public void addStudentToGroup(Student student, Group group) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to add a student to the group (ID={})", group.getId());
-		try {
-			jdbcTemplate.update(ADD_STUDENT_TO_GROUP, group.getId(), student.getId());
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(
-					String.format("Cannot add a student to the group (ID=%d)", group.getId()), e);
-		}
+		student.setGroup(group);
+		update(student);
 	}
 
 	public void removeStudentFromGroups(Student student) throws DataAreNotUpdatedException {
-		Integer studentID = student.getId();
-		LOGGER.trace("Going to delete a student (ID={}) from groups", studentID);
-		try {
-			if (jdbcTemplate.update(REMOVE_STUDENT_FROM_GROUPS, studentID) == 0) {
-				LOGGER.info("A student (ID={}) wasn't found in any group", studentID);
-			} else {
-				LOGGER.info("A student (ID={}) was deleted from groups successfully", studentID);
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(
-					String.format("Cannot delete a student (ID=%d) from groups", studentID), e);
-		}
-
+		student.setGroup(null);
+		update(student);
 	}
-
 }

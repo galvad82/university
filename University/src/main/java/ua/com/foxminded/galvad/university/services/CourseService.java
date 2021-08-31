@@ -3,6 +3,8 @@ package ua.com.foxminded.galvad.university.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.transaction.Transactional;
+
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import ua.com.foxminded.galvad.university.dao.impl.CourseDAO;
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
+import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
 import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
@@ -35,8 +38,11 @@ public class CourseService {
 	@Autowired
 	private TeacherDAO teacherDAO;
 	@Autowired
+	private LessonDAO lessonDAO;
+	@Autowired
 	private LessonService lessonService;
 
+	@Transactional
 	public void create(CourseDTO courseDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		Course course = convertToEntityWithoutID(courseDTO);
 		courseDAO.create(course);
@@ -55,13 +61,17 @@ public class CourseService {
 		return courseDTO;
 	}
 
+	@Transactional
 	public void update(CourseDTO oldDTO, CourseDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update CourseDTO with newName={} ", newDTO.getName());
 		courseDAO.update(convertToEntity(oldDTO, newDTO));
 		LOGGER.trace("Updated CourseDTO with newName={} ", newDTO.getName());
 	}
 
+	@Transactional
 	public void delete(CourseDTO courseDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+		LOGGER.trace("Going to delete all the lessons for courseDTO (name={})", courseDTO.getName());	
+		lessonDAO.deleteByCourseID(convertToEntity(courseDTO).getId());		
 		LOGGER.trace("Going to delete CourseDTO by entity (name={})", courseDTO.getName());
 		courseDAO.delete(convertToEntity(courseDTO));
 	}

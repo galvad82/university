@@ -1,10 +1,13 @@
 package ua.com.foxminded.galvad.university.services;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+//import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -20,6 +23,7 @@ import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.model.Student;
 
 @Service
+
 public class StudentService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StudentService.class);
 
@@ -31,6 +35,7 @@ public class StudentService {
 	@Autowired
 	private GroupService groupService;
 
+	@Transactional
 	public void create(StudentDTO studentDTO) throws DataAreNotUpdatedException {
 		studentDAO.create(convertToEntityWithoutID(studentDTO));
 	}
@@ -47,6 +52,7 @@ public class StudentService {
 		return resultDTO;
 	}
 
+	@Transactional
 	public void update(StudentDTO oldDTO, StudentDTO newDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to update StudentDTO, firstName={}, lastName={}", newDTO.getFirstName(),
 				newDTO.getLastName());
@@ -57,10 +63,11 @@ public class StudentService {
 	public void updateGroup(StudentDTO studentDTO, GroupDTO groupDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to assign StudentDTO (firstName={}, lastName={}) to a groupDTO with name={}",
 				studentDTO.getFirstName(), studentDTO.getLastName(), groupDTO.getName());
-		studentDAO.updateGroupForStudent(convertToEntity(studentDTO), groupService.convertToEntity(groupDTO));
+		studentDAO.addStudentToGroup(convertToEntity(studentDTO), groupService.convertToEntity(groupDTO));
 		LOGGER.trace("StudentDTO was assigned successfully.");
 	}
 
+	@Transactional
 	public void delete(StudentDTO studentDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete StudentDTO by entity, firstName={}, lastName={}", studentDTO.getFirstName(),
 				studentDTO.getLastName());
@@ -77,28 +84,31 @@ public class StudentService {
 	public Map<StudentDTO, String> buildStudentGroupMap() throws DataNotFoundException {
 		LOGGER.trace("Going to get a map (StudentDTO,GroupName)");
 		Map<StudentDTO, String> studentGroupMap = new LinkedHashMap<>();
-		studentDAO.findAll().stream().forEach(
-				student -> studentGroupMap.put(convertToDTO(student), groupService.getGroupNameForStudent(student)));
+		studentDAO.findAll().stream().forEach(student -> {
+			if (student.getGroup() == null) {
+				studentGroupMap.put(convertToDTO(student), "NONE");
+			} else {
+				studentGroupMap.put(convertToDTO(student), student.getGroup().getName());
+			}
+		});
 		LOGGER.trace("A map (StudentDTO,GroupName) is prepared.");
 		return studentGroupMap;
 	}
 
-	public List<StudentDTO> findAllUnassignedStudents() throws DataNotFoundException {
+	public Set<StudentDTO> findAllUnassignedStudents() throws DataNotFoundException {
 		LOGGER.trace("Going to find all unassigned students");
-		List<StudentDTO> listOfUnassignedStudents = new ArrayList<>();
-		studentDAO.findAll().stream().forEach(student -> {
-			if (studentDAO.getGroupId(student) == 0) {
-				listOfUnassignedStudents.add(convertToDTO(student));
-			}
-		});
+		Set<StudentDTO> setOfUnassignedStudents = studentDAO.findAll().stream().filter(s -> (s.getGroup() == null))
+				.map(this::convertToDTO).collect(Collectors.toSet());
 		LOGGER.trace("A list with all unassigned students is prepared.");
-		return listOfUnassignedStudents;
+		return setOfUnassignedStudents;
 	}
 
+	@Transactional
 	public void addToGroup(StudentDTO studentDTO, GroupDTO groupDTO) throws DataAreNotUpdatedException {
 		studentDAO.addStudentToGroup(convertToEntity(studentDTO), groupService.convertToEntity(groupDTO));
 	}
 
+	@Transactional
 	public void removeStudentFromGroup(StudentDTO studentDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to remove a studentDTO(firstName={}, lastName={}) from group", studentDTO.getFirstName(),
 				studentDTO.getLastName());

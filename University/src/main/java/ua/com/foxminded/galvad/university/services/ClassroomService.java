@@ -3,6 +3,8 @@ package ua.com.foxminded.galvad.university.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.transaction.Transactional;
+
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 import ua.com.foxminded.galvad.university.dao.impl.ClassroomDAO;
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
+import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
@@ -27,8 +30,11 @@ public class ClassroomService {
 	@Autowired
 	private ClassroomDAO classroomDAO;
 	@Autowired
+	private LessonDAO lessonDAO;
+	@Autowired
 	private LessonService lessonService;
 
+	@Transactional
 	public void create(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		classroomDAO.create(convertToEntityWithoutID(classroomDTO));
 	}
@@ -43,6 +49,7 @@ public class ClassroomService {
 		return classroomDTO;
 	}
 
+	@Transactional
 	public void update(ClassroomDTO oldDTO, ClassroomDTO newDTO)
 			throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update ClassroomDTO with newName={} ", newDTO.getName());
@@ -50,7 +57,10 @@ public class ClassroomService {
 		LOGGER.trace("Updated ClassroomDTO with newName={} ", newDTO.getName());
 	}
 
+	@Transactional
 	public void delete(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+		LOGGER.trace("Going to delete all the lessons for classroomDTO (name={})", classroomDTO.getName());	
+		lessonDAO.deleteByClassroomID(convertToEntity(classroomDTO).getId());
 		LOGGER.trace("Going to delete ClassroomDTO (name={})", classroomDTO.getName());
 		classroomDAO.delete(convertToEntity(classroomDTO));
 	}

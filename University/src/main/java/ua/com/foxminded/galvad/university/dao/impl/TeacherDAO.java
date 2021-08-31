@@ -5,17 +5,15 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import javax.sql.DataSource;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import ua.com.foxminded.galvad.university.dao.DAO;
-import ua.com.foxminded.galvad.university.dao.impl.mappers.TeacherMapper;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
 @Repository
@@ -23,125 +21,90 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TeacherDAO.class);
 
-	private JdbcTemplate jdbcTemplate;
-	private TeacherMapper mapper;
-
-	private static final String CREATE = "INSERT INTO teachers (firstname, lastname) VALUES (?, ?)";
-	private static final String RETRIEVE = "SELECT * FROM teachers WHERE id=?";
-	private static final String RETRIEVE_BY_NAME = "SELECT * FROM teachers WHERE firstname=? AND lastname=?";
-	private static final String UPDATE = "UPDATE teachers SET firstname=?,lastname=? WHERE id=?";
-	private static final String DELETE = "DELETE FROM teachers WHERE id=?";
-	private static final String FIND_ALL = "SELECT * FROM teachers";
-
-	@Autowired
-	public void setDataSource(DataSource ds) {
-		this.jdbcTemplate = new JdbcTemplate(ds);
-	}
-
-	@Autowired
-	public void setMapper(TeacherMapper mapper) {
-		if (mapper != null) {
-			this.mapper = mapper;
-		} else {
-			throw new IllegalArgumentException("Mapper cannot be null!");
-		}
-	}
+	@PersistenceContext
+	private EntityManager entityManager;
 
 	public void create(Teacher teacher) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to add a teacher to DB. FirstName=\"{}\", LastName =\"{}\"", teacher.getFirstName(),
 				teacher.getLastName());
 		try {
-			jdbcTemplate.update(CREATE, teacher.getFirstName(), teacher.getLastName());
-			LOGGER.info("Added a teacher to DB. FirstName=\"{}\", LastName =\"{}\"", teacher.getFirstName(),
+			entityManager.persist(teacher);
+		} catch (Exception e) {
+			LOGGER.info("Teacher with firstName={}, lastName={} wasn't added to DB.", teacher.getFirstName(),
 					teacher.getLastName());
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot add a teacher \"%s\" \"%s\" to DB",
-					teacher.getFirstName(), teacher.getLastName()), e);
+			throw new DataAreNotUpdatedException(
+					String.format("Teacher with firstName=%s, lastName=%s wasn't added to DB.", teacher.getFirstName(),
+							teacher.getLastName()));
 		}
-
+		LOGGER.info("Teacher with firstName={}, lastName={} successfully added to DB.", teacher.getFirstName(),
+				teacher.getLastName());
 	}
 
 	public Teacher retrieve(Integer id) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a teacher from DB. ID={}", id);
+		Teacher teacher = null;
 		try {
-			LOGGER.trace("Going to retrieve a teacher from DB. ID={}", id);
-			Teacher retrievedTeacher = jdbcTemplate.query(RETRIEVE, mapper, id).get(0);
-			LOGGER.info("Retrieved a teacher with ID={} from DB", id);
-			return retrievedTeacher;
-		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(String.format("A teacher with ID=%d is not found", id));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(String.format("Cannot retrieve a teacher with ID=%d", id), e);
+			teacher = entityManager.find(Teacher.class, id);
+		} catch (Exception e) {
+			LOGGER.info("Can't retrieve a teacher from DB. ID={}", id);
+			throw new DataAreNotUpdatedException(String.format("Can't retrieve a teacher from DB. ID=%d", id));
 		}
+		LOGGER.trace("The teacher with id={} retrieved from DB successfully", id);
+		return teacher;
 	}
 
 	public Teacher retrieve(String firstName, String lastName) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a teacher entity (First_Name={}, Last_Name={})", firstName, lastName);
+		Teacher teacher = null;
 		try {
-			LOGGER.trace("Going to retrieve a teacher entity (First_Name ={}, Last_Name ={})", firstName, lastName);
-			Teacher result = jdbcTemplate.query(RETRIEVE_BY_NAME, mapper, firstName, lastName).get(0);
-			LOGGER.info("A teacher retrieved from DB. First_Name ={}, Last_Name ={}, ID={}", result.getFirstName(),
-					result.getLastName(), result.getId());
-			return result;
-		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(String
-					.format("A teacher with FirstName=\"%s\" and LastName=\"%s\" is not found", firstName, lastName));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(
-					String.format("Cannot retrieve an ID for a teacher with FirstName=\"%s\" and LastName=\"%s\"",
-							firstName, lastName),
-					e);
+			teacher = (Teacher) entityManager
+					.createQuery("from Teacher where firstName=:firstName and lastName=:lastName")
+					.setParameter("firstName", firstName).setParameter("lastName", lastName).getSingleResult();
+		} catch (Exception e) {
+			LOGGER.info("Can't retrieve a teacher from DB. First_Name={}, Last_Name={}", firstName, lastName);
+			throw new DataAreNotUpdatedException(String
+					.format("Can't retrieve a teacher from DB. First_Name=%s, Last_Name=%s", firstName, lastName));
 		}
+		LOGGER.trace("The teacher with First_Name={}, Last_Name={} retrieved from DB successfully", firstName,
+				lastName);
+		return teacher;
 	}
 
 	public Integer getId(Teacher teacher) throws DataNotFoundException {
-		try {
-			LOGGER.trace("Going to retrieve an ID for a teacher from DB. First_Name ={}, Last_Name ={}",
-					teacher.getFirstName(), teacher.getLastName());
-			Integer result = jdbcTemplate.query(RETRIEVE_BY_NAME, mapper, teacher.getFirstName(), teacher.getLastName())
-					.get(0).getId();
-			LOGGER.info("Retrieved an ID for a teacher from DB. First_Name ={}, Last_Name ={}, ID={}",
-					teacher.getFirstName(), teacher.getLastName(), result);
-			return result;
-		} catch (IndexOutOfBoundsException e) {
-			throw new DataNotFoundException(
-					String.format("A teacher with FirstName=\"%s\" and LastName=\"%s\" is not found",
-							teacher.getFirstName(), teacher.getLastName()));
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException(
-					String.format("Cannot retrieve an ID for a teacher with FirstName=\"%s\" and LastName=\"%s\"",
-							teacher.getFirstName(), teacher.getLastName()),
-					e);
-		}
+		return retrieve(teacher.getFirstName(), teacher.getLastName()).getId();
 	}
 
 	public void update(Teacher teacher) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to update a teacher (ID={})", teacher.getId());
 		try {
-			Integer result = jdbcTemplate.update(UPDATE, teacher.getFirstName(), teacher.getLastName(),
-					teacher.getId());
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(
-						String.format("A teacher with ID=%d was not updated", teacher.getId()));
-			} else {
-				LOGGER.info("A teacher with ID={} was updated, new FirstName={}, new LastName={}", teacher.getId(),
-						teacher.getFirstName(), teacher.getLastName());
-			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot update a teacher with ID=%d", teacher.getId()),
-					e);
+			entityManager.merge(teacher);
+		} catch (Exception e) {
+			LOGGER.info("Can't update a teacher. ID={}", teacher.getId());
+			throw new DataAreNotUpdatedException(String.format("Can't update a teacher. ID=%d", teacher.getId()));
 		}
+		LOGGER.trace("The teacher (ID={}) updated successfully", teacher.getId());
 	}
 
 	public void delete(Integer id) throws DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete a teacher (ID={})", id);
+		LOGGER.trace("Going to delete a teacher entity, ID={}", id);
+		Integer isDeleted;
 		try {
-			Integer result = jdbcTemplate.update(DELETE, id);
-			if (result == 0) {
-				throw new DataAreNotUpdatedException(String.format("A teacher with ID=%d was not deleted", id));
+			isDeleted = entityManager.createQuery("delete from Teacher teacher where teacher.id=:id")
+					.setParameter("id", id).executeUpdate();
+		} catch (Exception e) {
+			if (e.getCause() instanceof ConstraintViolationException) {
+				LOGGER.info("Can't delete a teacher as the entity is connected to a Course. ID={}", id);
+				throw new DataAreNotUpdatedException(
+						String.format("Can't delete a teacher (ID=%d) because of Course-Teacher connection", id));
 			} else {
-				LOGGER.info("A teacher with ID={} was deleted successfully", id);
+				LOGGER.info("Can't delete a teacher. ID={}", id);
+				throw new DataAreNotUpdatedException(String.format("Can't delete a teacher. ID=%d", id));
 			}
-		} catch (DataAccessException e) {
-			throw new DataAreNotUpdatedException(String.format("Cannot delete a teacher with ID=%d", id), e);
+		}
+		if (isDeleted != 0) {
+			LOGGER.trace("The teacher entity deleted, ID={}", id);
+		} else {
+			throw new DataAreNotUpdatedException(String.format("A teacher with ID=%d is not found!", id));
 		}
 	}
 
@@ -149,22 +112,24 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 		delete(teacher.getId());
 	}
 
+	@SuppressWarnings("unchecked")
 	public List<Teacher> findAll() throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve a list of Teachers from DB");
 		List<Teacher> resultList = new ArrayList<>();
-		LOGGER.trace("Going to retrieve a list of teachers from DB");
 		try {
-			resultList = jdbcTemplate.query(FIND_ALL, mapper);
+			resultList = entityManager.createQuery("from Teacher").getResultList();
+		} catch (Exception e) {
+			LOGGER.info("Can't retrieve a list of teachers.");
+			throw new DataAreNotUpdatedException("Can't retrieve a list of teachers.");
+		}
+		if (resultList.isEmpty()) {
+			LOGGER.info("Retrieved an EMPTY list of Teachers");
+		} else {
+			LOGGER.info("Sorting the list by Name");
 			Collections.sort(resultList,
 					Comparator.comparing(Teacher::getLastName).thenComparing(Teacher::getFirstName));
-			if (resultList.isEmpty()) {
-				throw new DataNotFoundException("None of teachers was found in DB");
-			} else {
-				LOGGER.info("Retrieved a list of teachers successfully. {} teachers were found", resultList.size());
-				return resultList;
-			}
-		} catch (DataAccessException e) {
-			throw new DataNotFoundException("Cannot retrieve a list of teachers from DB", e);
+			LOGGER.info("Retrieved a list of Teachers successfully. {} Teachers were found", resultList.size());
 		}
+		return resultList;
 	}
-
 }
