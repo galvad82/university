@@ -41,7 +41,11 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 			classroom = entityManager.find(Classroom.class, id);
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a classroom from DB. ID={}", id);
-			throw new DataAreNotUpdatedException(String.format("Can't retrieve a classroom from DB. ID=%d", id));
+			throw new DataNotFoundException(String.format("Can't retrieve a classroom from DB. ID=%d", id));
+		}
+		if (classroom == null) {
+			LOGGER.info("A classroom with ID={} is not found", id);
+			throw new DataNotFoundException(String.format("A classroom with ID=%d is not found", id));
 		}
 		LOGGER.trace("The classroom with id={} retrieved from DB successfully", id);
 		return classroom;
@@ -55,7 +59,7 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 					.setParameter("name", classroomName).getSingleResult();
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a classroom from DB. Name={}", classroomName);
-			throw new DataAreNotUpdatedException(
+			throw new DataNotFoundException(
 					String.format("Can't retrieve a classroom from DB. Name=%s", classroomName));
 		}
 		LOGGER.trace("The classroom with name={} retrieved from DB successfully", classroomName);
@@ -106,7 +110,7 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 			resultList = entityManager.createQuery("from Classroom").getResultList();
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a list of classrooms.");
-			throw new DataAreNotUpdatedException("Can't retrieve a list of classrooms.");
+			throw new DataNotFoundException("Can't retrieve a list of classrooms.");
 		}
 		if (resultList.isEmpty()) {
 			LOGGER.info("Retrieved an EMPTY list of Classrooms");

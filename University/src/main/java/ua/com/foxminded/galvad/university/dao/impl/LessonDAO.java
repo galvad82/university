@@ -51,7 +51,11 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 			lesson = entityManager.find(Lesson.class, id);
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a lesson from DB. ID={}", id);
-			throw new DataAreNotUpdatedException(String.format("Can't retrieve a lesson from DB. ID=%d", id));
+			throw new DataNotFoundException(String.format("Can't retrieve a lesson from DB. ID=%d", id));
+		}
+		if (lesson == null) {
+			LOGGER.info("A lesson with ID={} was not found", id);
+			throw new DataNotFoundException(String.format("A lesson with ID=%d was not found", id));
 		}
 		LOGGER.trace("The lesson with id={} retrieved from DB successfully", id);
 		return lesson;
@@ -125,12 +129,12 @@ public class LessonDAO implements DAO<Integer, Lesson> {
 			resultList = entityManager.createQuery("from Lesson").getResultList();
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a list of lessons.");
-			throw new DataAreNotUpdatedException("Can't retrieve a list of lessons.");
+			throw new DataNotFoundException("Can't retrieve a list of lessons.");
 		}
 		if (resultList.isEmpty()) {
 			LOGGER.info("Retrieved an EMPTY list of Lessons");
 		} else {
-			LOGGER.info("Sorting the list by Name");
+			LOGGER.info("Sorting the list by Id");
 			Collections.sort(resultList, Comparator.comparing(Lesson::getId));
 			LOGGER.info("Retrieved a list of Lessons successfully. {} Lessons were found", resultList.size());
 		}

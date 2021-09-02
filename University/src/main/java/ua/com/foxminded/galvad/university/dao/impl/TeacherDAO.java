@@ -47,7 +47,11 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 			teacher = entityManager.find(Teacher.class, id);
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a teacher from DB. ID={}", id);
-			throw new DataAreNotUpdatedException(String.format("Can't retrieve a teacher from DB. ID=%d", id));
+			throw new DataNotFoundException(String.format("Can't retrieve a teacher from DB. ID=%d", id));
+		}
+		if (teacher == null) {
+			LOGGER.info("A teacher with ID={} is not found", id);
+			throw new DataNotFoundException(String.format("A teacher with ID=%d is not found", id));
 		}
 		LOGGER.trace("The teacher with id={} retrieved from DB successfully", id);
 		return teacher;
@@ -62,8 +66,12 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 					.setParameter("firstName", firstName).setParameter("lastName", lastName).getSingleResult();
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a teacher from DB. First_Name={}, Last_Name={}", firstName, lastName);
-			throw new DataAreNotUpdatedException(String
+			throw new DataNotFoundException(String
 					.format("Can't retrieve a teacher from DB. First_Name=%s, Last_Name=%s", firstName, lastName));
+		}
+		if (teacher == null) {
+			LOGGER.info("A teacher with First_Name={}, Last_Name={} is not found", firstName, lastName);
+			throw new DataNotFoundException(String.format("A teacher with First_Name=%s, Last_Name=%s is not found", firstName, lastName));
 		}
 		LOGGER.trace("The teacher with First_Name={}, Last_Name={} retrieved from DB successfully", firstName,
 				lastName);
@@ -120,7 +128,7 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 			resultList = entityManager.createQuery("from Teacher").getResultList();
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a list of teachers.");
-			throw new DataAreNotUpdatedException("Can't retrieve a list of teachers.");
+			throw new DataNotFoundException("Can't retrieve a list of teachers.");
 		}
 		if (resultList.isEmpty()) {
 			LOGGER.info("Retrieved an EMPTY list of Teachers");

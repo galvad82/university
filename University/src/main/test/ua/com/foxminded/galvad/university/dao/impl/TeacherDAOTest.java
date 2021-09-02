@@ -5,36 +5,37 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.sql.DataSource;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.transaction.Transactional;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import ua.com.foxminded.galvad.university.dao.impl.mappers.TeacherMapper;
+import ua.com.foxminded.galvad.university.config.SpringConfigDAOTest;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
+@SpringJUnitConfig(SpringConfigDAOTest.class)
+@ActiveProfiles("dev")
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
 class TeacherDAOTest {
 
-	private DataSource dataSource;
-	private TeacherDAO teacherDAO = new TeacherDAO();
+	@PersistenceContext
+	private EntityManager entityManager;
 
-	@BeforeEach
-	void setDataSource() {
-		dataSource = new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).addScript("classpath:schema.sql")
-				.addScript("classpath:test-data.sql").build();
-		teacherDAO.setDataSource(dataSource);
-		teacherDAO.setMapper(new TeacherMapper());
-	}
+	@Autowired
+	private TeacherDAO teacherDAO;
 
 	@Test
 	void testCreate_shouldAddNewRowToDatabaseAndRetrieveIt() {
-		teacherDAO.create(new Teacher(3, "TestFirstName", "TestLastName"));
-		Teacher resultTeacher = teacherDAO.retrieve(3);
-		assertEquals(3, resultTeacher.getId());
+		createEntity("TestFirstName", "TestLastName");
+		Teacher resultTeacher = teacherDAO.retrieve(1);
+		assertEquals(1, resultTeacher.getId());
 		assertEquals("TestFirstName", resultTeacher.getFirstName());
 		assertEquals("TestLastName", resultTeacher.getLastName());
 	}
@@ -42,15 +43,13 @@ class TeacherDAOTest {
 	@Test
 	void testCreate_shouldThrowDataAreNotUpdatedException() {
 		dropDB();
-		Teacher teacher = new Teacher(1, "FirstName", "LastName");
+		Teacher teacher = new Teacher();
 		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.create(teacher));
 	}
 
 	@Test
 	void testGetId_shouldReturnCorrectIdForEntity() {
-		Teacher teacher = new Teacher();
-		teacher.setFirstName("Jennie");
-		teacher.setLastName("Crigler");
+		Teacher teacher = createEntity("TestFirstName", "TestLastName");
 		assertEquals(1, teacherDAO.getId(teacher));
 	}
 
@@ -73,9 +72,10 @@ class TeacherDAOTest {
 
 	@Test
 	void testRetrieve_shouldReturnCorrectData() {
+		createEntity("TestFirstName", "TestLastName");
 		assertEquals(1, teacherDAO.retrieve(1).getId());
-		assertEquals("Jennie", teacherDAO.retrieve(1).getFirstName());
-		assertEquals("Crigler", teacherDAO.retrieve(1).getLastName());
+		assertEquals("TestFirstName", teacherDAO.retrieve(1).getFirstName());
+		assertEquals("TestLastName", teacherDAO.retrieve(1).getLastName());
 	}
 
 	@Test
@@ -91,9 +91,10 @@ class TeacherDAOTest {
 
 	@Test
 	void testRetrieveByName_shouldReturnCorrectData() {
-		assertEquals(1, teacherDAO.retrieve("Jennie", "Crigler").getId());
-		assertEquals("Jennie", teacherDAO.retrieve("Jennie", "Crigler").getFirstName());
-		assertEquals("Crigler", teacherDAO.retrieve("Jennie", "Crigler").getLastName());
+		createEntity("TestFirstName", "TestLastName");
+		assertEquals(1, teacherDAO.retrieve("TestFirstName", "TestLastName").getId());
+		assertEquals("TestFirstName", teacherDAO.retrieve("TestFirstName", "TestLastName").getFirstName());
+		assertEquals("TestLastName", teacherDAO.retrieve("TestFirstName", "TestLastName").getLastName());
 	}
 
 	@Test
@@ -106,38 +107,39 @@ class TeacherDAOTest {
 		dropDB();
 		assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve("NONE", "NONE"));
 	}
-	
+
 	@Test
 	void testUpdate_shouldReturnUpdatedEntity() {
-		Teacher teacher = teacherDAO.retrieve(1);
-		teacher.setFirstName("First Name");
-		teacher.setLastName("Last Name");
-		teacherDAO.update(teacher);
-		Teacher retrievedTeacher = teacherDAO.retrieve(1);
-		assertEquals(teacher, retrievedTeacher);
+		createEntity("TestFirstName", "TestLastName");
+		Teacher teacherBeforeUpdate = teacherDAO.retrieve(1);
+		assertEquals(1, teacherBeforeUpdate.getId());
+		assertEquals("TestFirstName", teacherBeforeUpdate.getFirstName());
+		assertEquals("TestLastName", teacherBeforeUpdate.getLastName());
+		teacherBeforeUpdate.setFirstName("NEW First Name");
+		teacherBeforeUpdate.setLastName("NEW Last Name");
+		teacherDAO.update(teacherBeforeUpdate);
+		Teacher teacherAfterUpdate = teacherDAO.retrieve(1);
+		assertEquals(1, teacherAfterUpdate.getId());
+		assertEquals("NEW First Name", teacherAfterUpdate.getFirstName());
+		assertEquals("NEW Last Name", teacherAfterUpdate.getLastName());
 	}
 
 	@Test
 	void testUpdate_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
 		Teacher teacher = new Teacher();
-		teacher.setId(1);
-		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.update(teacher));
-	}
-
-	@Test
-	void testUpdate_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
-		Teacher teacher = new Teacher();
-		teacher.setId(100);
 		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.update(teacher));
 	}
 
 	@Test
 	void testDeleteByEntity_shouldReturnCorrectNumberOfEntities() {
-		Teacher teacher = teacherDAO.retrieve(1);
-		teacherDAO.delete(teacher);
-		int numOfTeachersFromTestData = teacherDAO.findAll().size();
-		assertEquals(1, numOfTeachersFromTestData);
+		createEntity("TestFirstName", "TestLastName");
+		Teacher teacher2 = createEntity("TestFirstName2", "TestLastName2");
+		int numOfTeachersBeforeDelete = teacherDAO.findAll().size();
+		assertEquals(2, numOfTeachersBeforeDelete);
+		teacherDAO.delete(teacher2);
+		int numOfTeachersAfterDelete = teacherDAO.findAll().size();
+		assertEquals(1, numOfTeachersBeforeDelete - numOfTeachersAfterDelete);
 	}
 
 	@Test
@@ -157,27 +159,23 @@ class TeacherDAOTest {
 
 	@Test
 	void testDeleteByID_shouldReturnCorrectNumberOfEntities() {
-		teacherDAO.delete(1);
-		int numOfTeachersFromTestData = teacherDAO.findAll().size();
-		assertEquals(1, numOfTeachersFromTestData);
-	}
-
-	@Test
-	void shouldThrowIllegalArgumentExceptionWhenMapperIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> teacherDAO.setMapper(null));
-	}
-
-	@Test
-	void shouldThrowIllegalArgumentExceptionWhenDatasourceIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> teacherDAO.setDataSource(null));
+		createEntity("TestFirstName", "TestLastName");
+		createEntity("TestFirstName2", "TestLastName2");
+		int numOfTeachersBeforeDelete = teacherDAO.findAll().size();
+		assertEquals(2, numOfTeachersBeforeDelete);
+		teacherDAO.delete(2);
+		int numOfTeachersAfterDelete = teacherDAO.findAll().size();
+		assertEquals(1, numOfTeachersBeforeDelete - numOfTeachersAfterDelete);
 	}
 
 	@Test
 	void testFindAll_shouldFindTwoEntities() {
+		createEntity("TestFirstName", "TestLastName");
+		createEntity("TestFirstName2", "TestLastName2");
 		List<Teacher> retrievedList = teacherDAO.findAll();
 		List<Teacher> expectedList = new ArrayList<>();
-		expectedList.add(new Teacher(1, "Jennie", "Crigler"));
-		expectedList.add(new Teacher(2, "Gladys", "Swon"));
+		expectedList.add(new Teacher(1, "TestFirstName", "TestLastName"));
+		expectedList.add(new Teacher(2, "TestFirstName2", "TestLastName2"));
 		assertEquals(expectedList, retrievedList);
 	}
 
@@ -188,16 +186,26 @@ class TeacherDAOTest {
 	}
 
 	@Test
-	void testFindAll_shouldThrowDataNotFoundExceptionAsNothingFound() {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		String query = "DELETE FROM teachers";
-		jdbcTemplate.execute(query);
-		assertThrows(DataNotFoundException.class, () -> teacherDAO.findAll());
+	void testFindAll_shouldReturnEmptyListWhenNothingFound() {
+		createEntity("TestFirstName", "TestLastName");
+		createEntity("TestFirstName2", "TestLastName2");
+		List<Teacher> retrievedList = teacherDAO.findAll();
+		assertEquals(2, retrievedList.size());
+		entityManager.createNativeQuery("DELETE FROM teachers").executeUpdate();
+		List<Teacher> expectedList = new ArrayList<>();
+		retrievedList = teacherDAO.findAll();
+		assertEquals(expectedList, retrievedList);
 	}
 
 	private void dropDB() {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		String query = "DROP ALL OBJECTS";
-		jdbcTemplate.execute(query);
+		entityManager.createNativeQuery("DROP ALL OBJECTS").executeUpdate();
+	}
+
+	private Teacher createEntity(String firstName, String lastName) {
+		Teacher entity = new Teacher();
+		entity.setFirstName(firstName);
+		entity.setLastName(lastName);
+		teacherDAO.create(entity);
+		return entity;
 	}
 }

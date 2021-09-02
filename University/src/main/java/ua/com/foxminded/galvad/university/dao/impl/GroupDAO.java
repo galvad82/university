@@ -43,13 +43,17 @@ public class GroupDAO implements DAO<Integer, Group> {
 			group = entityManager.find(Group.class, id);
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a group from DB. ID={}", id);
-			throw new DataAreNotUpdatedException(String.format("Can't retrieve a group from DB. ID=%d", id));
+			throw new DataNotFoundException(String.format("Can't retrieve a group from DB. ID=%d", id));
+		}
+		if (group == null) {
+			LOGGER.info("A group with ID={} is not found", id);
+			throw new DataNotFoundException(String.format("A group with ID=%d is not found", id));
 		}
 		LOGGER.trace("The group with id={} retrieved from DB successfully", id);
 		return group;
 	}
 
-	public Group retrieve(String groupName) {
+	public Group retrieve(String groupName) throws DataNotFoundException {
 		LOGGER.trace("Going to retrieve a group from DB. Name={}", groupName);
 		Group group = null;
 		try {
@@ -57,7 +61,11 @@ public class GroupDAO implements DAO<Integer, Group> {
 					.getSingleResult();
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a group from DB. Name={}", groupName);
-			throw new DataAreNotUpdatedException(String.format("Can't retrieve a group from DB. Name=%s", groupName));
+			throw new DataNotFoundException(String.format("Can't retrieve a group from DB. Name=%s", groupName));
+		}
+		if (group == null) {
+			LOGGER.info("A group with Name={} is not found", groupName);
+			throw new DataNotFoundException(String.format("A group with Name=%s is not found", groupName));
 		}
 		LOGGER.trace("The group with name={} retrieved from DB successfully", groupName);
 		return group;
@@ -89,6 +97,7 @@ public class GroupDAO implements DAO<Integer, Group> {
 			isDeleted = entityManager.createQuery("delete from Group gr where gr.id=:id").setParameter("id", id)
 					.executeUpdate();
 		} catch (Exception e) {
+			e.printStackTrace();
 			LOGGER.info("Can't delete a group. ID={}", id);
 			throw new DataAreNotUpdatedException(String.format("Can't delete a group. ID=%d", id));
 		}
@@ -111,7 +120,7 @@ public class GroupDAO implements DAO<Integer, Group> {
 			resultList = entityManager.createQuery("from Group").getResultList();
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a list of groups.");
-			throw new DataAreNotUpdatedException("Can't retrieve a list of groups.");
+			throw new DataNotFoundException("Can't retrieve a list of groups.");
 		}
 		if (resultList.isEmpty()) {
 			LOGGER.info("Retrieved an EMPTY list of Groups");

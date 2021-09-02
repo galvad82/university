@@ -5,51 +5,53 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.sql.DataSource;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.transaction.Transactional;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import ua.com.foxminded.galvad.university.dao.impl.mappers.ClassroomMapper;
+import ua.com.foxminded.galvad.university.config.SpringConfigDAOTest;
 import ua.com.foxminded.galvad.university.model.Classroom;
 
+@SpringJUnitConfig(SpringConfigDAOTest.class)
+@ActiveProfiles("dev")
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
 class ClassroomDAOTest {
 
-	private DataSource dataSource;
-	private ClassroomDAO classroomDAO = new ClassroomDAO();
+	@PersistenceContext
+	private EntityManager entityManager;
 
-	@BeforeEach
-	void setDataSource() {
-		dataSource = new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).addScript("classpath:schema.sql")
-				.addScript("classpath:test-data.sql").build();
-		classroomDAO.setDataSource(dataSource);
-		classroomDAO.setMapper(new ClassroomMapper());
-	}
+	@Autowired
+	private ClassroomDAO classroomDAO;
 
 	@Test
 	void testCreate_shouldAddNewRowToDatabaseAndRetrieveIt() {
-		classroomDAO.create(new Classroom(3, "TestName"));
-		Classroom resultClassroom = classroomDAO.retrieve(3);
-		assertEquals(3, resultClassroom.getId());
+		createEntity("TestName");
+		Classroom resultClassroom = classroomDAO.retrieve(1);
+		assertEquals(1, resultClassroom.getId());
 		assertEquals("TestName", resultClassroom.getName());
 	}
 
 	@Test
 	void testCreate_shouldThrowDataAreNotUpdatedException() {
 		dropDB();
-		Classroom classroom = new Classroom(1, "Test Name");
+		Classroom classroom = new Classroom();
+		classroom.setName("TestName");
 		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.create(classroom));
 	}
 
 	@Test
 	void testGetId_shouldReturnCorrectIdForEntity() {
-		Classroom classroom = new Classroom();
-		classroom.setName("ROOM-15");
-		assertEquals(1, classroomDAO.getId(classroom));
+		createEntity("TestName");
+		Classroom resultClassroom = classroomDAO.retrieve(1);
+		assertEquals(1, resultClassroom.getId());
 	}
 
 	@Test
@@ -69,8 +71,10 @@ class ClassroomDAOTest {
 
 	@Test
 	void testRetrieve_shouldReturnCorrectData() {
-		assertEquals(1, classroomDAO.retrieve(1).getId());
-		assertEquals("ROOM-15", classroomDAO.retrieve(1).getName());
+		createEntity("TestName");
+		Classroom resultClassroom = classroomDAO.retrieve(1);
+		assertEquals(1, resultClassroom.getId());
+		assertEquals("TestName", resultClassroom.getName());
 	}
 
 	@Test
@@ -86,13 +90,15 @@ class ClassroomDAOTest {
 
 	@Test
 	void testRetrieveByName_shouldReturnCorrectData() {
-		assertEquals("ROOM-15", classroomDAO.retrieve("ROOM-15").getName());
+		createEntity("TestName");
+		assertEquals("TestName", classroomDAO.retrieve("TestName").getName());
+		assertEquals(1, classroomDAO.retrieve("TestName").getId());
 	}
 
 	@Test
 	void testRetrieveByName_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve("ROOM-15"));
+		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve("TestName"));
 	}
 
 	@Test
@@ -102,34 +108,33 @@ class ClassroomDAOTest {
 
 	@Test
 	void testUpdate_shouldReturnUpdatedEntity() {
-		Classroom classroom = classroomDAO.retrieve(1);
-		classroom.setName("New Name");
-		classroomDAO.update(classroom);
-		Classroom retrievedClassroom = classroomDAO.retrieve(1);
-		assertEquals(classroom, retrievedClassroom);
+		createEntity("TestName");
+		Classroom classroomBeforeUpdate = classroomDAO.retrieve(1);
+		assertEquals("TestName", classroomBeforeUpdate.getName());
+		assertEquals(1, classroomBeforeUpdate.getId());
+		classroomBeforeUpdate.setName("New Name");
+		classroomDAO.update(classroomBeforeUpdate);
+		Classroom classroomAfterUpdate = classroomDAO.retrieve(1);
+		assertEquals("New Name", classroomAfterUpdate.getName());
+		assertEquals(1, classroomAfterUpdate.getId());
 	}
 
 	@Test
 	void testUpdate_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
 		Classroom classroom = new Classroom();
-		classroom.setId(1);
-		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.update(classroom));
-	}
-
-	@Test
-	void testUpdate_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
-		Classroom classroom = new Classroom();
-		classroom.setId(100);
 		assertThrows(DataAreNotUpdatedException.class, () -> classroomDAO.update(classroom));
 	}
 
 	@Test
 	void testDeleteByEntity_shouldReturnCorrectNumberOfEntities() {
-		Classroom classroom = classroomDAO.retrieve(1);
-		classroomDAO.delete(classroom);
-		int numOfClassroomsFromTestData = classroomDAO.findAll().size();
-		assertEquals(1, numOfClassroomsFromTestData);
+		createEntity("TestName");
+		Classroom classroom2 = createEntity("TestName2");
+		int numOfClassroomsBeforeDelete = classroomDAO.findAll().size();
+		assertEquals(2, numOfClassroomsBeforeDelete);
+		classroomDAO.delete(classroom2);
+		int numOfClassroomsAfterDelete = classroomDAO.findAll().size();
+		assertEquals(1, numOfClassroomsBeforeDelete - numOfClassroomsAfterDelete);
 	}
 
 	@Test
@@ -149,17 +154,23 @@ class ClassroomDAOTest {
 
 	@Test
 	void testDeleteByID_shouldReturnCorrectNumberOfEntities() {
-		classroomDAO.delete(1);
-		int numOfClassroomsFromTestData = classroomDAO.findAll().size();
-		assertEquals(1, numOfClassroomsFromTestData);
+		createEntity("TestName");
+		createEntity("TestName2");
+		int numOfClassroomsBeforeDelete = classroomDAO.findAll().size();
+		assertEquals(2, numOfClassroomsBeforeDelete);
+		classroomDAO.delete(2);
+		int numOfClassroomsAfterDelete = classroomDAO.findAll().size();
+		assertEquals(1, numOfClassroomsBeforeDelete - numOfClassroomsAfterDelete);
 	}
 
 	@Test
 	void testFindAll_shouldFindTwoEntities() {
+		createEntity("TestName");
+		createEntity("TestName2");
 		List<Classroom> retrievedList = classroomDAO.findAll();
 		List<Classroom> expectedList = new ArrayList<>();
-		expectedList.add(new Classroom(1, "ROOM-15"));
-		expectedList.add(new Classroom(2, "ROOM-20"));
+		expectedList.add(new Classroom(1, "TestName"));
+		expectedList.add(new Classroom(2, "TestName2"));
 		assertEquals(expectedList, retrievedList);
 	}
 
@@ -171,25 +182,25 @@ class ClassroomDAOTest {
 
 	@Test
 	void testFindAll_shouldThrowDataNotFoundExceptionAsNothingFound() {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		String query = "DELETE FROM classrooms";
-		jdbcTemplate.execute(query);
-		assertThrows(DataNotFoundException.class, () -> classroomDAO.findAll());
-	}
-
-	@Test
-	void shouldThrowIllegalArgumentExceptionWhenDatasourceIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> classroomDAO.setDataSource(null));
-	}
-
-	@Test
-	void shouldThrowIllegalArgumentExceptionWhenMapperIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> classroomDAO.setMapper(null));
+		createEntity("TestName");
+		createEntity("TestName2");
+		List<Classroom> retrievedList = classroomDAO.findAll();
+		assertEquals(2, retrievedList.size());
+		entityManager.createNativeQuery("DELETE FROM classrooms").executeUpdate();
+		List<Classroom> expectedList = new ArrayList<>();
+		retrievedList = classroomDAO.findAll();
+		assertEquals(expectedList, retrievedList);
 	}
 
 	private void dropDB() {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		String query = "DROP ALL OBJECTS";
-		jdbcTemplate.execute(query);
+		entityManager.createNativeQuery("DROP ALL OBJECTS").executeUpdate();
 	}
+
+	private Classroom createEntity(String entityName) {
+		Classroom entity = new Classroom();
+		entity.setName(entityName);
+		classroomDAO.create(entity);
+		return entity;
+	}
+
 }
