@@ -12,10 +12,10 @@ import org.apache.commons.lang3.StringUtils;
 @Entity
 @Table(name = "classrooms")
 public class Classroom {
-	
+
 	@Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE )
-    @Column(name = "id")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
 	private Integer id;
 	@Column(name = "name")
 	private String name;
@@ -36,9 +36,9 @@ public class Classroom {
 			throw new IllegalArgumentException("Cannot create a Classroom because of illegal arguments");
 		}
 	}
-	
+
 	public Classroom() {
-		
+
 	}
 
 	public String getName() {

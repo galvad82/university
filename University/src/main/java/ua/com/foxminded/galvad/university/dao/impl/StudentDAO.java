@@ -29,7 +29,6 @@ public class StudentDAO implements DAO<Integer, Student> {
 		try {
 			entityManager.persist(student);
 		} catch (Exception e) {
-			e.printStackTrace();
 			LOGGER.info("Student with firstName={}, lastName={} wasn't added to DB.", student.getFirstName(),
 					student.getLastName());
 			throw new DataAreNotUpdatedException(
@@ -46,9 +45,12 @@ public class StudentDAO implements DAO<Integer, Student> {
 		try {
 			student = entityManager.find(Student.class, id);
 		} catch (Exception e) {
-			e.printStackTrace();
 			LOGGER.info("Can't retrieve a student from DB. ID={}", id);
-			throw new DataAreNotUpdatedException(String.format("Can't retrieve a student from DB. ID=%d", id));
+			throw new DataNotFoundException(String.format("Can't retrieve a student from DB. ID=%d", id));
+		}
+		if (student == null) {
+			LOGGER.info("A student with ID={} is not found", id);
+			throw new DataNotFoundException(String.format("A student with ID=%d is not found", id));
 		}
 		LOGGER.trace("The student with id={} retrieved from DB successfully", id);
 		return student;
@@ -61,10 +63,13 @@ public class StudentDAO implements DAO<Integer, Student> {
 			student = (Student) entityManager.createQuery("from Student where firstName=:firstName and lastName=:lastName")
 					.setParameter("firstName", firstName).setParameter("lastName", lastName).getSingleResult();
 		} catch (Exception e) {
-			e.printStackTrace();
 			LOGGER.info("Can't retrieve a student from DB. First_Name={}, Last_Name={}", firstName, lastName);
-			throw new DataAreNotUpdatedException(
+			throw new DataNotFoundException(
 					String.format("Can't retrieve a student from DB. First_Name=%s, Last_Name=%s", firstName, lastName));
+		}
+		if (student == null) {
+			LOGGER.info("A student with First_Name={}, Last_Name={} is not found", firstName, lastName);
+			throw new DataNotFoundException(String.format("A student with First_Name=%s, Last_Name=%s is not found", firstName, lastName));
 		}
 		LOGGER.trace("The student with First_Name={}, Last_Name={} retrieved from DB successfully", firstName, lastName);
 		return student;
@@ -79,7 +84,6 @@ public class StudentDAO implements DAO<Integer, Student> {
 		try {
 			entityManager.merge(student);
 		} catch (Exception e) {
-			e.printStackTrace();
 			LOGGER.info("Can't update a student. ID={}", student.getId());
 			throw new DataAreNotUpdatedException(String.format("Can't update a student. ID=%d", student.getId()));
 		}
@@ -93,11 +97,9 @@ public class StudentDAO implements DAO<Integer, Student> {
 			isDeleted = entityManager.createQuery("DELETE FROM Student student WHERE student.id=:id")
 					.setParameter("id", id).executeUpdate();
 		} catch (Exception e) {
-			e.printStackTrace();
 			LOGGER.info("Can't delete a student. ID={}", id);
 			throw new DataAreNotUpdatedException(String.format("Can't delete a student. ID=%d", id));
 		}
-		System.out.println(isDeleted);
 		if (isDeleted != 0) {
 			LOGGER.trace("The student entity deleted, ID={}", id);
 		} else {
@@ -116,9 +118,8 @@ public class StudentDAO implements DAO<Integer, Student> {
 		try {
 			resultList = entityManager.createQuery("from Student").getResultList();
 		} catch (Exception e) {
-			e.printStackTrace();
 			LOGGER.info("Can't retrieve a list of students.");
-			throw new DataAreNotUpdatedException("Can't retrieve a list of students.");
+			throw new DataNotFoundException("Can't retrieve a list of students.");
 		}
 		if (resultList.isEmpty()) {
 			LOGGER.info("Retrieved an EMPTY list of Students");

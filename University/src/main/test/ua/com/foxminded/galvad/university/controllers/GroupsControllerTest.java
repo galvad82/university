@@ -10,7 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,7 +81,7 @@ class GroupsControllerTest {
 	void testAddViewGet() throws Exception {
 		GroupDTO groupDTO = new GroupDTO();
 		groupDTO.setName("");
-		List<StudentDTO> listOfStudents = new ArrayList<>();
+		Set<StudentDTO> listOfStudents = new HashSet<>();
 		when(studentServiceMock.findAllUnassignedStudents()).thenReturn(listOfStudents);
 		mockMvc.perform(get("/groups/add")).andExpect(view().name("groups/add"))
 				.andExpect(matchAll(model().attribute("groupDTO", groupDTO)));
@@ -152,7 +154,7 @@ class GroupsControllerTest {
 		expectedGroupDTO.setName("NewName");
 		expectedGroupDTO.setListOfStudent(listOfStudents);
 
-		when(groupServiceMock.retrieveWithListOfStudents(initialGroupDTO.getName())).thenReturn(initialGroupDTO);
+		when(groupServiceMock.retrieve(initialGroupDTO.getName())).thenReturn(initialGroupDTO);
 		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", expectedGroupDTO)
 				.flashAttr("initialName", initialGroupDTO.getName());
 		mockMvc.perform(request).andExpect(matchAll(model().attribute("result", "Group was successfully updated")))
@@ -187,7 +189,7 @@ class GroupsControllerTest {
 		expectedGroupDTO.setName("NewName");
 		expectedGroupDTO.setListOfStudent(listOfStudentsWithoutEmpty);
 
-		when(groupServiceMock.retrieveWithListOfStudents(initialGroupDTO.getName())).thenReturn(initialGroupDTO);
+		when(groupServiceMock.retrieve(initialGroupDTO.getName())).thenReturn(initialGroupDTO);
 		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", newGroupDTO)
 				.flashAttr("initialName", initialGroupDTO.getName());
 		mockMvc.perform(request).andExpect(matchAll(model().attribute("result", "Group was successfully updated")))
@@ -200,7 +202,7 @@ class GroupsControllerTest {
 	void testDeleteViewPost() throws Exception {
 		GroupDTO groupDTO = new GroupDTO();
 		groupDTO.setName("AB-123");
-		when(groupServiceMock.retrieveWithListOfStudents("AB-123")).thenReturn(groupDTO);
+		when(groupServiceMock.retrieve("AB-123")).thenReturn(groupDTO);
 		mockMvc.perform(post("/groups/delete").param("name", "AB-123"))
 				.andExpect(matchAll(model().attribute("group", groupDTO))).andExpect(view().name("groups/delete"));
 	}
@@ -217,7 +219,7 @@ class GroupsControllerTest {
 		groupDTO.setListOfStudent(listOfStudent);
 
 		DataNotFoundException expectedException = new DataNotFoundException("Error Message");
-		when(groupServiceMock.retrieveWithListOfStudents("TEST")).thenThrow(expectedException);
+		when(groupServiceMock.retrieve("TEST")).thenThrow(expectedException);
 		mockMvc.perform(post("/groups/delete").param("name", "TEST"))
 				.andExpect(matchAll(model().attribute("group", groupDTO))).andExpect(view().name("groups/delete"));
 	}
@@ -225,7 +227,7 @@ class GroupsControllerTest {
 	@Test
 	void testDeleteResultViewPost() throws Exception {
 		mockMvc.perform(post("/groups/delete/result").param("name", "name"))
-				.andExpect(matchAll(model().attribute("result", "The group was successfully deleted.")))
+				.andExpect(matchAll(model().attribute("result", "The group name was successfully deleted.")))
 				.andExpect(view().name("groups/result"));
 	}
 

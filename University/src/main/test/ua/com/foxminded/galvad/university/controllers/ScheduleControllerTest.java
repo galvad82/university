@@ -86,7 +86,7 @@ class ScheduleControllerTest {
 	@Test
 	void testGroupView() throws Exception {
 		List<GroupDTO> listOfGroups = createListOfGroups();
-		when(groupServiceMock.findAllWithoutStudentList()).thenReturn(listOfGroups);
+		when(groupServiceMock.findAll()).thenReturn(listOfGroups);
 		mockMvc.perform(get("/schedule/group")).andExpect(status().isOk()).andExpect(view().name("schedule/group"))
 				.andExpect(model().attribute("listOfGroups", listOfGroups));
 	}

@@ -3,101 +3,66 @@ package ua.com.foxminded.galvad.university.services;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import javax.sql.DataSource;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.transaction.Transactional;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
 
 import ua.com.foxminded.galvad.university.config.SpringConfigTest;
-import ua.com.foxminded.galvad.university.dao.impl.GroupDAO;
-import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
-import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
-import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
-import ua.com.foxminded.galvad.university.dto.StudentDTO;
-import ua.com.foxminded.galvad.university.dto.TeacherDTO;
+import ua.com.foxminded.galvad.university.model.Classroom;
+import ua.com.foxminded.galvad.university.model.Course;
+import ua.com.foxminded.galvad.university.model.Group;
+import ua.com.foxminded.galvad.university.model.Lesson;
 import ua.com.foxminded.galvad.university.model.Student;
+import ua.com.foxminded.galvad.university.model.Teacher;
 
 @SpringJUnitWebConfig(SpringConfigTest.class)
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
 class GroupServiceTest {
 
 	@Autowired
-	private GroupDAO groupDAO;
-	@Autowired
-	private StudentDAO studentDAO;
-	@Autowired
-	private StudentService studentService;
-	@Autowired
-	private GroupService groupService = new GroupService();
+	private GroupService groupService;
 
-	private DataSource dataSource;
-
-	@BeforeEach
-	void setDatasoure() {
-		dataSource = new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).addScript("classpath:schema.sql")
-				.addScript("classpath:test-data.sql").build();
-		groupDAO.setDataSource(dataSource);
-		studentDAO.setDataSource(dataSource);
-	}
+	@PersistenceContext
+	private EntityManager entityManager;
 
 	@Test
 	void testCreate() {
-		GroupDTO groupDTO = new GroupDTO();
-		groupDTO.setName("TestName");
-		List<StudentDTO> list = new ArrayList<>();
-		list.add(studentService.findAll().get(0));
-		list.add(studentService.findAll().get(1));
-		groupDTO.setListOfStudent(list);
-		groupService.create(groupDTO);
-		GroupDTO retrievedDTO = groupService.findAll().get(2);
+		GroupDTO groupDTO = createDTO("TestName");
+		GroupDTO retrievedDTO = groupService.findAll().get(0);
 		assertEquals(groupDTO, retrievedDTO);
 	}
 
 	@Test
 	void testRetrieve() {
-		GroupDTO groupDTO = groupService.retrieve("AB-123");
-		assertEquals("AB-123", groupDTO.getName());
-		assertTrue(groupDTO.getListOfStudent().isEmpty());
-	}
-	
-	@Test
-	void testRetrieveWithListOfStudents() {
-		GroupDTO groupDTO = groupService.retrieveWithListOfStudents("AB-123");
-		assertEquals("AB-123", groupDTO.getName());
-		assertEquals(2, groupDTO.getListOfStudent().size());
-		assertEquals("John", groupDTO.getListOfStudent().get(0).getFirstName());
-		assertEquals("Nick", groupDTO.getListOfStudent().get(1).getFirstName());
-		assertEquals("Davidson", groupDTO.getListOfStudent().get(0).getLastName());
-		assertEquals("Johnson", groupDTO.getListOfStudent().get(1).getLastName());
-	}
-	
-	@Test
-	void testGetGroupNameForStudent() {
-		assertEquals("AB-123", groupService.getGroupNameForStudent(new Student(1, "John", "Davidson")));
+		GroupDTO groupDTO = createDTO("TestName");
+		GroupDTO retrievedDTO = groupService.retrieve("TestName");
+		assertEquals(groupDTO, retrievedDTO);
 	}
 
 	@Test
 	void testRetrieveByFindAll() {
-		GroupDTO groupDTO = groupService.findAll().get(0);
-		assertEquals("AB-123", groupDTO.getName());
-		assertEquals("John", groupDTO.getListOfStudent().get(0).getFirstName());
-		assertEquals("Nick", groupDTO.getListOfStudent().get(1).getFirstName());
-		assertEquals("Davidson", groupDTO.getListOfStudent().get(0).getLastName());
-		assertEquals("Johnson", groupDTO.getListOfStudent().get(1).getLastName());
+		GroupDTO groupDTO = createDTO("TestName");
+		GroupDTO retrievedDTO = groupService.findAll().get(0);
+		assertEquals(groupDTO, retrievedDTO);
 	}
 
 	@Test
 	void testUpdate() {
-		GroupDTO initialDTO = groupService.findAll().get(0);
+		GroupDTO initialDTO = createDTO("TestName");
 		GroupDTO newDTO = new GroupDTO();
-		newDTO.setName(initialDTO.getName());
 		newDTO.setListOfStudent(initialDTO.getListOfStudent());
 		newDTO.setName("AA-123");
 		groupService.update(initialDTO, newDTO);
@@ -107,78 +72,86 @@ class GroupServiceTest {
 
 	@Test
 	void testDelete() {
+		List<GroupDTO> expectedList = new ArrayList<>();
+		expectedList.add(createDTO("TestName"));
+		expectedList.add(createDTO("TestName2"));
 		List<GroupDTO> listBeforeDel = groupService.findAll();
-		groupService.delete(listBeforeDel.get(0));
+		assertEquals(expectedList, listBeforeDel);
+		groupService.delete(expectedList.get(1));
+		expectedList.remove(1);
 		List<GroupDTO> listAfterDel = groupService.findAll();
-		assertEquals(listBeforeDel.size() - 1, listAfterDel.size());
+		assertEquals(expectedList, listAfterDel);
 	}
 
 	@Test
 	void testFindAll() {
-		List<GroupDTO> list = groupService.findAll();
-		GroupDTO groupDTO = list.get(0);
-		assertEquals(2, list.size());
-		assertEquals("AB-123", groupDTO.getName());
-		assertEquals("John", groupDTO.getListOfStudent().get(0).getFirstName());
-		assertEquals("Nick", groupDTO.getListOfStudent().get(1).getFirstName());
-		assertEquals("Davidson", groupDTO.getListOfStudent().get(0).getLastName());
-		assertEquals("Johnson", groupDTO.getListOfStudent().get(1).getLastName());
-		assertEquals(2, groupDTO.getListOfStudent().size());
-		GroupDTO groupDTO2 = list.get(1);
-		assertEquals("CD-456", groupDTO2.getName());
-		assertEquals("Mike", groupDTO2.getListOfStudent().get(0).getFirstName());
-		assertEquals("Peter", groupDTO2.getListOfStudent().get(1).getFirstName());
-		assertEquals("Dombrovsky", groupDTO2.getListOfStudent().get(0).getLastName());
-		assertEquals("Eastwood", groupDTO2.getListOfStudent().get(1).getLastName());
-		assertEquals(3, groupDTO2.getListOfStudent().size());
+		GroupDTO group = createDTO("TestName");
+		GroupDTO group1 = createDTO("TestName1");
+		GroupDTO group2 = createDTO("TestName2");
+		List<GroupDTO> retrievedList = groupService.findAll();
+		assertEquals(group, retrievedList.get(0));
+		assertEquals(group1, retrievedList.get(1));
+		assertEquals(group2, retrievedList.get(2));
 	}
 
-	@Test
-	void testFindAllWithoutStudentList() {
-		List<GroupDTO> list = groupService.findAllWithoutStudentList();
-		GroupDTO groupDTO = list.get(0);
-		assertEquals(2, list.size());
-		assertEquals("AB-123", groupDTO.getName());
-		assertTrue(groupDTO.getListOfStudent().isEmpty());
-		GroupDTO groupDTO2 = list.get(1);
-		assertEquals("CD-456", groupDTO2.getName());
-		assertTrue(groupDTO2.getListOfStudent().isEmpty());
-	}
-	
 	@Test
 	void testFindAllLessonsForGroup() {
-
-		GroupDTO groupDTO = new GroupDTO();
-		groupDTO.setName("AB-123");
-		StudentDTO studentA = new StudentDTO();
-		studentA.setFirstName("John");
-		studentA.setLastName("Davidson");
-		StudentDTO studentB=new StudentDTO();
-		studentB.setFirstName("Nick");
-		studentB.setLastName("Johnson");
-		List<StudentDTO> listOfStudents = new ArrayList<>();
-		listOfStudents.add(studentA);
-		listOfStudents.add(studentB);
-		groupDTO.setListOfStudent(listOfStudents);		
+		createLesson("Name", "FirstName", "LastName");
+		createLesson("Name2", "FirstName2", "LastName2");
+		createLesson("Name3", "FirstName3", "LastName3");
+		List<LessonDTO> listOfLessons = groupService.findAllLessonsForGroup("Name3");
+		assertEquals("Name3", listOfLessons.get(0).getClassroom().getName());
+		assertEquals("Name3", listOfLessons.get(0).getCourse().getName());
+		assertEquals("LastName3", listOfLessons.get(0).getCourse().getTeacher().getLastName());
+		assertEquals("Name3", listOfLessons.get(0).getGroup().getName());
+		assertEquals(2222L, listOfLessons.get(0).getDuration());
+		assertEquals(111111L, listOfLessons.get(0).getStartTime());
+		assertEquals(1, listOfLessons.size());
+	}
 		
-		ClassroomDTO classroomDTO = new ClassroomDTO();
-		classroomDTO.setName("ROOM-15");
-		CourseDTO courseDTO = new CourseDTO();
-		courseDTO.setName("Science");
-		TeacherDTO teacherDTO = new TeacherDTO();
-		teacherDTO.setFirstName("Jennie");
-		teacherDTO.setLastName("Crigler");
-		courseDTO.setTeacher(teacherDTO);
-		
-		LessonDTO lessonDTO = new LessonDTO();
-		lessonDTO.setClassroom(classroomDTO);
-		lessonDTO.setCourse(courseDTO);
-		lessonDTO.setGroup(groupDTO);
-		lessonDTO.setDuration(2700000l);
-		lessonDTO.setStartTime(1616510000000l);		
-		List<LessonDTO> listOfLessons = new ArrayList<LessonDTO>();
-		listOfLessons.add(lessonDTO);
-
-		assertEquals(listOfLessons, groupService.findAllLessonsForGroup("AB-123"));
+	private GroupDTO createDTO(String name) {
+		Group group = new Group();
+		group.setName(name);
+		Student student = new Student();
+		student.setFirstName(name);
+		student.setLastName("LastName");
+		entityManager.persist(student);
+		Set<Student> setOfStudents = new HashSet<>();
+		setOfStudents.add(student);
+		group.setSetOfStudent(setOfStudents);
+		entityManager.persist(group);
+		return groupService.retrieve(name);
+	}
+	
+	private Lesson createLesson(String name, String firstName, String lastName) {
+		Student student = new Student();
+		student.setFirstName(firstName);
+		student.setLastName(lastName);
+		entityManager.persist(student);
+		Group group = new Group();
+		group.setName(name);
+		Set<Student> setOfStudents = new HashSet<>();
+		setOfStudents.add(student);
+		group.setSetOfStudent(setOfStudents);
+		entityManager.persist(group);		
+		Teacher teacher = new Teacher();
+		teacher.setFirstName(firstName);
+		teacher.setLastName(lastName);
+		entityManager.persist(teacher);
+		Course course = new Course();
+		course.setName(name);
+		course.setTeacher(teacher);
+		entityManager.persist(course);
+		Classroom classroom = new Classroom();
+		classroom.setName(name);
+		entityManager.persist(classroom);
+		Lesson entity = new Lesson();
+		entity.setClassroom(classroom);
+		entity.setCourse(course);
+		entity.setGroup(group);
+		entity.setStartTime(111111L);
+		entity.setDuration(2222L);
+		entityManager.persist(entity);
+		return entity;
 	}
 }

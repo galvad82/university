@@ -4,39 +4,37 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.transaction.Transactional;
 
-import javax.sql.DataSource;
-
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import ua.com.foxminded.galvad.university.dao.impl.mappers.StudentMapper;
+import ua.com.foxminded.galvad.university.config.SpringConfigDAOTest;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
 
+@SpringJUnitConfig(SpringConfigDAOTest.class)
+@ActiveProfiles("dev")
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
+@Transactional
 class StudentDAOTest {
-	private DataSource dataSource;
-	private StudentDAO studentDAO = new StudentDAO();
 
-	@BeforeEach
-	void setDataSource() {
-		dataSource = new EmbeddedDatabaseBuilder().setType(EmbeddedDatabaseType.H2).addScript("classpath:schema.sql")
-				.addScript("classpath:test-data.sql").build();
-		studentDAO.setDataSource(dataSource);
-		studentDAO.setMapper(new StudentMapper());
-	}
+	@PersistenceContext
+	private EntityManager entityManager;
+
+	@Autowired
+	private StudentDAO studentDAO = new StudentDAO();
 
 	@Test
 	void testCreate_shouldAddNewRowToDatabaseAndRetrieveIt() {
-		studentDAO.create(new Student(7, "TestFirstName", "TestLastName"));
-		Student resultStudent = studentDAO.retrieve(7);
-		assertEquals(7, resultStudent.getId());
-		assertEquals("TestFirstName", resultStudent.getFirstName());
-		assertEquals("TestLastName", resultStudent.getLastName());
+		Student student = createEntity("TestFirstName", "TestLastName");
+		assertEquals(student, studentDAO.retrieve(1));
 	}
 
 	@Test
@@ -48,9 +46,8 @@ class StudentDAOTest {
 
 	@Test
 	void testRetrieve_shouldReturnCorrectData() {
-		assertEquals(1, studentDAO.retrieve(1).getId());
-		assertEquals("John", studentDAO.retrieve(1).getFirstName());
-		assertEquals("Davidson", studentDAO.retrieve(1).getLastName());
+		Student student = createEntity("TestFirstName", "TestLastName");
+		assertEquals(student, studentDAO.retrieve(1));
 	}
 
 	@Test
@@ -66,9 +63,8 @@ class StudentDAOTest {
 
 	@Test
 	void testRetrieveByName_shouldReturnCorrectData() {
-		assertEquals(1, studentDAO.retrieve("John", "Davidson").getId());
-		assertEquals("John", studentDAO.retrieve("John", "Davidson").getFirstName());
-		assertEquals("Davidson", studentDAO.retrieve("John", "Davidson").getLastName());
+		Student student = createEntity("TestFirstName", "TestLastName");
+		assertEquals(student, studentDAO.retrieve("TestFirstName", "TestLastName"));
 	}
 
 	@Test
@@ -83,26 +79,8 @@ class StudentDAOTest {
 	}
 
 	@Test
-	void testGetGroupId_shouldReturnCorrectIdForEntity() {
-		assertEquals(1, studentDAO.getGroupId(new Student(1, "John", "Davidson")));
-	}
-
-	@Test
-	void testGetGroupIdWithNonexistentStudent_shouldReturnZero() {
-		assertEquals(0, studentDAO.getGroupId(new Student(10, "NONE", "NONE")));
-	}
-
-	@Test
-	void testGetGroupId__shouldReturnZero() {
-		dropDB();
-		assertEquals(0, studentDAO.getGroupId(new Student(10, "NONE", "NONE")));
-	}
-
-	@Test
 	void testGetId_shouldReturnCorrectIdForEntity() {
-		Student student = new Student();
-		student.setFirstName("John");
-		student.setLastName("Davidson");
+		Student student = createEntity("TestFirstName", "TestLastName");
 		assertEquals(1, studentDAO.getId(student));
 	}
 
@@ -125,12 +103,18 @@ class StudentDAOTest {
 
 	@Test
 	void testUpdate_shouldReturnUpdatedEntity() {
-		Student student = studentDAO.retrieve(1);
-		student.setFirstName("First Name");
-		student.setLastName("Last Name");
-		studentDAO.update(student);
-		Student retrievedStudent = studentDAO.retrieve(1);
-		assertEquals(student, retrievedStudent);
+		Student student = createEntity("TestFirstName", "TestLastName");
+		Student studentBeforeUpdate = studentDAO.retrieve(1);
+		assertEquals(student, studentBeforeUpdate);
+		studentBeforeUpdate.setFirstName("NEW First Name");
+		studentBeforeUpdate.setLastName("NEW Last Name");
+		Group newGroup = new Group();
+		newGroup.setName("NewGroup");
+		entityManager.persist(newGroup);
+		studentBeforeUpdate.setGroup(newGroup);
+		studentDAO.update(studentBeforeUpdate);
+		Student studentAfterUpdate = studentDAO.retrieve(1);
+		assertEquals(studentBeforeUpdate, studentAfterUpdate);
 	}
 
 	@Test
@@ -142,47 +126,14 @@ class StudentDAOTest {
 	}
 
 	@Test
-	void testUpdate_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
-		Student student = new Student();
-		student.setId(100);
-		assertThrows(DataAreNotUpdatedException.class, () -> studentDAO.update(student));
-	}
-
-	@Test
-	void testUpdateGroupForStudent_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
-		dropDB();
-		Student student = new Student();
-		student.setId(100);
-		Group group = new Group();
-		group.setId(100);
-		assertThrows(DataAreNotUpdatedException.class, () -> studentDAO.updateGroupForStudent(student, group));
-	}
-
-	@Test
-	void testUpdateGroupForStudent_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
-		Student student = new Student();
-		student.setId(100);
-		Group group = new Group();
-		group.setId(100);
-		assertThrows(DataAreNotUpdatedException.class, () -> studentDAO.updateGroupForStudent(student, group));
-	}
-
-	@Test
-	void testUpdateGroupForStudent_shouldReturnUpdatedEntity() {
-		Student student = studentDAO.retrieve(1);
-		assertEquals(1, studentDAO.getGroupId(student));
-		Group group = new Group();
-		group.setId(2);
-		studentDAO.updateGroupForStudent(student, group);
-		assertEquals(2, studentDAO.getGroupId(student));
-	}
-
-	@Test
 	void testDeleteByEntity_shouldReturnCorrectNumberOfEntities() {
-		Student student = studentDAO.retrieve(1);
-		studentDAO.delete(student);
-		int numOfStudentsFromTestData = studentDAO.findAll().size();
-		assertEquals(5, numOfStudentsFromTestData);
+		createEntity("TestFirstName", "TestLastName");
+		Student student2 = createEntity("TestFirstName2", "TestLastName2");
+		int numOfStudentsBeforeDelete = studentDAO.findAll().size();
+		assertEquals(2, numOfStudentsBeforeDelete);
+		studentDAO.delete(student2);
+		int numOfStudentsAfterDelete = studentDAO.findAll().size();
+		assertEquals(1, numOfStudentsBeforeDelete - numOfStudentsAfterDelete);
 	}
 
 	@Test
@@ -202,9 +153,13 @@ class StudentDAOTest {
 
 	@Test
 	void testDeleteByID_shouldReturnCorrectNumberOfEntities() {
-		studentDAO.delete(1);
-		int numOfStudentsFromTestData = studentDAO.findAll().size();
-		assertEquals(5, numOfStudentsFromTestData);
+		createEntity("TestFirstName", "TestLastName");
+		createEntity("TestFirstName2", "TestLastName2");
+		int numOfStudentsBeforeDelete = studentDAO.findAll().size();
+		assertEquals(2, numOfStudentsBeforeDelete);
+		studentDAO.delete(2);
+		int numOfStudentsAfterDelete = studentDAO.findAll().size();
+		assertEquals(1, numOfStudentsBeforeDelete - numOfStudentsAfterDelete);
 	}
 
 	@Test
@@ -214,25 +169,11 @@ class StudentDAOTest {
 	}
 
 	@Test
-	void shouldThrowIllegalArgumentExceptionWhenDatasourceIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> studentDAO.setDataSource(null));
-	}
-
-	@Test
-	void shouldThrowIllegalArgumentExceptionWhenMapperIsNull() {
-		Assertions.assertThrows(IllegalArgumentException.class, () -> studentDAO.setMapper(null));
-	}
-
-	@Test
-	void testFindAll_shouldFindSixSortedByLastNameEntities() {
-		List<Student> retrievedList = studentDAO.findAll();
+	void testFindAll_shouldFindTwoEntities() {
 		List<Student> expectedList = new ArrayList<>();
-		expectedList.add(new Student(1, "John", "Davidson"));
-		expectedList.add(new Student(5, "Mike", "Dombrovsky"));
-		expectedList.add(new Student(3, "Peter", "Eastwood"));
-		expectedList.add(new Student(2, "Nick", "Johnson"));
-		expectedList.add(new Student(4, "Michael", "Murray"));
-		expectedList.add(new Student(6, "Student", "WithoutGroup"));
+		expectedList.add(createEntity("TestFirstName", "TestLastName"));
+		expectedList.add(createEntity("TestFirstName2", "TestLastName2"));
+		List<Student> retrievedList = studentDAO.findAll();
 		assertEquals(expectedList, retrievedList);
 	}
 
@@ -243,15 +184,31 @@ class StudentDAOTest {
 	}
 
 	@Test
-	void testFindAll_shouldThrowDataNotFoundExceptionAsNothingFound() {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		String query = "DELETE FROM students";
-		jdbcTemplate.execute(query);
-		assertThrows(DataNotFoundException.class, () -> studentDAO.findAll());
+	void testFindAll_shouldReturnEmptyListWhenNothingFound() {
+		createEntity("TestFirstName", "TestLastName");
+		createEntity("TestFirstName2", "TestLastName2");
+		List<Student> retrievedList = studentDAO.findAll();
+		assertEquals(2, retrievedList.size());
+		entityManager.createNativeQuery("DELETE FROM students").executeUpdate();
+		List<Student> expectedList = new ArrayList<>();
+		retrievedList = studentDAO.findAll();
+		assertEquals(expectedList, retrievedList);
 	}
 
 	@Test
-	void testaddStudentToGroup_shouldThrowDataNotFoundExceptionAfterDropDB() {
+	void testAddStudentToGroup_shouldSetProperGroupForStudentEntity() {
+		Student student = createEntity("TestFirstName", "TestLastName");
+		assertEquals(student, studentDAO.retrieve(1));
+		Group newGroup = new Group();
+		newGroup.setName("NewGroup");
+		entityManager.persist(newGroup);
+		studentDAO.addStudentToGroup(student, newGroup);
+		student.setGroup(newGroup);
+		assertEquals(student, studentDAO.retrieve(1));
+	}
+
+	@Test
+	void testAddStudentToGroup_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
 		Student student = new Student(1, "John", "Davidson");
 		Group group = new Group(1, "GroupName");
@@ -259,32 +216,34 @@ class StudentDAOTest {
 	}
 
 	@Test
-	void testRemoveStudentFromGroups_shouldReturnOneRowBeforeAndZeroRowsAfterRemoving() {
-		Student student = new Student(1, "John", "Davidson");
-		String query = "SELECT COUNT (group_id) FROM groups_students WHERE student_id=1";
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		int count = jdbcTemplate.queryForObject(query, Integer.class);
-		assertEquals(1, count);
+	void testRemoveStudentFromGroups_shouldSetNullAsGroupForStudent() {
+		Student student = createEntity("TestFirstName", "TestLastName");
+		assertEquals(student, studentDAO.retrieve(1));
 		studentDAO.removeStudentFromGroups(student);
-		int countAfterRemoving = jdbcTemplate.queryForObject(query, Integer.class);
-		assertEquals(0, countAfterRemoving);
+		student.setGroup(null);
+		assertEquals(student, studentDAO.retrieve(1));
 	}
 
 	@Test
-	void shouldGetCorrectGroupIDForStudent() {
-		assertEquals(1, studentDAO.getGroupId(studentDAO.retrieve(1)));
-	}
-
-	@Test
-	void shouldReturnZeroAsGroupNumberForUnassignedStudent() {
-		Student student = studentDAO.retrieve(6);
-		assertEquals(0, studentDAO.getGroupId(student));
+	void testRemoveStudentFromGroups_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
+		dropDB();
+		Student student = new Student(1, "John", "Davidson");
+		assertThrows(DataAreNotUpdatedException.class, () -> studentDAO.removeStudentFromGroups(student));
 	}
 
 	private void dropDB() {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		String query = "DROP ALL OBJECTS";
-		jdbcTemplate.execute(query);
+		entityManager.createNativeQuery("DROP ALL OBJECTS").executeUpdate();
 	}
 
+	private Student createEntity(String firstName, String lastName) {
+		Student entity = new Student();
+		entity.setFirstName(firstName);
+		entity.setLastName(lastName);
+		Group group = new Group();
+		group.setName("TestGroup");
+		entityManager.persist(group);
+		entity.setGroup(group);
+		studentDAO.create(entity);
+		return entity;
+	}
 }

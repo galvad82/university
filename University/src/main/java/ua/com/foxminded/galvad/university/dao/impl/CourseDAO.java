@@ -42,7 +42,11 @@ public class CourseDAO implements DAO<Integer, Course> {
 			course = entityManager.find(Course.class, id);
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a course from DB. ID={}", id);
-			throw new DataAreNotUpdatedException(String.format("Can't retrieve a course from DB. ID=%d", id));
+			throw new DataNotFoundException(String.format("Can't retrieve a course from DB. ID=%d", id));
+		}
+		if (course == null) {
+			LOGGER.info("A course with ID={} is not found", id);
+			throw new DataNotFoundException(String.format("A course with ID=%d is not found", id));
 		}
 		LOGGER.trace("The course with id={} retrieved from DB successfully", id);
 		return course;
@@ -56,7 +60,11 @@ public class CourseDAO implements DAO<Integer, Course> {
 					.getSingleResult();
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a course from DB. Name={}", courseName);
-			throw new DataAreNotUpdatedException(String.format("Can't retrieve a course from DB. Name=%s", courseName));
+			throw new DataNotFoundException(String.format("Can't retrieve a course from DB. Name=%s", courseName));
+		}
+		if (course == null) {
+			LOGGER.info("A course with Name={} is not found", courseName);
+			throw new DataNotFoundException(String.format("A course with Name=%s is not found", courseName));
 		}
 		LOGGER.trace("The course with name={} retrieved from DB successfully", courseName);
 		return course;
@@ -106,7 +114,7 @@ public class CourseDAO implements DAO<Integer, Course> {
 			resultList = entityManager.createQuery("from Course").getResultList();
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a list of courses.");
-			throw new DataAreNotUpdatedException("Can't retrieve a list of courses.");
+			throw new DataNotFoundException("Can't retrieve a list of courses.");
 		}
 		if (resultList.isEmpty()) {
 			LOGGER.info("Retrieved an EMPTY list of Courses");

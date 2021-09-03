@@ -27,8 +27,7 @@ public class SpringConfigTest implements WebMvcConfigurer {
 
 	@Bean
 	public DataSource dataSource() {
-		return new EmbeddedDatabaseBuilder().setName("testdb").setType(EmbeddedDatabaseType.H2)
-				.addScripts("classpath:schema.sql").addScript("classpath:test-data.sql").build();
+		return new EmbeddedDatabaseBuilder().setName("university").setType(EmbeddedDatabaseType.H2).build();
 	}
 
 	@Bean

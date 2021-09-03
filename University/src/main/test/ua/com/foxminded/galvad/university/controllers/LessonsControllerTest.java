@@ -122,7 +122,7 @@ class LessonsControllerTest {
 		listOfGroupNames.add(EMPTY);
 		listOfGroupNames.add(FIRST);
 		listOfGroupNames.add(SECOND);
-		when(groupServiceMock.findAllWithoutStudentList()).thenReturn(createGroupList());
+		when(groupServiceMock.findAll()).thenReturn(createGroupList());
 
 		List<String> listOfCourseNames = new ArrayList<>();
 		listOfCourseNames.add(EMPTY);
@@ -172,7 +172,7 @@ class LessonsControllerTest {
 		List<String> listOfGroupNames = new ArrayList<>();
 		listOfGroupNames.add(FIRST);
 		listOfGroupNames.add(SECOND);
-		when(groupServiceMock.findAllWithoutStudentList()).thenReturn(createGroupList());
+		when(groupServiceMock.findAll()).thenReturn(createGroupList());
 
 		List<String> listOfCourseNames = new ArrayList<>();
 		listOfCourseNames.add(FIRST);

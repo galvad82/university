@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-//import javax.transaction.Transactional;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.spi.MappingContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,27 +17,36 @@ import org.springframework.stereotype.Service;
 
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
+import ua.com.foxminded.galvad.university.dao.impl.GroupDAO;
 import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
+import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
 
 @Service
-
 public class StudentService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StudentService.class);
 
-	@Autowired
 	private ModelMapper modelMapper;
 	@Autowired
 	private StudentDAO studentDAO;
+	@Autowired
+	private GroupDAO groupDAO;
 
 	@Autowired
 	private GroupService groupService;
 
+	@Autowired
+	public StudentService(ModelMapper modelMapper) {
+		this.modelMapper = modelMapper;
+		this.modelMapper.addConverter(entityToDTO);
+		this.modelMapper.addConverter(dtoToEntity);
+	}
+
 	@Transactional
 	public void create(StudentDTO studentDTO) throws DataAreNotUpdatedException {
-		studentDAO.create(convertToEntityWithoutID(studentDTO));
+		studentDAO.create(convertToEntity(studentDTO));
 	}
 
 	public StudentDTO retrieve(String firstName, String lastName) throws DataAreNotUpdatedException {
@@ -129,12 +138,6 @@ public class StudentService {
 		LOGGER.trace("Going to convert StudentDTO to entity");
 		Student entity = modelMapper.map(studentDTO, Student.class);
 		LOGGER.trace("StudentDTO converted successfully.");
-		LOGGER.trace("Going to get ID for Student with firstName={}, lastName={}", entity.getFirstName(),
-				entity.getLastName());
-		Integer id = studentDAO.getId(entity);
-		LOGGER.trace("ID={}", id);
-		entity.setId(id);
-		LOGGER.trace("ID was set for the entity successfully");
 		return entity;
 	}
 
@@ -149,10 +152,44 @@ public class StudentService {
 		return entity;
 	}
 
-	private Student convertToEntityWithoutID(StudentDTO studentDTO) throws DataNotFoundException {
-		LOGGER.trace("Going to convert StudentDTO to entity");
-		Student entity = modelMapper.map(studentDTO, Student.class);
-		LOGGER.trace("StudentDTO converted successfully.");
-		return entity;
-	}
+	Converter<Student, StudentDTO> entityToDTO = new Converter<Student, StudentDTO>() {
+		@Override
+		public StudentDTO convert(MappingContext<Student, StudentDTO> context) {
+			StudentDTO studentDTO = new StudentDTO();
+			studentDTO.setFirstName(context.getSource().getFirstName());
+			studentDTO.setLastName(context.getSource().getLastName());
+			if (context.getSource().getGroup() != null) {
+				GroupDTO groupDTO = new GroupDTO();
+				groupDTO.setName(context.getSource().getGroup().getName());
+				studentDTO.setGroupDTO(groupDTO);
+			}
+			return studentDTO;
+		}
+	};
+
+	Converter<StudentDTO, Student> dtoToEntity = new Converter<StudentDTO, Student>() {
+		@Override
+		public Student convert(MappingContext<StudentDTO, Student> context) {
+			Student student = new Student();
+			student.setFirstName(context.getSource().getFirstName());
+			student.setLastName(context.getSource().getLastName());
+			if (context.getSource().getGroupDTO() != null) {
+				Group group = new Group();
+				group.setName(context.getSource().getGroupDTO().getName());
+				try {
+					group.setId(groupDAO.getId(group));
+				} catch (DataNotFoundException e) {
+					group.setId(null);
+				}
+				student.setGroup(group);
+			}
+			try {
+				student.setId(studentDAO.getId(student));
+			} catch (DataNotFoundException e) {
+				student.setId(null);
+			}
+			return student;
+		}
+	};
+
 }

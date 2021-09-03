@@ -32,8 +32,8 @@ import ua.com.foxminded.galvad.university.model.Lesson;
 public class LessonService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LessonService.class);
-
-	private ModelMapper modelMapper = new ModelMapper();
+	@Autowired
+	private ModelMapper modelMapper;
 	@Autowired
 	private CourseService courseService;
 	@Autowired
