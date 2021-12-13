@@ -14,13 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-import ua.com.foxminded.galvad.university.config.SpringConfigDAOTest;
+//import ua.com.foxminded.galvad.university.config.SpringConfigDAOTest;
 import ua.com.foxminded.galvad.university.model.Classroom;
 
-@SpringJUnitConfig(SpringConfigDAOTest.class)
-@ActiveProfiles("dev")
+@TestPropertySource(
+		  locations = "classpath:application-test.properties")
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 @Transactional
 class ClassroomDAOTest {
