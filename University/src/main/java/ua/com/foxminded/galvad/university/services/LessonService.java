@@ -12,7 +12,6 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
@@ -35,13 +34,10 @@ public class LessonService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(LessonService.class);
 	@Autowired
 	private ModelMapper modelMapper;
-	@Lazy
 	@Autowired
 	private CourseService courseService;
-	@Lazy
 	@Autowired
 	private GroupService groupService;
-	@Lazy
 	@Autowired
 	private ClassroomService classroomService;
 	@Autowired
@@ -62,13 +58,37 @@ public class LessonService {
 		LOGGER.trace("Going to delete LessonDTO");
 		lessonDAO.delete(convertToEntity(lessonDTO));
 	}
-	
+
 	public List<LessonDTO> findAll() throws DataNotFoundException {
 		LOGGER.trace("Going to get list of ALL LessonDTO from DB");
 		List<Lesson> listOfLessons = lessonDAO.findAll();
 		List<LessonDTO> list = listOfLessons.stream().map(this::convertToDTO).collect(Collectors.toList());
 		LOGGER.trace("List of ALL LessonDTO retrieved from DB, {} were found", list.size());
 		return list;
+	}
+
+	public List<LessonDTO> findAllLessonsForClassroom(String classroomName) throws DataNotFoundException {
+		LOGGER.trace("Going to get list of lessons for a classroom (name={})", classroomName);
+		List<LessonDTO> listOfLessons = findAll().stream().filter(s -> s.getClassroom().getName().equals(classroomName))
+				.sorted((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime())).collect(Collectors.toList());
+		LOGGER.trace("The list of lessons for the classroom (name={}) retrieved successfully", classroomName);
+		return listOfLessons;
+	}
+
+	public List<LessonDTO> findAllLessonsForCourse(String courseName) throws DataNotFoundException {
+		LOGGER.trace("Going to get list of lessons for a course (name={})", courseName);
+		List<LessonDTO> listOfLessons = findAll().stream().filter(s -> s.getCourse().getName().equals(courseName))
+				.sorted((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime())).collect(Collectors.toList());
+		LOGGER.trace("The list of lessons for the course (name={}) retrieved successfully", courseName);
+		return listOfLessons;
+	}
+
+	public List<LessonDTO> findAllLessonsForGroup(String groupName) throws DataNotFoundException {
+		LOGGER.trace("Going to get list of all lessons for group (name={})", groupName);
+		List<LessonDTO> listOfLessons = findAll().stream().filter(s -> s.getGroup().getName().equals(groupName))
+				.sorted((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime())).collect(Collectors.toList());
+		LOGGER.trace("The list of lessons for group (name={}) retrieved successfully", groupName);
+		return listOfLessons;
 	}
 
 	public void deleteByClassroom(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
