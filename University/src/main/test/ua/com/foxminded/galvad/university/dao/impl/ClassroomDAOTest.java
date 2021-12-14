@@ -7,23 +7,17 @@ import java.util.List;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-
-//import ua.com.foxminded.galvad.university.config.SpringConfigDAOTest;
 import ua.com.foxminded.galvad.university.model.Classroom;
 
-@TestPropertySource(
-		  locations = "classpath:application-test.properties")
+@DataJpaTest
+@ComponentScan("ua.com.foxminded.galvad.university.dao")
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
-@Transactional
 class ClassroomDAOTest {
 
 	@PersistenceContext

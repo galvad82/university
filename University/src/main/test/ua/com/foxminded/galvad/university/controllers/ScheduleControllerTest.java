@@ -12,10 +12,10 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
@@ -30,7 +30,8 @@ import ua.com.foxminded.galvad.university.services.GroupService;
 import ua.com.foxminded.galvad.university.services.LessonService;
 import ua.com.foxminded.galvad.university.services.TeacherService;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class ScheduleControllerTest {
 
 	private static final String SCHEDULE_RESULT = "schedule/result";
@@ -94,7 +95,7 @@ class ScheduleControllerTest {
 	@Test
 	void testGroupResultView() throws Exception {
 		List<Event> eventList = createEventList(createListOfLessons());
-		when(lessonServiceMock.eventListForCalendarCreator(groupServiceMock.findAllLessonsForGroup(FIRST))).thenReturn(eventList);
+		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForGroup(FIRST))).thenReturn(eventList);
 		mockMvc.perform(post("/schedule/group/result").param("group", FIRST)).andExpect(status().isOk())
 				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", eventList));
 		
@@ -112,7 +113,7 @@ class ScheduleControllerTest {
 	@Test
 	void testClassroomResultView() throws Exception {
 		List<Event> eventList = createEventList(createListOfLessons());
-		when(lessonServiceMock.eventListForCalendarCreator(classroomServiceMock.findAllLessonsForClassroom(FIRST))).thenReturn(eventList);
+		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForClassroom(FIRST))).thenReturn(eventList);
 		mockMvc.perform(post("/schedule/classroom/result").param("classroom", FIRST)).andExpect(status().isOk())
 				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", eventList));
 	}
@@ -128,7 +129,7 @@ class ScheduleControllerTest {
 	@Test
 	void testCourseResultView() throws Exception {
 		List<Event> eventList = createEventList(createListOfLessons());
-		when(lessonServiceMock.eventListForCalendarCreator(courseServiceMock.findAllLessonsForCourse(FIRST))).thenReturn(eventList);
+		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForCourse(FIRST))).thenReturn(eventList);
 		mockMvc.perform(post("/schedule/course/result").param("course", FIRST)).andExpect(status().isOk())
 				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", eventList));
 	}

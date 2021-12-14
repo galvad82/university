@@ -9,15 +9,12 @@ import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
-
-import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
@@ -27,17 +24,17 @@ import ua.com.foxminded.galvad.university.model.Lesson;
 import ua.com.foxminded.galvad.university.model.Student;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
-@SpringJUnitWebConfig(SpringConfigTest.class)
+@DataJpaTest
+@ComponentScan("ua.com.foxminded.galvad.university")
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
-@Transactional
 class TeacherServiceTest {
 
 	@Autowired
 	private TeacherService teacherService;
-	
+
 	@Autowired
 	private LessonService lessonService;
-	
+
 	@PersistenceContext
 	private EntityManager entityManager;
 
@@ -84,12 +81,12 @@ class TeacherServiceTest {
 		expectedList.add(createDTO("First NameB", "Last NameB"));
 		expectedList.add(createDTO("First NameC", "Last NameC"));
 		List<TeacherDTO> listBeforeDelete = teacherService.findAll();
-		assertEquals(expectedList,listBeforeDelete);
+		assertEquals(expectedList, listBeforeDelete);
 		teacherService.delete(expectedList.get(1));
 		List<TeacherDTO> listAfterDelete = teacherService.findAll();
 		expectedList.remove(1);
-		assertEquals(expectedList,listAfterDelete);
-		assertEquals(1,listBeforeDelete.size()-listAfterDelete.size());
+		assertEquals(expectedList, listAfterDelete);
+		assertEquals(1, listBeforeDelete.size() - listAfterDelete.size());
 	}
 
 	@Test
@@ -99,22 +96,22 @@ class TeacherServiceTest {
 		expectedList.add(createDTO("First NameB", "Last NameB"));
 		expectedList.add(createDTO("First NameC", "Last NameC"));
 		List<TeacherDTO> retrievedList = teacherService.findAll();
-		assertEquals(expectedList,retrievedList);
+		assertEquals(expectedList, retrievedList);
 	}
 
 	@Test
 	void testFindAllLessonsForTeacher() {
 		assertTrue(lessonService.findAll().isEmpty());
-		createLesson("Group", "Course","Class","StudentFName", "StudentLName", "TeacherFName", "TeacherLName");
-		createLesson("Group1", "Course1","Class1","StudentFNameA", "StudentLNameA", "TeacherFNameA", "TeacherLNameA");
-		createLesson("Group", "Course","Class","StudentFNameA", "StudentLNameA", "TeacherFNameB", "TeacherLNameB");
-		List<LessonDTO> retrievedList = teacherService.findAllLessonsForTeacher("TeacherFNameA","TeacherLNameA");
-		List<LessonDTO> expectedList = new ArrayList<>(); 
+		createLesson("Group", "Course", "Class", "StudentFName", "StudentLName", "TeacherFName", "TeacherLName");
+		createLesson("Group1", "Course1", "Class1", "StudentFNameA", "StudentLNameA", "TeacherFNameA", "TeacherLNameA");
+		createLesson("Group", "Course", "Class", "StudentFNameB", "StudentLNameB", "TeacherFNameB", "TeacherLNameB");
+		List<LessonDTO> retrievedList = teacherService.findAllLessonsForTeacher("TeacherFNameA", "TeacherLNameA");
+		List<LessonDTO> expectedList = new ArrayList<>();
 		expectedList.add(lessonService.findAll().get(1));
 		assertEquals(1, retrievedList.size());
-		assertEquals(expectedList,retrievedList);
+		assertEquals(expectedList, retrievedList);
 	}
-	
+
 	private TeacherDTO createDTO(String firstName, String LastName) {
 		Teacher teacher = new Teacher();
 		teacher.setFirstName(firstName);

@@ -2,7 +2,6 @@ package ua.com.foxminded.galvad.university.controllers;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.ResultMatcher.matchAll;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -14,10 +13,10 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -26,7 +25,8 @@ import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.services.ClassroomService;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class ClassroomsControllerTest {
 
 	@Mock
@@ -66,57 +66,53 @@ class ClassroomsControllerTest {
 	void testListView_shouldThrowExpectedException() throws Exception {
 		DataNotFoundException expectedException = new DataNotFoundException("Error Message");
 		when(classroomServiceMock.findAll()).thenThrow(expectedException);
-		mockMvc.perform(get("/classrooms")).andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
+		mockMvc.perform(get("/classrooms"))
+				.andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
 	}
 
 	@Test
 	void testAddViewGet() throws Exception {
 		ClassroomDTO expectedClassroomDTO = new ClassroomDTO();
-		mockMvc.perform(get("/classrooms/add")).andExpect(matchAll(model().attribute("classroomDTO", expectedClassroomDTO))).andExpect(view().name("classrooms/add"));
+		mockMvc.perform(get("/classrooms/add")).andExpectAll(model().attribute("classroomDTO", expectedClassroomDTO))
+				.andExpect(result -> assertEquals("classrooms/add", result.getModelAndView().getViewName()));
 	}
-	
+
 	@Test
 	void testAddViewPost() throws Exception {
 		ClassroomDTO expectedClassroomDTO = new ClassroomDTO();
 		expectedClassroomDTO.setName("TEST");
 		RequestBuilder request = post("/classrooms/add").flashAttr("classroomDTO", expectedClassroomDTO);
-		mockMvc
-		.perform(request)
-		.andExpect(matchAll(model().attribute("classroom", expectedClassroomDTO)))
-		.andExpect(matchAll(model().attribute("result", "A classroom was successfully added.")))
-		.andExpect(view().name("classrooms/result"));
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("classroom", expectedClassroomDTO),
+						model().attribute("result", "A classroom was successfully added."))
+				.andExpect(result -> assertEquals("classrooms/result", result.getModelAndView().getViewName()));
 	}
-	
+
 	@Test
 	void testEditViewPost() throws Exception {
-		mockMvc
-		.perform(post("/classrooms/edit").param("name", "TEST"))
-		.andExpect(matchAll(model().attribute("name", "TEST")))
-		.andExpect(view().name("classrooms/edit"));
+		mockMvc.perform(post("/classrooms/edit").param("name", "TEST")).andExpectAll(model().attribute("name", "TEST"))
+				.andExpect(result -> assertEquals("classrooms/edit", result.getModelAndView().getViewName()));
 	}
-	
+
 	@Test
 	void testEditResultViewPost() throws Exception {
-		mockMvc
-		.perform(post("/classrooms/edit/result").param("name", "name").param("initialName", "initialName"))
-		.andExpect(matchAll(model().attribute("result", "Classroom was successfully updated")))
-		.andExpect(view().name("classrooms/result"));
+		mockMvc.perform(post("/classrooms/edit/result").param("name", "name").param("initialName", "initialName"))
+				.andExpectAll(model().attribute("result", "Classroom was successfully updated"))
+				.andExpect(result -> assertEquals("classrooms/result", result.getModelAndView().getViewName()));
 	}
-	
+
 	@Test
 	void testDeleteViewPost() throws Exception {
-		mockMvc
-		.perform(post("/classrooms/delete").param("name", "TEST"))
-		.andExpect(matchAll(model().attribute("name", "TEST")))
-		.andExpect(view().name("classrooms/delete"));
+		mockMvc.perform(post("/classrooms/delete").param("name", "TEST"))
+				.andExpectAll(model().attribute("name", "TEST"))
+				.andExpect(result -> assertEquals("classrooms/delete", result.getModelAndView().getViewName()));
 	}
-	
+
 	@Test
 	void testDeleteResultViewPost() throws Exception {
-		mockMvc
-		.perform(post("/classrooms/delete/result").param("name", "name"))
-		.andExpect(matchAll(model().attribute("result", "A classroom was successfully deleted.")))
-		.andExpect(view().name("classrooms/result"));
+		mockMvc.perform(post("/classrooms/delete/result").param("name", "name"))
+				.andExpectAll(model().attribute("result", "A classroom was successfully deleted."))
+				.andExpect(result -> assertEquals("classrooms/result", result.getModelAndView().getViewName()));
 	}
 
 	@Test

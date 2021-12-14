@@ -9,15 +9,12 @@ import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
-
-import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
@@ -27,13 +24,16 @@ import ua.com.foxminded.galvad.university.model.Lesson;
 import ua.com.foxminded.galvad.university.model.Student;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
-@SpringJUnitWebConfig(SpringConfigTest.class)
+@DataJpaTest
+@ComponentScan("ua.com.foxminded.galvad.university")
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
-@Transactional
 class GroupServiceTest {
 
 	@Autowired
 	private GroupService groupService;
+
+	@Autowired
+	private LessonService lessonService;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -99,7 +99,7 @@ class GroupServiceTest {
 		createLesson("Name", "FirstName", "LastName");
 		createLesson("Name2", "FirstName2", "LastName2");
 		createLesson("Name3", "FirstName3", "LastName3");
-		List<LessonDTO> listOfLessons = groupService.findAllLessonsForGroup("Name3");
+		List<LessonDTO> listOfLessons = lessonService.findAllLessonsForGroup("Name3");
 		assertEquals("Name3", listOfLessons.get(0).getClassroom().getName());
 		assertEquals("Name3", listOfLessons.get(0).getCourse().getName());
 		assertEquals("LastName3", listOfLessons.get(0).getCourse().getTeacher().getLastName());
@@ -108,7 +108,7 @@ class GroupServiceTest {
 		assertEquals(111111L, listOfLessons.get(0).getStartTime());
 		assertEquals(1, listOfLessons.size());
 	}
-		
+
 	private GroupDTO createDTO(String name) {
 		Group group = new Group();
 		group.setName(name);
@@ -122,7 +122,7 @@ class GroupServiceTest {
 		entityManager.persist(group);
 		return groupService.retrieve(name);
 	}
-	
+
 	private Lesson createLesson(String name, String firstName, String lastName) {
 		Student student = new Student();
 		student.setFirstName(firstName);
@@ -133,7 +133,7 @@ class GroupServiceTest {
 		Set<Student> setOfStudents = new HashSet<>();
 		setOfStudents.add(student);
 		group.setSetOfStudent(setOfStudents);
-		entityManager.persist(group);		
+		entityManager.persist(group);
 		Teacher teacher = new Teacher();
 		teacher.setFirstName(firstName);
 		teacher.setLastName(lastName);

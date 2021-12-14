@@ -9,22 +9,19 @@ import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
-
-import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
 
-@SpringJUnitWebConfig(SpringConfigTest.class)
+@DataJpaTest
+@ComponentScan("ua.com.foxminded.galvad.university")
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
-@Transactional
 class StudentServiceTest {
 
 	@Autowired
@@ -103,51 +100,51 @@ class StudentServiceTest {
 		List<StudentDTO> retrievedList = studentService.findAll();
 		assertEquals(expectedList, retrievedList);
 	}
-	
+
 	@Test
-	void testFindAllUnassignedStudents(){
+	void testFindAllUnassignedStudents() {
 		createDTO("FirstName", "LastName", "Group");
-		StudentDTO studentDTO= createDTO("FirstNameB", "LastNameB", "Group2");
+		StudentDTO studentDTO = createDTO("FirstNameB", "LastNameB", "Group2");
 		createDTO("FirstNameC", "LastNameC", "Group3");
 		studentService.removeStudentFromGroup(studentDTO);
 		studentDTO = studentService.retrieve("FirstNameB", "LastNameB");
 		Set<StudentDTO> listOfStudents = studentService.findAllUnassignedStudents();
 		assertTrue(listOfStudents.contains(studentDTO));
-		assertEquals(1, listOfStudents.size());	
-	}
-	
-	@Test
-	void testBuildStudentGroupMap(){
-		StudentDTO studentDTO = createDTO("FirstName", "LastName", "Group");
-		StudentDTO studentDTO2= createDTO("FirstNameB", "LastNameB", "Group2");
-		StudentDTO studentDTO3= createDTO("FirstNameC", "LastNameC", "Group2");
-		StudentDTO studentDTO4= createDTO("FirstNameD", "LastNameD", "Group3");
-		studentService.removeStudentFromGroup(studentDTO4);
-		studentDTO4=studentService.findAll().get(3);
-		Map<StudentDTO, String> mapOfStudents = studentService.buildStudentGroupMap();
-		assertEquals(4, mapOfStudents.size());
-		assertEquals("Group",mapOfStudents.get(studentDTO));
-		assertEquals("Group2",mapOfStudents.get(studentDTO2));
-		assertEquals("Group2",mapOfStudents.get(studentDTO3));
-		assertEquals("NONE",mapOfStudents.get(studentDTO4));
+		assertEquals(1, listOfStudents.size());
 	}
 
 	@Test
-	void testAddToGroup(){
+	void testBuildStudentGroupMap() {
 		StudentDTO studentDTO = createDTO("FirstName", "LastName", "Group");
-		StudentDTO studentDTO2= createDTO("FirstNameB", "LastNameB", "Group2");
+		StudentDTO studentDTO2 = createDTO("FirstNameB", "LastNameB", "Group2");
+		StudentDTO studentDTO3 = createDTO("FirstNameC", "LastNameC", "Group2");
+		StudentDTO studentDTO4 = createDTO("FirstNameD", "LastNameD", "Group3");
+		studentService.removeStudentFromGroup(studentDTO4);
+		studentDTO4 = studentService.findAll().get(3);
+		Map<StudentDTO, String> mapOfStudents = studentService.buildStudentGroupMap();
+		assertEquals(4, mapOfStudents.size());
+		assertEquals("Group", mapOfStudents.get(studentDTO));
+		assertEquals("Group2", mapOfStudents.get(studentDTO2));
+		assertEquals("Group2", mapOfStudents.get(studentDTO3));
+		assertEquals("NONE", mapOfStudents.get(studentDTO4));
+	}
+
+	@Test
+	void testAddToGroup() {
+		StudentDTO studentDTO = createDTO("FirstName", "LastName", "Group");
+		StudentDTO studentDTO2 = createDTO("FirstNameB", "LastNameB", "Group2");
 		assertEquals("Group", studentDTO.getGroupDTO().getName());
 		studentService.removeStudentFromGroup(studentDTO);
 		studentDTO = studentService.retrieve("FirstName", "LastName");
 		assertNull(studentDTO.getGroupDTO());
 		studentService.addToGroup(studentDTO, studentDTO2.getGroupDTO());
 		studentDTO = studentService.retrieve("FirstName", "LastName");
-		assertEquals("Group2", studentDTO.getGroupDTO().getName());		
+		assertEquals("Group2", studentDTO.getGroupDTO().getName());
 	}
-	
+
 	@Test
-	void testRemoveStudentFromGroup(){
-		StudentDTO studentDTO= createDTO("FirstNameB", "LastNameB", "Group2");
+	void testRemoveStudentFromGroup() {
+		StudentDTO studentDTO = createDTO("FirstNameB", "LastNameB", "Group2");
 		assertEquals("Group2", studentDTO.getGroupDTO().getName());
 		studentService.removeStudentFromGroup(studentDTO);
 		studentDTO = studentService.retrieve("FirstNameB", "LastNameB");

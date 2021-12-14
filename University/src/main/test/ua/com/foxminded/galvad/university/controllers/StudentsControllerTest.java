@@ -11,14 +11,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.springframework.test.web.servlet.ResultMatcher.matchAll;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -28,7 +26,8 @@ import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.services.GroupService;
 import ua.com.foxminded.galvad.university.services.StudentService;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class StudentsControllerTest {
 
 	@Mock
@@ -86,9 +85,8 @@ class StudentsControllerTest {
 		groupDTO.setName("Test");
 		listOfGroups.add(groupDTO);
 		when(groupServiceMock.findAll()).thenReturn(listOfGroups);
-		mockMvc.perform(get("/students/add")).andExpect(view().name("students/add"))
-				.andExpect(matchAll(model().attribute("listGroupNames", listOfGroupNames)))
-				.andExpect(matchAll(model().attribute("studentDTO", studentDTO)));
+		mockMvc.perform(get("/students/add")).andExpectAll(model().attribute("listGroupNames", listOfGroupNames),
+				model().attribute("studentDTO", studentDTO)).andExpect(view().name("students/add"));
 	}
 
 	@Test
@@ -98,9 +96,11 @@ class StudentsControllerTest {
 		expectedStudentDTO.setFirstName("TestLastName");
 		RequestBuilder request = post("/students/add").flashAttr("studentDTO", expectedStudentDTO).flashAttr("group",
 				"AB-123");
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("student", expectedStudentDTO)))
-				.andExpect(matchAll(model().attribute("groupName", "AB-123")))
-				.andExpect(matchAll(model().attribute("result", "A student was successfully added.")));
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("student", expectedStudentDTO),
+						model().attribute("groupName", "AB-123"),
+						model().attribute("result", "A student was successfully added."))
+				.andExpect(result -> assertEquals("students/result", result.getModelAndView().getViewName()));
 	}
 
 	@Test
@@ -123,9 +123,9 @@ class StudentsControllerTest {
 		RequestBuilder request = post("/students/edit").flashAttr("firstName", studentDTO.getFirstName())
 				.flashAttr("lastName", studentDTO.getLastName()).flashAttr("groupName", "AB-123");
 
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("listOfGroups", listOfGroupsWithNone)))
-				.andExpect(matchAll(model().attribute("initialGroup", "AB-123")))
-				.andExpect(matchAll(model().attribute("studentDTO", studentDTO)))
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("listOfGroups", listOfGroupsWithNone),
+						model().attribute("initialGroup", "AB-123"), model().attribute("studentDTO", studentDTO))
 				.andExpect(view().name("students/edit"));
 	}
 
@@ -133,12 +133,12 @@ class StudentsControllerTest {
 	void testEditResultViewPost() throws Exception {
 		testEditResultViewPost_WithParameters("NEW", "OLD");
 	}
-	
+
 	@Test
 	void testEditResultViewPost_WithNewGroupNameNONE() throws Exception {
 		testEditResultViewPost_WithParameters("NONE", "OLD");
 	}
-	
+
 	@Test
 	void testEditResultViewPost_WithInitialGroupNameNONE() throws Exception {
 		testEditResultViewPost_WithParameters("NEW", "NONE");
@@ -149,9 +149,9 @@ class StudentsControllerTest {
 		RequestBuilder request = post("/students/delete").flashAttr("firstName", "firstName")
 				.flashAttr("lastName", "lastName").flashAttr("groupName", "OLD");
 
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("firstName", "firstName")))
-				.andExpect(matchAll(model().attribute("lastName", "lastName")))
-				.andExpect(matchAll(model().attribute("groupName", "OLD"))).andExpect(view().name("students/delete"));
+		mockMvc.perform(request).andExpectAll(model().attribute("firstName", "firstName"),
+				model().attribute("lastName", "lastName"), model().attribute("groupName", "OLD"))
+				.andExpect(view().name("students/delete"));
 	}
 
 	@Test
@@ -163,30 +163,31 @@ class StudentsControllerTest {
 		RequestBuilder request = post("/students/delete/result").flashAttr("firstName", "firstName")
 				.flashAttr("lastName", "lastName").flashAttr("groupName", "OLD");
 
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("result", "A student was successfully deleted.")))
-				.andExpect(matchAll(model().attribute("student", studentDTO)))
-				.andExpect(matchAll(model().attribute("groupName", "OLD"))).andExpect(view().name("students/result"));
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("result", "A student was successfully deleted."),
+						model().attribute("student", studentDTO), model().attribute("groupName", "OLD"))
+				.andExpect(view().name("students/result"));
 	}
 
 	@Test
 	void testWrongView_shouldReturn4xx() throws Exception {
 		mockMvc.perform(get("/students/wrong")).andExpect(status().is4xxClientError());
 	}
-	
-	private void testEditResultViewPost_WithParameters(String gName, String attrInitialGroup)  throws Exception{
-	String groupName = gName;
-	StudentDTO updatedStudentDTO = new StudentDTO();
-	updatedStudentDTO.setFirstName("NewFirstName");
-	updatedStudentDTO.setLastName("NewLastName");
 
-	RequestBuilder request = post("/students/edit/result").flashAttr("studentDTO", updatedStudentDTO)
-			.flashAttr("groupName", groupName).flashAttr("initialGroup", attrInitialGroup)
-			.flashAttr("initialFirstName", "OldFirstName").flashAttr("initialLastName", "OldLastName");
+	private void testEditResultViewPost_WithParameters(String gName, String attrInitialGroup) throws Exception {
+		String groupName = gName;
+		StudentDTO updatedStudentDTO = new StudentDTO();
+		updatedStudentDTO.setFirstName("NewFirstName");
+		updatedStudentDTO.setLastName("NewLastName");
 
-	mockMvc.perform(request).andExpect(matchAll(model().attribute("result", "Student was successfully updated")))
-			.andExpect(matchAll(model().attribute("groupName", groupName)))
-			.andExpect(matchAll(model().attribute("student", updatedStudentDTO)))
-			.andExpect(view().name("students/result"));
+		RequestBuilder request = post("/students/edit/result").flashAttr("studentDTO", updatedStudentDTO)
+				.flashAttr("groupName", groupName).flashAttr("initialGroup", attrInitialGroup)
+				.flashAttr("initialFirstName", "OldFirstName").flashAttr("initialLastName", "OldLastName");
+
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("result", "Student was successfully updated"),
+						model().attribute("groupName", groupName), model().attribute("student", updatedStudentDTO))
+				.andExpect(view().name("students/result"));
 	}
 
 }

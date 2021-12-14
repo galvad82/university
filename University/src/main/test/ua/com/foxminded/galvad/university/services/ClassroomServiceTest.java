@@ -11,11 +11,10 @@ import javax.transaction.Transactional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
-
-import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
@@ -25,12 +24,16 @@ import ua.com.foxminded.galvad.university.model.Lesson;
 import ua.com.foxminded.galvad.university.model.Student;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
-@SpringJUnitWebConfig(SpringConfigTest.class)
+@DataJpaTest
+@ComponentScan("ua.com.foxminded.galvad.university")
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 class ClassroomServiceTest {
 
 	@Autowired
 	private ClassroomService classroomService;
+
+	@Autowired
+	private LessonService lessonService;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -71,11 +74,11 @@ class ClassroomServiceTest {
 		List<ClassroomDTO> expectedList = new ArrayList<>();
 		expectedList.add(createDTO("Name"));
 		expectedList.add(createDTO("Name2"));
-		List<ClassroomDTO> retrievedList =classroomService.findAll();
+		List<ClassroomDTO> retrievedList = classroomService.findAll();
 		assertEquals(expectedList, retrievedList);
 		classroomService.delete(expectedList.get(1));
 		expectedList.remove(1);
-		retrievedList =classroomService.findAll();
+		retrievedList = classroomService.findAll();
 		assertEquals(expectedList, retrievedList);
 	}
 
@@ -84,7 +87,7 @@ class ClassroomServiceTest {
 		List<ClassroomDTO> expectedList = new ArrayList<>();
 		expectedList.add(createDTO("Name"));
 		expectedList.add(createDTO("Name2"));
-		List<ClassroomDTO> retrievedList =classroomService.findAll();
+		List<ClassroomDTO> retrievedList = classroomService.findAll();
 		assertEquals(expectedList, retrievedList);
 	}
 
@@ -94,7 +97,7 @@ class ClassroomServiceTest {
 		createLesson("Name", "FirstName", "LastName");
 		createLesson("Name2", "FirstName2", "LastName2");
 		createLesson("Name3", "FirstName3", "LastName3");
-		List<LessonDTO> listOfLessons = classroomService.findAllLessonsForClassroom("Name3");
+		List<LessonDTO> listOfLessons = lessonService.findAllLessonsForClassroom("Name3");
 		assertEquals("Name3", listOfLessons.get(0).getClassroom().getName());
 		assertEquals("Name3", listOfLessons.get(0).getCourse().getName());
 		assertEquals("LastName3", listOfLessons.get(0).getCourse().getTeacher().getLastName());
@@ -103,14 +106,14 @@ class ClassroomServiceTest {
 		assertEquals(111111L, listOfLessons.get(0).getStartTime());
 		assertEquals(1, listOfLessons.size());
 	}
-	
+
 	private ClassroomDTO createDTO(String name) {
 		ClassroomDTO DTO = new ClassroomDTO();
 		DTO.setName(name);
 		classroomService.create(DTO);
 		return DTO;
 	}
-	
+
 	private Lesson createLesson(String name, String firstName, String lastName) {
 		Group group = new Group();
 		group.setName(name);

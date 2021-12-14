@@ -2,7 +2,6 @@ package ua.com.foxminded.galvad.university.controllers;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.ResultMatcher.matchAll;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -14,10 +13,10 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -32,7 +31,8 @@ import ua.com.foxminded.galvad.university.services.CourseService;
 import ua.com.foxminded.galvad.university.services.GroupService;
 import ua.com.foxminded.galvad.university.services.LessonService;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class LessonsControllerTest {
 
 	@Mock
@@ -136,10 +136,10 @@ class LessonsControllerTest {
 		listOfClassroomNames.add(SECOND);
 		when(classroomServiceMock.findAll()).thenReturn(createClassroomList());
 
-		mockMvc.perform(get("/lessons/add")).andExpect(matchAll(model().attribute("lessonDTO", lessonDTO)))
-				.andExpect(matchAll(model().attribute("groups", listOfGroupNames)))
-				.andExpect(matchAll(model().attribute("courses", listOfCourseNames)))
-				.andExpect(matchAll(model().attribute("classrooms", listOfClassroomNames)))
+		mockMvc.perform(get("/lessons/add"))
+				.andExpectAll(model().attribute("lessonDTO", lessonDTO), model().attribute("groups", listOfGroupNames),
+						model().attribute("courses", listOfCourseNames),
+						model().attribute("classrooms", listOfClassroomNames))
 				.andExpect(view().name("lessons/add"));
 	}
 
@@ -162,8 +162,9 @@ class LessonsControllerTest {
 				.flashAttr("classroom", CLASSROOM_NAME).flashAttr("startTime", START_TIME_STRING)
 				.flashAttr("duration", DURATION_STRING);
 
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("lesson", lessonDTO)))
-				.andExpect(matchAll(model().attribute("result", "A lesson was successfully added.")))
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("lesson", lessonDTO),
+						model().attribute("result", "A lesson was successfully added."))
 				.andExpect(view().name("lessons/result"));
 	}
 
@@ -195,16 +196,12 @@ class LessonsControllerTest {
 				.flashAttr("courseName", COURSE_NAME).flashAttr("classroomName", CLASSROOM_NAME)
 				.flashAttr("startTime", START_TIME_STRING).flashAttr("duration", DURATION_STRING);
 
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("groups", listOfGroupNames)))
-				.andExpect(matchAll(model().attribute("courses", listOfCourseNames)))
-				.andExpect(matchAll(model().attribute("classrooms", listOfClassroomNames)))
-				.andExpect(matchAll(model().attribute("lessonDTO", lessonDTO)))
-				.andExpect(matchAll(model().attribute("initialGroup", GROUP_NAME)))
-				.andExpect(matchAll(model().attribute("initialCourse", COURSE_NAME)))
-				.andExpect(matchAll(model().attribute("initialClassroom", CLASSROOM_NAME)))
-				.andExpect(matchAll(model().attribute("initialStartTime", START_TIME_STRING)))
-				.andExpect(matchAll(model().attribute("initialDuration", DURATION_STRING)))
-				.andExpect(view().name("lessons/edit"));
+		mockMvc.perform(request).andExpectAll(model().attribute("groups", listOfGroupNames),
+				model().attribute("courses", listOfCourseNames), model().attribute("classrooms", listOfClassroomNames),
+				model().attribute("lessonDTO", lessonDTO), model().attribute("initialGroup", GROUP_NAME),
+				model().attribute("initialCourse", COURSE_NAME), model().attribute("initialClassroom", CLASSROOM_NAME),
+				model().attribute("initialStartTime", START_TIME_STRING),
+				model().attribute("initialDuration", DURATION_STRING)).andExpect(view().name("lessons/edit"));
 	}
 
 	@Test
@@ -242,9 +239,8 @@ class LessonsControllerTest {
 				.flashAttr("group", SECOND).flashAttr("course", SECOND).flashAttr("classroom", SECOND)
 				.flashAttr("startTime", START_TIME_STRING_NEW).flashAttr("duration", DURATION_STRING_NEW);
 
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("result", "Lesson was successfully updated")))
-				.andExpect(matchAll(model().attribute("lesson", updatedLessonDTO)))
-				.andExpect(view().name("lessons/result"));
+		mockMvc.perform(request).andExpectAll(model().attribute("result", "Lesson was successfully updated"),
+				model().attribute("lesson", updatedLessonDTO)).andExpect(view().name("lessons/result"));
 	}
 
 	@Test
@@ -266,7 +262,7 @@ class LessonsControllerTest {
 				.flashAttr("classroomName", FIRST).flashAttr("startTime", START_TIME_STRING)
 				.flashAttr("duration", DURATION_STRING);
 
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("lesson", lessonDTO)))
+		mockMvc.perform(request).andExpect(model().attribute("lesson", lessonDTO))
 				.andExpect(view().name("lessons/delete"));
 	}
 
@@ -281,9 +277,9 @@ class LessonsControllerTest {
 		when(courseServiceMock.retrieve(FIRST)).thenReturn(createCourse(FIRST));
 
 		RequestBuilder request = post("/lessons/delete/result").flashAttr("lesson", lessonDTO);
-		
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("result", "A lesson was successfully added")))
-				.andExpect(matchAll(model().attribute("lesson", lessonDTO))).andExpect(view().name("lessons/result"));
+
+		mockMvc.perform(request).andExpectAll(model().attribute("result", "A lesson was successfully added"),
+				model().attribute("lesson", lessonDTO)).andExpect(view().name("lessons/result"));
 	}
 
 	@Test
