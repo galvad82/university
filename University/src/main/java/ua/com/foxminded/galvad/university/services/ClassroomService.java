@@ -16,7 +16,6 @@ import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
-import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
 
 @Service
@@ -31,8 +30,6 @@ public class ClassroomService {
 	private ClassroomDAO classroomDAO;
 	@Autowired
 	private LessonDAO lessonDAO;
-	@Autowired
-	private LessonService lessonService;
 
 	@Transactional
 	public void create(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
@@ -70,15 +67,6 @@ public class ClassroomService {
 		List<ClassroomDTO> list = classroomDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
 		LOGGER.trace("List of ALL ClassroomDTO retrieved from DB, {} were found", list.size());
 		return list;
-	}
-
-	public List<LessonDTO> findAllLessonsForClassroom(String classroomName) throws DataNotFoundException {
-		LOGGER.trace("Going to get list of lessons for a classroom (name={})", classroomName);
-		List<LessonDTO> listOfLessons = lessonService.findAll().stream()
-				.filter(s -> s.getClassroom().getName().equals(classroomName))
-				.sorted((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime())).collect(Collectors.toList());
-		LOGGER.trace("The list of lessons for the classroom (name={}) retrieved successfully", classroomName);
-		return listOfLessons;
 	}
 
 	private ClassroomDTO convertToDTO(Classroom entity) throws DataNotFoundException {

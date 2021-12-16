@@ -9,15 +9,12 @@ import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.junit.jupiter.web.SpringJUnitWebConfig;
-
-import ua.com.foxminded.galvad.university.config.SpringConfigTest;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
@@ -27,13 +24,16 @@ import ua.com.foxminded.galvad.university.model.Lesson;
 import ua.com.foxminded.galvad.university.model.Student;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
-@SpringJUnitWebConfig(SpringConfigTest.class)
+@DataJpaTest
+@ComponentScan("ua.com.foxminded.galvad.university")
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
-@Transactional
 class CourseServiceTest {
 
 	@Autowired
 	private CourseService courseService;
+	
+	@Autowired
+	private LessonService lessonService;
 
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -97,7 +97,7 @@ class CourseServiceTest {
 		createLesson("Name", "FirstName", "LastName");
 		createLesson("Name2", "FirstName2", "LastName2");
 		createLesson("Name3", "FirstName3", "LastName3");
-		List<LessonDTO> listOfLessons = courseService.findAllLessonsForCourse("Name3");
+		List<LessonDTO> listOfLessons = lessonService.findAllLessonsForCourse("Name3");
 		assertEquals("Name3", listOfLessons.get(0).getClassroom().getName());
 		assertEquals("Name3", listOfLessons.get(0).getCourse().getName());
 		assertEquals("LastName3", listOfLessons.get(0).getCourse().getTeacher().getLastName());

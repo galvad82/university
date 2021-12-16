@@ -2,7 +2,6 @@ package ua.com.foxminded.galvad.university.controllers;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.ResultMatcher.matchAll;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -14,10 +13,10 @@ import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -25,7 +24,8 @@ import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
 import ua.com.foxminded.galvad.university.services.TeacherService;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest
+@AutoConfigureMockMvc
 class TeachersControllerTest {
 
 	@Mock
@@ -59,8 +59,8 @@ class TeachersControllerTest {
 		expectedList.add(secondTeacherDTO);
 
 		when(teacherServiceMock.findAll()).thenReturn(expectedList);
-		mockMvc.perform(get("/teachers")).andExpect(status().isOk()).andExpect(view().name("teachers/list"))
-				.andExpect(model().attribute("teachers", expectedList));
+		mockMvc.perform(get("/teachers")).andExpectAll(status().isOk(), model().attribute("teachers", expectedList))
+				.andExpect(view().name("teachers/list"));
 	}
 
 	@Test
@@ -74,8 +74,8 @@ class TeachersControllerTest {
 	@Test
 	void testAddViewGet() throws Exception {
 		TeacherDTO teacherDTO = new TeacherDTO();
-		mockMvc.perform(get("/teachers/add")).andExpect(view().name("teachers/add"))
-				.andExpect(matchAll(model().attribute("teacherDTO", teacherDTO)));
+		mockMvc.perform(get("/teachers/add")).andExpect(model().attribute("teacherDTO", teacherDTO))
+				.andExpect(view().name("teachers/add"));
 	}
 
 	@Test
@@ -84,8 +84,9 @@ class TeachersControllerTest {
 		teacherDTO.setFirstName("Bradleigh");
 		teacherDTO.setLastName("Donaldson");
 		RequestBuilder request = post("/teachers/add").flashAttr("teacherDTO", teacherDTO);
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("teacher", teacherDTO)))
-				.andExpect(matchAll(model().attribute("result", "A teacher was successfully added.")))
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("teacher", teacherDTO),
+						model().attribute("result", "A teacher was successfully added."))
 				.andExpect(view().name("teachers/result"));
 	}
 
@@ -95,8 +96,9 @@ class TeachersControllerTest {
 		String lastName = "LastName";
 		RequestBuilder request = post("/teachers/edit").flashAttr("firstName", firstName).flashAttr("lastName",
 				lastName);
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("firstName", firstName)))
-				.andExpect(matchAll(model().attribute("lastName", lastName))).andExpect(view().name("teachers/edit"));
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("firstName", firstName), model().attribute("lastName", lastName))
+				.andExpect(view().name("teachers/edit"));
 	}
 
 	@Test
@@ -114,17 +116,16 @@ class TeachersControllerTest {
 				.flashAttr("initialFirstName", initialTeacherDTO.getFirstName())
 				.flashAttr("initialLastName", initialTeacherDTO.getLastName());
 
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("result", "Teacher was successfully updated")))
-				.andExpect(matchAll(model().attribute("teacher", updatedTeacherDTO)))
-				.andExpect(view().name("teachers/result"));
+		mockMvc.perform(request).andExpectAll(model().attribute("result", "Teacher was successfully updated"),
+				model().attribute("teacher", updatedTeacherDTO)).andExpect(view().name("teachers/result"));
 	}
 
 	@Test
 	void testDeleteViewPost() throws Exception {
 		RequestBuilder request = post("/teachers/delete").flashAttr("firstName", "firstName").flashAttr("lastName",
 				"lastName");
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("firstName", "firstName")))
-				.andExpect(matchAll(model().attribute("lastName", "lastName")))
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("firstName", "firstName"), model().attribute("lastName", "lastName"))
 				.andExpect(view().name("teachers/delete"));
 	}
 
@@ -135,9 +136,8 @@ class TeachersControllerTest {
 		teacherDTO.setLastName("lastName");
 		RequestBuilder request = post("/teachers/delete/result").flashAttr("firstName", "firstName")
 				.flashAttr("lastName", "lastName");
-		mockMvc.perform(request).andExpect(matchAll(model().attribute("result", "A teacher was successfully deleted.")))
-				.andExpect(matchAll(model().attribute("teacher", teacherDTO)))
-				.andExpect(view().name("teachers/result"));
+		mockMvc.perform(request).andExpectAll(model().attribute("result", "A teacher was successfully deleted."),
+				model().attribute("teacher", teacherDTO)).andExpect(view().name("teachers/result"));
 	}
 
 	@Test

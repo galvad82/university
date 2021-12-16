@@ -67,7 +67,7 @@ public class ScheduleController {
 	@PostMapping("/group/result")
 	public String forGroupResult(@ModelAttribute("group") String groupName, Model model) {
 		model.addAttribute(LESSONS,
-				lessonService.eventListForCalendarCreator(groupService.findAllLessonsForGroup(groupName)));
+				lessonService.eventListForCalendarCreator(lessonService.findAllLessonsForGroup(groupName)));
 		return SCHEDULE_RESULT;
 	}
 
@@ -80,7 +80,7 @@ public class ScheduleController {
 	@PostMapping("/classroom/result")
 	public String forClassroomResult(@ModelAttribute("classroom") String classrooomName, Model model) {
 		model.addAttribute(LESSONS,
-				lessonService.eventListForCalendarCreator(classroomService.findAllLessonsForClassroom(classrooomName)));
+				lessonService.eventListForCalendarCreator(lessonService.findAllLessonsForClassroom(classrooomName)));
 		return SCHEDULE_RESULT;
 	}
 
@@ -93,7 +93,7 @@ public class ScheduleController {
 	@PostMapping("/course/result")
 	public String forCourseResult(@ModelAttribute("course") String courseName, Model model) {
 		model.addAttribute(LESSONS,
-				lessonService.eventListForCalendarCreator(courseService.findAllLessonsForCourse(courseName)));
+				lessonService.eventListForCalendarCreator(lessonService.findAllLessonsForCourse(courseName)));
 		return SCHEDULE_RESULT;
 	}
 }

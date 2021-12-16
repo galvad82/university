@@ -9,16 +9,12 @@ import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import javax.transaction.Transactional;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-
-import ua.com.foxminded.galvad.university.config.SpringConfigDAOTest;
 import ua.com.foxminded.galvad.university.model.Classroom;
 import ua.com.foxminded.galvad.university.model.Course;
 import ua.com.foxminded.galvad.university.model.Group;
@@ -26,10 +22,9 @@ import ua.com.foxminded.galvad.university.model.Lesson;
 import ua.com.foxminded.galvad.university.model.Student;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
-@SpringJUnitConfig(SpringConfigDAOTest.class)
-@ActiveProfiles("dev")
+@DataJpaTest
+@ComponentScan("ua.com.foxminded.galvad.university.dao")
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
-@Transactional
 class LessonDAOTest {
 
 	@PersistenceContext
@@ -39,7 +34,7 @@ class LessonDAOTest {
 	private LessonDAO lessonDAO = new LessonDAO();
 
 	@Test
-	void testCreate_shouldAddNewRowToDatabaseAndRetrieveIt() {
+	void testCreate_testGetID_testRetrieve() {
 		Lesson lesson = createEntity("Name", "FirstName", "LastName");
 		assertEquals(lesson, lessonDAO.retrieve(1));
 	}
@@ -49,12 +44,6 @@ class LessonDAOTest {
 		dropDB();
 		Lesson lesson = new Lesson(new Group(1), new Course(1), new Classroom(1), 161651000L, 3600000L);
 		assertThrows(DataAreNotUpdatedException.class, () -> lessonDAO.create(lesson));
-	}
-
-	@Test
-	void testGetId_shouldReturnCorrectIdForEntity() {
-		Lesson lesson = createEntity("Name", "FirstName", "LastName");
-		assertEquals(lesson, lessonDAO.retrieve(1));
 	}
 
 	@Test
@@ -68,12 +57,6 @@ class LessonDAOTest {
 		dropDB();
 		Lesson lesson = new Lesson(100, new Group(1), new Course(1), new Classroom(1), 161651000L, 3600000L);
 		assertThrows(DataNotFoundException.class, () -> lessonDAO.getId(lesson));
-	}
-
-	@Test
-	void testRetrieve_shouldReturnCorrectData() {
-		Lesson lesson = createEntity("Name", "FirstName", "LastName");
-		assertEquals(lesson, lessonDAO.retrieve(1));
 	}
 
 	@Test

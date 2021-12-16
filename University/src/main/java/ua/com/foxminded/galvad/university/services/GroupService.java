@@ -23,7 +23,6 @@ import ua.com.foxminded.galvad.university.dao.impl.GroupDAO;
 import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
 import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
-import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
@@ -44,8 +43,7 @@ public class GroupService {
 	private StudentDAO studentDAO;
 	@Autowired
 	private LessonDAO lessonDAO;
-	@Autowired
-	private LessonService lessonService;
+
 	@PersistenceContext
 	private EntityManager entityManager;
 
@@ -99,15 +97,6 @@ public class GroupService {
 		List<GroupDTO> list = groupDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
 		LOGGER.trace("List of ALL GroupDTO retrieved from DB, {} were found", list.size());
 		return list;
-	}
-
-	public List<LessonDTO> findAllLessonsForGroup(String groupName) throws DataNotFoundException {
-		LOGGER.trace("Going to get list of all lessons for group (name={})", groupName);
-		List<LessonDTO> listOfLessons = lessonService.findAll().stream()
-				.filter(s -> s.getGroup().getName().equals(groupName))
-				.sorted((o1, o2) -> o1.getStartTime().compareTo(o2.getStartTime())).collect(Collectors.toList());
-		LOGGER.trace("The list of lessons for group (name={}) retrieved successfully", groupName);
-		return listOfLessons;
 	}
 
 	private GroupDTO convertToDTO(Group entity) throws DataNotFoundException {
