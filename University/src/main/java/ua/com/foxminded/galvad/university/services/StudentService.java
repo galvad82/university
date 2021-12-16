@@ -29,19 +29,19 @@ public class StudentService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StudentService.class);
 
 	private ModelMapper modelMapper;
-	@Autowired
 	private StudentDAO studentDAO;
-	@Autowired
 	private GroupDAO groupDAO;
-
-	@Autowired
 	private GroupService groupService;
 
 	@Autowired
-	public StudentService(ModelMapper modelMapper) {
+	public StudentService(ModelMapper modelMapper, StudentDAO studentDAO, GroupDAO groupDAO,
+			GroupService groupService) {
 		this.modelMapper = modelMapper;
 		this.modelMapper.addConverter(entityToDTO);
 		this.modelMapper.addConverter(dtoToEntity);
+		this.studentDAO = studentDAO;
+		this.groupDAO = groupDAO;
+		this.groupService = groupService;
 	}
 
 	@Transactional

@@ -37,21 +37,22 @@ public class GroupService {
 	private static final String GOING_TO_CONVERT = "Going to convert groupDTO (name={}) to group";
 
 	private ModelMapper modelMapper;
-	@Autowired
 	private GroupDAO groupDAO;
-	@Autowired
 	private StudentDAO studentDAO;
-	@Autowired
 	private LessonDAO lessonDAO;
 
 	@PersistenceContext
 	private EntityManager entityManager;
 
 	@Autowired
-	public GroupService(ModelMapper modelMapper) {
+	public GroupService(ModelMapper modelMapper, GroupDAO groupDAO, StudentDAO studentDAO, LessonDAO lessonDAO, EntityManager entityManager) {
 		this.modelMapper = modelMapper;
 		this.modelMapper.addConverter(entityToDTO);
 		this.modelMapper.addConverter(dtoToEntity);
+		this.groupDAO = groupDAO;
+		this.studentDAO = studentDAO;
+		this.lessonDAO = lessonDAO;
+		this.entityManager = entityManager;
 	}
 
 	public void create(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {

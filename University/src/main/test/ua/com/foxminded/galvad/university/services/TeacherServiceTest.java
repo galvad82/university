@@ -7,15 +7,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.ModelMapper;
+import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
+import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
+import ua.com.foxminded.galvad.university.dto.CourseDTO;
+import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
+import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
 import ua.com.foxminded.galvad.university.model.Course;
@@ -24,133 +30,142 @@ import ua.com.foxminded.galvad.university.model.Lesson;
 import ua.com.foxminded.galvad.university.model.Student;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
-@DataJpaTest
-@ComponentScan("ua.com.foxminded.galvad.university")
-@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
+@ExtendWith(MockitoExtension.class)
 class TeacherServiceTest {
 
-	@Autowired
+	private static final String FIRST_NAME = "FirstName";
+	private static final String LAST_NAME = "LastName";
+
+	@Mock
+	private ModelMapper mockModelMapper;
+
+	@Mock
+	private TeacherDAO mockTeacherDAO;
+
+	@Mock
+	private LessonService mockLessonService;
+
+	@InjectMocks
 	private TeacherService teacherService;
-
-	@Autowired
-	private LessonService lessonService;
-
-	@PersistenceContext
-	private EntityManager entityManager;
 
 	@Test
 	void testCreate() {
-		TeacherDTO teacherDTO = new TeacherDTO();
-		teacherDTO.setFirstName("First Name");
-		teacherDTO.setLastName("Last Name");
+		TeacherDTO teacherDTO = createDTO(FIRST_NAME, LAST_NAME);
+		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
+		when(mockModelMapper.map(teacherDTO, Teacher.class)).thenReturn(teacherEntity);
 		teacherService.create(teacherDTO);
-		TeacherDTO retrievedDTO = teacherService.findAll().get(0);
-		assertEquals(teacherDTO, retrievedDTO);
+		verify(mockTeacherDAO, times(1)).create(teacherEntity);
 	}
 
 	@Test
 	void testRetrieve() {
-		TeacherDTO expectedDTO = createDTO("First Name", "Last Name");
-		TeacherDTO retrievedDTO = teacherService.retrieve("First Name", "Last Name");
-		assertEquals(expectedDTO, retrievedDTO);
-	}
-
-	@Test
-	void testRetrieveByFindAll() {
-		TeacherDTO expectedDTO = createDTO("First Name", "Last Name");
-		TeacherDTO retrievedDTO = teacherService.findAll().get(0);
-		assertEquals(expectedDTO, retrievedDTO);
+		TeacherDTO teacherDTO = createDTO(FIRST_NAME, LAST_NAME);
+		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
+		when(mockTeacherDAO.retrieve(FIRST_NAME, LAST_NAME)).thenReturn(teacherEntity);
+		when(mockModelMapper.map(teacherEntity, TeacherDTO.class)).thenReturn(teacherDTO);
+		teacherService.retrieve(FIRST_NAME, LAST_NAME);
+		verify(mockTeacherDAO, times(1)).retrieve(FIRST_NAME, LAST_NAME);
 	}
 
 	@Test
 	void testUpdate() {
-		createDTO("First Name", "Last Name");
-		TeacherDTO initialDTO = teacherService.findAll().get(0);
-		TeacherDTO newDTO = new TeacherDTO();
-		newDTO.setFirstName("NewName");
-		newDTO.setLastName("NewLastName");
-		teacherService.update(initialDTO, newDTO);
-		TeacherDTO updatedTeacherDTO = teacherService.findAll().get(0);
-		assertEquals(newDTO, updatedTeacherDTO);
+		TeacherDTO oldDTO = createDTO(FIRST_NAME, LAST_NAME);
+		TeacherDTO newDTO = createDTO("NewFName", "NewLName");
+		Teacher oldEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
+		Teacher newEntity = new Teacher(1, "NewFName", "NewLName");
+		when(mockModelMapper.map(newDTO, Teacher.class)).thenReturn(newEntity);
+		when(mockModelMapper.map(oldDTO, Teacher.class)).thenReturn(oldEntity);
+		when(mockTeacherDAO.getId(oldEntity)).thenReturn(1);
+		teacherService.update(oldDTO, newDTO);
+		verify(mockTeacherDAO, times(1)).update(newEntity);
 	}
 
 	@Test
 	void testDelete() {
-		List<TeacherDTO> expectedList = new ArrayList<>();
-		expectedList.add(createDTO("First Name", "Last Name"));
-		expectedList.add(createDTO("First NameB", "Last NameB"));
-		expectedList.add(createDTO("First NameC", "Last NameC"));
-		List<TeacherDTO> listBeforeDelete = teacherService.findAll();
-		assertEquals(expectedList, listBeforeDelete);
-		teacherService.delete(expectedList.get(1));
-		List<TeacherDTO> listAfterDelete = teacherService.findAll();
-		expectedList.remove(1);
-		assertEquals(expectedList, listAfterDelete);
-		assertEquals(1, listBeforeDelete.size() - listAfterDelete.size());
+		TeacherDTO teacherDTO = createDTO(FIRST_NAME, LAST_NAME);
+		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
+		when(mockModelMapper.map(teacherDTO, Teacher.class)).thenReturn(teacherEntity);
+		when(mockTeacherDAO.getId(teacherEntity)).thenReturn(teacherEntity.getId());
+		teacherService.delete(teacherDTO);
+		verify(mockTeacherDAO, times(1)).delete(teacherEntity);
 	}
 
 	@Test
 	void testFindAll() {
-		List<TeacherDTO> expectedList = new ArrayList<>();
-		expectedList.add(createDTO("First Name", "Last Name"));
-		expectedList.add(createDTO("First NameB", "Last NameB"));
-		expectedList.add(createDTO("First NameC", "Last NameC"));
-		List<TeacherDTO> retrievedList = teacherService.findAll();
-		assertEquals(expectedList, retrievedList);
+		TeacherDTO teacherDTO = createDTO(FIRST_NAME, LAST_NAME);
+		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
+		List<Teacher> list = new ArrayList<>();
+		list.add(teacherEntity);
+		when(mockTeacherDAO.findAll()).thenReturn(list);
+		when(mockModelMapper.map(teacherEntity, TeacherDTO.class)).thenReturn(teacherDTO);
+		teacherService.findAll();
+		verify(mockTeacherDAO, times(1)).findAll();
 	}
 
 	@Test
 	void testFindAllLessonsForTeacher() {
-		assertTrue(lessonService.findAll().isEmpty());
-		createLesson("Group", "Course", "Class", "StudentFName", "StudentLName", "TeacherFName", "TeacherLName");
-		createLesson("Group1", "Course1", "Class1", "StudentFNameA", "StudentLNameA", "TeacherFNameA", "TeacherLNameA");
-		createLesson("Group", "Course", "Class", "StudentFNameB", "StudentLNameB", "TeacherFNameB", "TeacherLNameB");
-		List<LessonDTO> retrievedList = teacherService.findAllLessonsForTeacher("TeacherFNameA", "TeacherLNameA");
-		List<LessonDTO> expectedList = new ArrayList<>();
-		expectedList.add(lessonService.findAll().get(1));
-		assertEquals(1, retrievedList.size());
-		assertEquals(expectedList, retrievedList);
+		TeacherDTO teacherDTO = createDTO(FIRST_NAME, LAST_NAME);
+		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
+		when(mockTeacherDAO.retrieve(FIRST_NAME, LAST_NAME)).thenReturn(teacherEntity);
+		when(mockModelMapper.map(teacherEntity, TeacherDTO.class)).thenReturn(teacherDTO);
+		Lesson lessonEntity = createLesson("G1", "Marketing", "A-101", FIRST_NAME, LAST_NAME, FIRST_NAME, LAST_NAME);
+		List<Lesson> list = new ArrayList<>();
+		list.add(lessonEntity);
+		LessonDTO lessonDTO = createLessonDTO("G1", "Marketing", "A-101", FIRST_NAME, LAST_NAME, FIRST_NAME, LAST_NAME);
+		List<LessonDTO> listOfLessonDTO = new ArrayList<>();
+		listOfLessonDTO.add(lessonDTO);
+		when(mockLessonService.findAll()).thenReturn(listOfLessonDTO);
+		List<LessonDTO> retrievedList = teacherService.findAllLessonsForTeacher(FIRST_NAME, LAST_NAME);
+		verify(mockTeacherDAO, times(1)).retrieve(FIRST_NAME, LAST_NAME);
+		assertEquals(retrievedList, listOfLessonDTO);
 	}
 
 	private TeacherDTO createDTO(String firstName, String LastName) {
-		Teacher teacher = new Teacher();
-		teacher.setFirstName(firstName);
-		teacher.setLastName(LastName);
-		entityManager.persist(teacher);
-		return teacherService.retrieve(firstName, LastName);
+		TeacherDTO teacherDTO = new TeacherDTO();
+		teacherDTO.setFirstName(firstName);
+		teacherDTO.setLastName(LastName);
+		return teacherDTO;
+	}
+
+	private LessonDTO createLessonDTO(String groupName, String courseName, String classroomName, String sFirstName,
+			String sLastName, String tFirstName, String tLastName) {
+		StudentDTO student = new StudentDTO();
+		student.setFirstName(sFirstName);
+		student.setLastName(sLastName);
+		GroupDTO group = new GroupDTO();
+		group.setName(groupName);
+		List<StudentDTO> listOfStudents = new ArrayList<>();
+		listOfStudents.add(student);
+		group.setListOfStudent(listOfStudents);
+		TeacherDTO teacher = new TeacherDTO();
+		teacher.setFirstName(tFirstName);
+		teacher.setLastName(tLastName);
+		CourseDTO course = new CourseDTO();
+		course.setName(courseName);
+		course.setTeacher(teacher);
+		ClassroomDTO classroom = new ClassroomDTO();
+		classroom.setName(classroomName);
+		LessonDTO lessonDTO = new LessonDTO();
+		lessonDTO.setClassroom(classroom);
+		lessonDTO.setCourse(course);
+		lessonDTO.setGroup(group);
+		lessonDTO.setStartTime(111111L);
+		lessonDTO.setDuration(2222L);
+		return lessonDTO;
 	}
 
 	private Lesson createLesson(String groupName, String courseName, String classroomName, String sFirstName,
 			String sLastName, String tFirstName, String tLastName) {
-		Student student = new Student();
-		student.setFirstName(sFirstName);
-		student.setLastName(sLastName);
-		entityManager.persist(student);
-		Group group = new Group();
-		group.setName(groupName);
+		Student student = new Student(1, sFirstName, sLastName);
+		Group group = new Group(1, groupName);
 		Set<Student> setOfStudents = new HashSet<>();
 		setOfStudents.add(student);
 		group.setSetOfStudent(setOfStudents);
-		entityManager.persist(group);
-		Teacher teacher = new Teacher();
-		teacher.setFirstName(tFirstName);
-		teacher.setLastName(tLastName);
-		entityManager.persist(teacher);
-		Course course = new Course();
-		course.setName(courseName);
+		Teacher teacher = new Teacher(1, tFirstName, tLastName);
+		Course course = new Course(1, courseName);
 		course.setTeacher(teacher);
-		entityManager.persist(course);
-		Classroom classroom = new Classroom();
-		classroom.setName(classroomName);
-		entityManager.persist(classroom);
-		Lesson lesson = new Lesson();
-		lesson.setClassroom(classroom);
-		lesson.setCourse(course);
-		lesson.setGroup(group);
-		lesson.setStartTime(111111L);
-		lesson.setDuration(2222L);
-		entityManager.persist(lesson);
-		return lesson;
+		Classroom classroom = new Classroom(1, classroomName);
+		return new Lesson(1, group, course, classroom, 111111L, 2222L);
 	}
 
 }
