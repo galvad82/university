@@ -10,8 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.EntityManager;
-
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -37,8 +35,6 @@ class GroupServiceTest {
 	private StudentDAO mockStudentDAO;
 	@Mock
 	private LessonDAO mockLessonDAO;
-	@Mock
-	private EntityManager mockEntityManager;
 	@Mock
 	private ModelMapper mockModelMapper;
 	@InjectMocks

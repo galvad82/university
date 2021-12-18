@@ -5,9 +5,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.spi.MappingContext;
@@ -41,18 +38,14 @@ public class GroupService {
 	private StudentDAO studentDAO;
 	private LessonDAO lessonDAO;
 
-	@PersistenceContext
-	private EntityManager entityManager;
-
 	@Autowired
-	public GroupService(ModelMapper modelMapper, GroupDAO groupDAO, StudentDAO studentDAO, LessonDAO lessonDAO, EntityManager entityManager) {
+	public GroupService(ModelMapper modelMapper, GroupDAO groupDAO, StudentDAO studentDAO, LessonDAO lessonDAO) {
 		this.modelMapper = modelMapper;
 		this.modelMapper.addConverter(entityToDTO);
 		this.modelMapper.addConverter(dtoToEntity);
 		this.groupDAO = groupDAO;
 		this.studentDAO = studentDAO;
 		this.lessonDAO = lessonDAO;
-		this.entityManager = entityManager;
 	}
 
 	public void create(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
@@ -85,7 +78,6 @@ public class GroupService {
 		} else {
 			LOGGER.trace("GroupDTO (name={}) doesn't have students", groupDTO.getName());
 		}
-		entityManager.flush();
 		LOGGER.trace("The students were deleted from the group");
 		LOGGER.trace("Going to delete all the lessons for GroupDTO (name={})", groupDTO.getName());
 		lessonDAO.deleteByGroupID(group.getId());

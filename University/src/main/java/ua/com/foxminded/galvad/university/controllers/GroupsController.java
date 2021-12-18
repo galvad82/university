@@ -79,9 +79,12 @@ public class GroupsController {
 
 	@PostMapping("/add")
 	public String createDTO(@ModelAttribute("groupDTO") GroupDTO groupDTO, Model model) {
-		groupDTO.setListOfStudent(groupDTO.getListOfStudent().stream().filter(s -> !s.getFirstName().isEmpty())
-				.collect(Collectors.toList()));
+		List<StudentDTO>listOfStudentDTOToAssign = groupDTO.getListOfStudent().stream().filter(s -> !s.getFirstName().isEmpty())
+				.collect(Collectors.toList());
+		groupDTO.setListOfStudent(new ArrayList<>());
 		groupService.create(groupDTO);
+		listOfStudentDTOToAssign.stream().forEach(s->studentService.addToGroup(s, groupDTO));
+		groupDTO.setListOfStudent(listOfStudentDTOToAssign);
 		Boolean showTable = true;
 		model.addAttribute(SHOWTABLE, showTable);
 		model.addAttribute(GROUP, groupDTO);
