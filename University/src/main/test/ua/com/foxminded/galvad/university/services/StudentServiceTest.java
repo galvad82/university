@@ -89,20 +89,6 @@ class StudentServiceTest {
 	}
 
 	@Test
-	void testUpdateGroup_shouldReturnSecondGroupForStudentAfterUpdate() {
-		GroupDTO newGroupDTO = new GroupDTO();
-		newGroupDTO.setName(GROUP_NAME2);
-		Group newGroupEntity = new Group(2, GROUP_NAME2);
-		StudentDTO oldStudentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
-		Student oldStudentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
-
-		when(mockModelMapper.map(oldStudentDTO, Student.class)).thenReturn(oldStudentEntity);
-		when(mockGroupService.convertToEntity(newGroupDTO)).thenReturn(newGroupEntity);
-		studentService.updateGroup(oldStudentDTO, newGroupDTO);
-		verify(mockStudentDAO, times(1)).addStudentToGroup(oldStudentEntity, newGroupEntity);
-	}
-
-	@Test
 	void testDelete() {
 		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
 		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);

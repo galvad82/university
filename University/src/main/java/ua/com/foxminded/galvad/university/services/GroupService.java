@@ -147,21 +147,14 @@ public class GroupService {
 	Converter<GroupDTO, Group> dtoToEntity = new Converter<GroupDTO, Group>() {
 		@Override
 		public Group convert(MappingContext<GroupDTO, Group> context) {
-			Group group = new Group();
-			group.setName(context.getSource().getName());
-			for (StudentDTO studentDTO : context.getSource().getListOfStudent()) {
-				Student student = new Student();
-				student.setFirstName(studentDTO.getFirstName());
-				student.setLastName(studentDTO.getLastName());
-				student.setId(studentDAO.getId(student));
-				group.getSetOfStudent().add(student);
-			}
+			GroupDTO groupDTO = context.getSource();
 			try {
-				group.setId(groupDAO.getId(group));
+				return groupDAO.retrieve(groupDTO.getName());
 			} catch (DataNotFoundException e) {
-				group.setId(null);
+				Group group= new Group();
+				group.setName(groupDTO.getName());
+				return group;
 			}
-			return group;
 		}
 	};
 

@@ -64,10 +64,12 @@ public class StudentsController {
 	@PostMapping("/add")
 	public String createDTO(@ModelAttribute("studentDTO") StudentDTO studentDTO,
 			@ModelAttribute("group") String groupDTOName, Model model) {
-		studentService.create(studentDTO);
 		if (!groupDTOName.equals(NONE)) {
-			studentService.addToGroup(studentDTO, groupService.retrieve(groupDTOName));
+			studentDTO.setGroupDTO(groupService.retrieve(groupDTOName));
+		} else {
+			studentDTO.setGroupDTO(null);
 		}
+		studentService.create(studentDTO);
 		model.addAttribute(STUDENT, studentDTO);
 		model.addAttribute(GROUP_NAME, groupDTOName);
 		model.addAttribute(RESULT, "A student was successfully added.");
@@ -96,23 +98,15 @@ public class StudentsController {
 			@ModelAttribute("groupName") String groupName, @ModelAttribute("initialGroup") String initialGroupName,
 			@ModelAttribute("initialFirstName") String initialFirstName,
 			@ModelAttribute("initialLastName") String initialLastName, Model model) {
-
-		StudentDTO initialStudentDTO = new StudentDTO();
-		initialStudentDTO.setFirstName(initialFirstName);
-		initialStudentDTO.setLastName(initialLastName);
-
+		StudentDTO initialStudentDTO = studentService.retrieve(initialFirstName, initialLastName);
 		studentService.update(initialStudentDTO, updatedStudentDTO);
 		if (groupName.equals(NONE)) {
 			studentService.removeStudentFromGroup(updatedStudentDTO);
 		} else {
 			GroupDTO groupDTO = groupService.retrieve(groupName);
-			if (initialGroupName.equals(NONE)) {
-				studentService.addToGroup(updatedStudentDTO, groupDTO);
-			} else {
-				studentService.updateGroup(updatedStudentDTO, groupDTO);
-			}
-		}
+			studentService.addToGroup(updatedStudentDTO, groupDTO);
 
+		}
 		model.addAttribute(RESULT, "Student was successfully updated");
 		model.addAttribute(GROUP_NAME, groupName);
 		model.addAttribute(STUDENT, updatedStudentDTO);
@@ -131,9 +125,7 @@ public class StudentsController {
 	@PostMapping("/delete/result")
 	public String deleteDTOResult(@ModelAttribute("firstName") String firstName,
 			@ModelAttribute("lastName") String lastName, @ModelAttribute("groupName") String groupName, Model model) {
-		StudentDTO studentDTO = new StudentDTO();
-		studentDTO.setFirstName(firstName);
-		studentDTO.setLastName(lastName);
+		StudentDTO studentDTO = studentService.retrieve(firstName, lastName);
 		studentService.delete(studentDTO);
 		model.addAttribute(STUDENT, studentDTO);
 		model.addAttribute(GROUP_NAME, groupName);

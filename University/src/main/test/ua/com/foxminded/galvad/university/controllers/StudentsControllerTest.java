@@ -162,7 +162,8 @@ class StudentsControllerTest {
 
 		RequestBuilder request = post("/students/delete/result").flashAttr("firstName", "firstName")
 				.flashAttr("lastName", "lastName").flashAttr("groupName", "OLD");
-
+		
+		when(studentServiceMock.retrieve("firstName", "lastName")).thenReturn(studentDTO);
 		mockMvc.perform(request)
 				.andExpectAll(model().attribute("result", "A student was successfully deleted."),
 						model().attribute("student", studentDTO), model().attribute("groupName", "OLD"))

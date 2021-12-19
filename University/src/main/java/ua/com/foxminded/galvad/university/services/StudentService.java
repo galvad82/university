@@ -21,7 +21,6 @@ import ua.com.foxminded.galvad.university.dao.impl.GroupDAO;
 import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
-import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
 
 @Service
@@ -68,8 +67,8 @@ public class StudentService {
 		studentDAO.update(convertToEntity(oldDTO, newDTO));
 		LOGGER.trace("StudentDTO was updated successfully.");
 	}
-
-	public void updateGroup(StudentDTO studentDTO, GroupDTO groupDTO) throws DataAreNotUpdatedException {
+	@Transactional
+	public void addToGroup(StudentDTO studentDTO, GroupDTO groupDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to assign StudentDTO (firstName={}, lastName={}) to a groupDTO with name={}",
 				studentDTO.getFirstName(), studentDTO.getLastName(), groupDTO.getName());
 		studentDAO.addStudentToGroup(convertToEntity(studentDTO), groupService.convertToEntity(groupDTO));
@@ -113,11 +112,6 @@ public class StudentService {
 	}
 
 	@Transactional
-	public void addToGroup(StudentDTO studentDTO, GroupDTO groupDTO) throws DataAreNotUpdatedException {
-		studentDAO.addStudentToGroup(convertToEntity(studentDTO), groupService.convertToEntity(groupDTO));
-	}
-
-	@Transactional
 	public void removeStudentFromGroup(StudentDTO studentDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to remove a studentDTO(firstName={}, lastName={}) from group", studentDTO.getFirstName(),
 				studentDTO.getLastName());
@@ -144,7 +138,7 @@ public class StudentService {
 	private Student convertToEntity(StudentDTO oldDTO, StudentDTO newDTO) throws DataNotFoundException {
 		LOGGER.trace("Going to convert newDTO(firstName={}, lastName={}) to entity", newDTO.getFirstName(),
 				newDTO.getLastName());
-		Student entity = modelMapper.map(newDTO, Student.class);
+		Student entity = convertToEntity(newDTO);
 		LOGGER.trace("DTO was converted successfully.");
 		LOGGER.trace("Going to set ID of oldDTO to newDTO");
 		entity.setId(studentDAO.getId(convertToEntity(oldDTO)));
@@ -159,9 +153,7 @@ public class StudentService {
 			studentDTO.setFirstName(context.getSource().getFirstName());
 			studentDTO.setLastName(context.getSource().getLastName());
 			if (context.getSource().getGroup() != null) {
-				GroupDTO groupDTO = new GroupDTO();
-				groupDTO.setName(context.getSource().getGroup().getName());
-				studentDTO.setGroupDTO(groupDTO);
+				studentDTO.setGroupDTO(groupService.retrieve(context.getSource().getGroup().getName()));
 			}
 			return studentDTO;
 		}
@@ -170,25 +162,18 @@ public class StudentService {
 	Converter<StudentDTO, Student> dtoToEntity = new Converter<StudentDTO, Student>() {
 		@Override
 		public Student convert(MappingContext<StudentDTO, Student> context) {
-			Student student = new Student();
-			student.setFirstName(context.getSource().getFirstName());
-			student.setLastName(context.getSource().getLastName());
-			if (context.getSource().getGroupDTO() != null) {
-				Group group = new Group();
-				group.setName(context.getSource().getGroupDTO().getName());
-				try {
-					group.setId(groupDAO.getId(group));
-				} catch (DataNotFoundException e) {
-					group.setId(null);
-				}
-				student.setGroup(group);
-			}
+			StudentDTO studentDTO = context.getSource();
 			try {
-				student.setId(studentDAO.getId(student));
+				return studentDAO.retrieve(studentDTO.getFirstName(), studentDTO.getLastName());
 			} catch (DataNotFoundException e) {
-				student.setId(null);
-			}
-			return student;
+				Student student = new Student();
+				student.setFirstName(studentDTO.getFirstName());
+				student.setLastName(studentDTO.getLastName());
+				if (studentDTO.getGroupDTO() != null) {
+					student.setGroup(groupDAO.retrieve(studentDTO.getGroupDTO().getName()));	
+				}
+				return student;
+			} 			
 		}
 	};
 
