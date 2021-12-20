@@ -2,6 +2,7 @@ package ua.com.foxminded.galvad.university.services;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -70,15 +71,18 @@ public class GroupService {
 		LOGGER.trace("Updated GroupDTO with newName={} ", newDTO.getName());
 	}
 
-	public void delete(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+	public void removeStudentsFromGroup(GroupDTO groupDTO)throws DataNotFoundException, DataAreNotUpdatedException {
+		LOGGER.trace("Going to convert DTO (name={}) to group", groupDTO.getName());
 		Group group = convertToEntity(groupDTO);
-		LOGGER.trace("Going to delete students of GroupDTO (name={}) from the group", groupDTO.getName());
-		if (!group.getSetOfStudent().isEmpty()) {
-			group.getSetOfStudent().stream().forEach(student -> studentDAO.removeStudentFromGroups(student));
-		} else {
-			LOGGER.trace("GroupDTO (name={}) doesn't have students", groupDTO.getName());
-		}
-		LOGGER.trace("The students were deleted from the group");
+		LOGGER.trace("Going to delete students from group (name={})", group.getName());
+		group.getSetOfStudent().stream().forEach(studentDAO::removeStudentFromGroups);
+		LOGGER.trace("Students were deleted from group (name={})", group.getName());
+		group.setSetOfStudent(new HashSet<>());
+	}
+	
+	public void delete(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+		LOGGER.trace("Going to convert DTO (name={}) to group", groupDTO.getName());
+		Group group = convertToEntity(groupDTO);
 		LOGGER.trace("Going to delete all the lessons for GroupDTO (name={})", groupDTO.getName());
 		lessonDAO.deleteByGroupID(group.getId());
 		LOGGER.trace("Going to delete GroupDTO (name={})", groupDTO.getName());
@@ -151,7 +155,7 @@ public class GroupService {
 			try {
 				return groupDAO.retrieve(groupDTO.getName());
 			} catch (DataNotFoundException e) {
-				Group group= new Group();
+				Group group = new Group();
 				group.setName(groupDTO.getName());
 				return group;
 			}

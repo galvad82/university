@@ -113,6 +113,7 @@ public class GroupsController {
 	@PostMapping("/delete/result")
 	public String deleteDTOResult(@ModelAttribute("name") String groupName, Model model) {
 		GroupDTO groupDTO = groupService.retrieve(groupName);
+		groupService.removeStudentsFromGroup(groupDTO);
 		groupService.delete(groupDTO);
 		Boolean showTable = false;
 		model.addAttribute("groupName", groupName);

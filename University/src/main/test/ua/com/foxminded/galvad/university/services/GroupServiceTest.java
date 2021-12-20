@@ -71,7 +71,16 @@ class GroupServiceTest {
 		groupService.update(oldDTO, newDTO);
 		verify(mockGroupDAO, times(1)).update(any(Group.class));
 	}
-
+	
+	@Test
+	void testRemoveStudentsFromGroup() {
+		Group groupEntity = createEntity(1, GROUP_NAME);
+		GroupDTO groupDTO = createDTO(GROUP_NAME);
+		when(mockModelMapper.map(groupDTO, Group.class)).thenReturn(groupEntity);
+		groupService.removeStudentsFromGroup(groupDTO);
+		verify(mockStudentDAO, times(1)).removeStudentFromGroups(any(Student.class));
+	}
+	
 	@Test
 	void testDelete() {
 		Group groupEntity = createEntity(1, GROUP_NAME);

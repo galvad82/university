@@ -139,6 +139,5 @@ public class StudentDAO implements DAO<Integer, Student> {
 	public void removeStudentFromGroups(Student student) throws DataAreNotUpdatedException {
 		student.setGroup(null);
 		update(student);
-		entityManager.flush();
 	}
 }
