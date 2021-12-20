@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>University - A schedule for a course</title>
+</head>
+<body>
+	<div th:insert="navbar :: bootstrap" />
+	<div th:insert="navbar :: navbar" />
+	<h2>A schedule for a course</h2>
+
+	<div class="container">
+	<div class="row align-items-start">
+		<div class="col"></div>
+			<div class="col">
+				<form class="row" th:action="@{/schedule/course/result}" th:method="POST" >
+					<label>Group:</label>
+					<select name="course" id="course" class="form-select" >
+						<option th:each="t : ${listOfCourses}" th:text="${t.name}" th:value="${t.name}" />
+					</select>
+					<p> </p>
+					<button type="submit" class="btn btn-primary mb-3">Get a schedule</button>
+				</form>
+			</div>
+		<div class="col"></div>
+	</div>
+	</div>
+
+</body>
+</html>

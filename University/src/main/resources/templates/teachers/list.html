@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>University - Teachers</title>
+</head>
+<body>
+	<div th:insert="navbar :: bootstrap"> </div>
+	<div th:insert="navbar :: navbar" > </div>
+
+	<h2>List of teachers</h2>
+	<p class="text-center" th:text="'Total: '+${teachers.size()}" />
+
+	<div class="container">
+			<div class="row align-items-start">
+			<div class="col"></div>
+			<div class="col"></div>
+			<div class="col">
+				<div class="form-group">
+					<input type="text" class="form-control pull-right" id="search"
+						placeholder="Quick search..">
+				</div>
+			</div>
+			</div>
+
+		<div class="row align-items-start">
+		<div class="col">
+		<table class="table table-striped" id="result-table"  aria-describedby="List of Teachers">
+			<thead>
+				<tr>
+					<th scope="col">First Name</th>
+					<th scope="col">Last Name</th>
+					<th scope="col"></th>
+					<th scope="col"></th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="teacherDTO : ${teachers}">
+					<td th:text="${teacherDTO.getFirstName()}"></td>
+					<td th:text="${teacherDTO.getLastName()}"></td>
+					<td>
+						<form th:action="@{/teachers/edit}" th:method="POST">
+							<input type="hidden" th:name="firstName" th:value="${teacherDTO.getFirstName()}" />
+							<input type="hidden" th:name="lastName" th:value="${teacherDTO.getLastName()}" />
+							<input type="image" alt="Edit" th:attr="src=@{images/edit.png}" />
+						</form>
+					</td>
+					<td>
+						<form th:action="@{/teachers/delete}" th:method="POST">
+							<input type="hidden" th:name="firstName" th:value="${teacherDTO.getFirstName()}" />
+							<input type="hidden" th:name="lastName" th:value="${teacherDTO.getLastName()}" />
+							<input type="image" alt="Delete" th:attr="src=@{images/delete.png}" />
+						</form>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		</div>
+
+
+	</div>
+	</div>
+
+<script >
+	$(document).ready(
+		function() {
+			$("#search").keyup(
+				function() {
+					_this = this;
+					$.each(
+						$("#result-table tbody tr"),
+						function() {
+							if ($(this)
+								.text()
+								.toLowerCase()
+								.indexOf(
+									$(_this)
+									.val()
+									.toLowerCase()) === -1) {
+								$(this).hide();
+							} else {
+								$(this).show();
+							}
+						});
+				});
+		}); 
+</script>
+
+</body>
+</html>

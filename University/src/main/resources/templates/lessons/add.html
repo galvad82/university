@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>University - Add a new Lesson</title>
+</head>
+<body>
+	<div th:insert="navbar :: bootstrap"></div>
+	<div th:insert="navbar :: navbar"></div>
+	<div th:insert="navbar :: datetimepicker"></div>
+
+	<h2>Add a new Lesson</h2>
+
+	<div class="container">
+		<div class="row align-items-start">
+			<div class="col"></div>
+			<div class="col">
+				<form class="row" th:action="@{/lessons/add}" th:method="POST">
+					<label for="group">Group:</label>
+					<select	name="group" id="group" class="form-select" >
+						<option th:each="t : ${groups}" th:value="${t}" th:text="${t}" />
+					</select>
+					<label for="course">Course:</label>
+					<select name="course" id="course" class="form-select" >
+						<option th:each="t : ${courses}" th:value="${t}" th:text="${t}" />
+					</select>
+					<label for="classroom">Classroom:</label>
+					<select name="classroom" id="classroom"	class="form-select" >
+						<option th:each="t : ${classrooms}" th:value="${t}" th:text="${t}" />
+					</select>
+					
+					<label for="startTime">Start at:</label>
+					<div class="input-group date m-0 p-0">
+						<input type="text" name="startTime" id="startTime"
+							class="form-control" />
+						<div class="input-group-append">
+							<div class="input-group-text">
+								<em class="bi bi-calendar2-check"></em>
+							</div>
+						</div>
+					</div>
+
+					<label>Duration:</label>
+					<div class="input-group m-0 p-0">
+						<input class="form-control" type="text" name="duration"
+							id="duration" />
+						<div class="input-group-append">
+							<div class="input-group-text">
+								<em class="bi-alarm"></em>
+							</div>
+						</div>
+					</div>
+
+					<p><span class="red">* All the fields are required</span></p>
+					<button type="submit" class="btn btn-primary mb-3">Add</button>
+				</form>
+			</div>
+			<div class="col"></div>
+		</div>
+	</div>
+
+
+
+	<script type="text/javascript">
+		jQuery('#duration').datetimepicker({
+			datepicker : false,
+			format : 'H:i',
+			minTime : '00:00',
+			maxTime : '03:10',
+			step : 15
+		});
+		jQuery('#startTime').datetimepicker(
+				{
+					format : 'd-m-Y H:i',
+					dayOfWeekStart : 1,
+					minTime : '08:00',
+					maxTime : '20:10',
+					step : 15,
+					yearStart : 2021,
+					yearEnd : 2025,
+					beforeShowDay : function(date) {
+						return [date.getDay() != 0, "" ]
+					}					
+				});
+	</script>
+</body>
+</html>
