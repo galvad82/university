@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,27 +52,30 @@ public class StudentDAO implements DAO<Integer, Student> {
 		if (student == null) {
 			LOGGER.info("A student with ID={} is not found", id);
 			throw new DataNotFoundException(String.format("A student with ID=%d is not found", id));
+		} else {
+			LOGGER.trace("The student with id={} retrieved from DB successfully", id);
+			return student;
 		}
-		LOGGER.trace("The student with id={} retrieved from DB successfully", id);
-		return student;
 	}
 
 	public Student retrieve(String firstName, String lastName) throws DataNotFoundException {
 		LOGGER.trace("Going to retrieve a student entity (First_Name={}, Last_Name={})", firstName, lastName);
 		Student student = null;
 		try {
-			student = (Student) entityManager.createQuery("from Student where firstName=:firstName and lastName=:lastName")
+			student = (Student) entityManager
+					.createQuery("from Student where firstName=:firstName and lastName=:lastName")
 					.setParameter("firstName", firstName).setParameter("lastName", lastName).getSingleResult();
+		} catch (NoResultException ex) {
+			LOGGER.info("A student with First_Name={}, Last_Name={} is not found", firstName, lastName);
+			throw new DataNotFoundException(
+					String.format("A student with First_Name=%s, Last_Name=%s is not found", firstName, lastName));
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a student from DB. First_Name={}, Last_Name={}", firstName, lastName);
-			throw new DataNotFoundException(
-					String.format("Can't retrieve a student from DB. First_Name=%s, Last_Name=%s", firstName, lastName));
+			throw new DataNotFoundException(String
+					.format("Can't retrieve a student from DB. First_Name=%s, Last_Name=%s", firstName, lastName));
 		}
-		if (student == null) {
-			LOGGER.info("A student with First_Name={}, Last_Name={} is not found", firstName, lastName);
-			throw new DataNotFoundException(String.format("A student with First_Name=%s, Last_Name=%s is not found", firstName, lastName));
-		}
-		LOGGER.trace("The student with First_Name={}, Last_Name={} retrieved from DB successfully", firstName, lastName);
+		LOGGER.trace("The student with First_Name={}, Last_Name={} retrieved from DB successfully", firstName,
+				lastName);
 		return student;
 	}
 
@@ -125,7 +129,8 @@ public class StudentDAO implements DAO<Integer, Student> {
 			LOGGER.info("Retrieved an EMPTY list of Students");
 		} else {
 			LOGGER.info("Sorting the list by Name");
-			Collections.sort(resultList, Comparator.comparing(Student::getLastName).thenComparing(Student::getFirstName));
+			Collections.sort(resultList,
+					Comparator.comparing(Student::getLastName).thenComparing(Student::getFirstName));
 			LOGGER.info("Retrieved a list of Students successfully. {} Students were found", resultList.size());
 		}
 		return resultList;

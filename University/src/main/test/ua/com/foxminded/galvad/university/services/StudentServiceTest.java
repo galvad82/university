@@ -209,7 +209,7 @@ class StudentServiceTest {
 		studentService.removeStudentFromGroup(studentDTO);
 		verify(mockStudentDAO, times(1)).removeStudentFromGroups(studentEntity);
 	}
-
+	
 	private Student createStudentEntity(Integer studentID, String firstName, String lastName, Integer groupID,
 			String groupName) {
 		Group group = new Group(groupID, groupName);

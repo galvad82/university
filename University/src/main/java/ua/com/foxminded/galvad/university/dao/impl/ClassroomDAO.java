@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,9 +47,10 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 		if (classroom == null) {
 			LOGGER.info("A classroom with ID={} is not found", id);
 			throw new DataNotFoundException(String.format("A classroom with ID=%d is not found", id));
+		} else {
+			LOGGER.trace("The classroom with id={} retrieved from DB successfully", id);
+			return classroom;
 		}
-		LOGGER.trace("The classroom with id={} retrieved from DB successfully", id);
-		return classroom;
 	}
 
 	public Classroom retrieve(String classroomName) throws DataNotFoundException {
@@ -57,6 +59,9 @@ public class ClassroomDAO implements DAO<Integer, Classroom> {
 		try {
 			classroom = (Classroom) entityManager.createQuery("from Classroom where name=:name")
 					.setParameter("name", classroomName).getSingleResult();
+		} catch (NoResultException ex) {
+			LOGGER.info("A classroom with Name={} is not found", classroomName);
+			throw new DataNotFoundException(String.format("A classroom with Name=%s is not found", classroomName));
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a classroom from DB. Name={}", classroomName);
 			throw new DataNotFoundException(

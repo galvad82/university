@@ -9,7 +9,7 @@ public class DataAreNotUpdatedException extends RuntimeException {
 	public DataAreNotUpdatedException(String errorMessage, Exception e) {
 		this.errorMessage = errorMessage;
 		this.exception = e;
-		this.causeDescription = e.getCause().toString();
+		this.causeDescription = e.getMessage();
 	}
 
 	public DataAreNotUpdatedException(String errorMessage) {

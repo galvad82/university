@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
 import org.hibernate.exception.ConstraintViolationException;
@@ -52,9 +53,10 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 		if (teacher == null) {
 			LOGGER.info("A teacher with ID={} is not found", id);
 			throw new DataNotFoundException(String.format("A teacher with ID=%d is not found", id));
+		} else {
+			LOGGER.trace("The teacher with id={} retrieved from DB successfully", id);
+			return teacher;
 		}
-		LOGGER.trace("The teacher with id={} retrieved from DB successfully", id);
-		return teacher;
 	}
 
 	public Teacher retrieve(String firstName, String lastName) throws DataNotFoundException {
@@ -64,14 +66,14 @@ public class TeacherDAO implements DAO<Integer, Teacher> {
 			teacher = (Teacher) entityManager
 					.createQuery("from Teacher where firstName=:firstName and lastName=:lastName")
 					.setParameter("firstName", firstName).setParameter("lastName", lastName).getSingleResult();
+		} catch (NoResultException ex) {
+			LOGGER.info("A teacher with First_Name={}, Last_Name={} is not found", firstName, lastName);
+			throw new DataNotFoundException(
+					String.format("A teacher with First_Name=%s, Last_Name=%s is not found", firstName, lastName));
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a teacher from DB. First_Name={}, Last_Name={}", firstName, lastName);
 			throw new DataNotFoundException(String
 					.format("Can't retrieve a teacher from DB. First_Name=%s, Last_Name=%s", firstName, lastName));
-		}
-		if (teacher == null) {
-			LOGGER.info("A teacher with First_Name={}, Last_Name={} is not found", firstName, lastName);
-			throw new DataNotFoundException(String.format("A teacher with First_Name=%s, Last_Name=%s is not found", firstName, lastName));
 		}
 		LOGGER.trace("The teacher with First_Name={}, Last_Name={} retrieved from DB successfully", firstName,
 				lastName);
