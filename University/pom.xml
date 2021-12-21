@@ -12,7 +12,7 @@
 		<relativePath/>
 	</parent>
   <properties>
-        <start-class>ua.com.foxminded.galvad.university.UniversityApplication.class</start-class>
+        <start-class>ua.com.foxminded.galvad.university.UniversityApplication</start-class>
   </properties>
  	<build>
 		<sourceDirectory>src/main/java</sourceDirectory>

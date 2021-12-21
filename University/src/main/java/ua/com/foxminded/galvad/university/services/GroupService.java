@@ -2,11 +2,9 @@ package ua.com.foxminded.galvad.university.services;
 
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
@@ -37,21 +35,18 @@ public class GroupService {
 	private static final String GOING_TO_CONVERT = "Going to convert groupDTO (name={}) to group";
 
 	private ModelMapper modelMapper;
-	@Autowired
 	private GroupDAO groupDAO;
-	@Autowired
 	private StudentDAO studentDAO;
-	@Autowired
 	private LessonDAO lessonDAO;
 
-	@PersistenceContext
-	private EntityManager entityManager;
-
 	@Autowired
-	public GroupService(ModelMapper modelMapper) {
+	public GroupService(ModelMapper modelMapper, GroupDAO groupDAO, StudentDAO studentDAO, LessonDAO lessonDAO) {
 		this.modelMapper = modelMapper;
 		this.modelMapper.addConverter(entityToDTO);
 		this.modelMapper.addConverter(dtoToEntity);
+		this.groupDAO = groupDAO;
+		this.studentDAO = studentDAO;
+		this.lessonDAO = lessonDAO;
 	}
 
 	public void create(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
@@ -76,16 +71,18 @@ public class GroupService {
 		LOGGER.trace("Updated GroupDTO with newName={} ", newDTO.getName());
 	}
 
-	public void delete(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+	public void removeStudentsFromGroup(GroupDTO groupDTO)throws DataNotFoundException, DataAreNotUpdatedException {
+		LOGGER.trace("Going to convert DTO (name={}) to group", groupDTO.getName());
 		Group group = convertToEntity(groupDTO);
-		LOGGER.trace("Going to delete students of GroupDTO (name={}) from the group", groupDTO.getName());
-		if (!group.getSetOfStudent().isEmpty()) {
-			group.getSetOfStudent().stream().forEach(student -> studentDAO.removeStudentFromGroups(student));
-		} else {
-			LOGGER.trace("GroupDTO (name={}) doesn't have students", groupDTO.getName());
-		}
-		entityManager.flush();
-		LOGGER.trace("The students were deleted from the group");
+		LOGGER.trace("Going to delete students from group (name={})", group.getName());
+		group.getSetOfStudent().stream().forEach(studentDAO::removeStudentFromGroups);
+		LOGGER.trace("Students were deleted from group (name={})", group.getName());
+		group.setSetOfStudent(new HashSet<>());
+	}
+	
+	public void delete(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+		LOGGER.trace("Going to convert DTO (name={}) to group", groupDTO.getName());
+		Group group = convertToEntity(groupDTO);
 		LOGGER.trace("Going to delete all the lessons for GroupDTO (name={})", groupDTO.getName());
 		lessonDAO.deleteByGroupID(group.getId());
 		LOGGER.trace("Going to delete GroupDTO (name={})", groupDTO.getName());
@@ -154,21 +151,14 @@ public class GroupService {
 	Converter<GroupDTO, Group> dtoToEntity = new Converter<GroupDTO, Group>() {
 		@Override
 		public Group convert(MappingContext<GroupDTO, Group> context) {
-			Group group = new Group();
-			group.setName(context.getSource().getName());
-			for (StudentDTO studentDTO : context.getSource().getListOfStudent()) {
-				Student student = new Student();
-				student.setFirstName(studentDTO.getFirstName());
-				student.setLastName(studentDTO.getLastName());
-				student.setId(studentDAO.getId(student));
-				group.getSetOfStudent().add(student);
-			}
+			GroupDTO groupDTO = context.getSource();
 			try {
-				group.setId(groupDAO.getId(group));
+				return groupDAO.retrieve(groupDTO.getName());
 			} catch (DataNotFoundException e) {
-				group.setId(null);
+				Group group = new Group();
+				group.setName(groupDTO.getName());
+				return group;
 			}
-			return group;
 		}
 	};
 

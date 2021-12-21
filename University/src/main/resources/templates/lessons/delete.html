@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>University - Lesson information</title>
+</head>
+<body>
+	<div th:insert="navbar :: bootstrap"></div>
+	<div th:insert="navbar :: navbar"></div>
+	<h2>Delete a lesson</h2>
+	
+	<div class="container">
+		<table class="table table-striped" aria-describedby="Delete the Lesson">
+			<thead>
+				<tr>
+					<th scope="col">Group</th>
+					<th scope="col">Course</th>
+					<th scope="col">Classroom</th>
+					<th scope="col">Start Time</th>
+					<th scope="col">Duration</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td th:text="${lesson.group.name}"></td>
+					<td th:text="${lesson.course.name}"></td>
+					<td th:text="${lesson.classroom.name}"></td>
+					<td th:text="${lesson.startTimeString}"></td>
+					<td th:text="${lesson.durationString}"></td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	
+	<div class="container">
+		<p class="alert alert-danger text-center" role="alert"> "Are you sure you want to delete the lesson?" </p>
+		<div class="row align-items-start">
+			<div class="col"></div>
+			<div class="col"></div>
+			<div class="col">
+				<form th:action="@{/lessons/delete/result}" th:method="POST" th:object=${lesson}>
+							<input type="hidden" th:field="*{group.name}"/> 
+							<input type="hidden" th:field="*{course.name}" /> 
+							<input type="hidden" th:field="*{classroom.name}" />
+							<input type="hidden" th:field="*{startTime}" />
+							<input type="hidden" th:field="*{duration}" />
+							<button type="submit" class="btn btn-danger">Yes, delete!</button>
+				</form>
+			</div>
+			<div class="col">
+			<button onclick="goBack()" class="btn btn-primary mb-3">Cancel</button>
+			</div>
+			<div class="col"></div>
+			<div class="col"></div>
+		</div>
+	</div>
+	
+<script>
+function goBack() {
+    window.history.back();
+}
+</script>
+
+</body>
+</html>

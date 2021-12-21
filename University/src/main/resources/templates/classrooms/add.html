@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>University - Add a new Classroom</title>
+</head>
+<body>
+	<div th:insert="navbar :: bootstrap"></div>
+	<div th:insert="navbar :: navbar"></div>
+	<h2>
+		<p class="text-center">Add a new Classroom</p>
+	</h2>
+
+	<div class="container">
+		<div class="row align-items-start">
+			<div class="col"></div>
+			<div class="col">
+				<form class="row" th:action="@{/classrooms/add}" th:method="POST"
+					th:object="${classroomDTO}">
+						<label><span class="red">*</span> Name:</label> <input type="text"
+							th:field="*{name}" class="form-control" />
+							<p> </p>
+						<button type="submit" class="btn btn-primary mb-3">Add</button>
+				</form>
+			</div>
+			<div class="col"></div>
+		</div>
+	</div>
+</body>
+</html>

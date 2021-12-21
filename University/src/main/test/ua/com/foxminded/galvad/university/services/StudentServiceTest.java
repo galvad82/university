@@ -1,165 +1,231 @@
 package ua.com.foxminded.galvad.university.services;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.modelmapper.ModelMapper;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import ua.com.foxminded.galvad.university.dao.impl.GroupDAO;
+import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
+import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
 
-@DataJpaTest
-@ComponentScan("ua.com.foxminded.galvad.university")
-@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
+@ExtendWith(MockitoExtension.class)
 class StudentServiceTest {
 
-	@Autowired
-	private StudentService studentService;
+	private static final String FIRST_NAME = "FirstName";
+	private static final String LAST_NAME = "LastName";
+	private static final String FIRST_NAME_B = "FirstNameB";
+	private static final String LAST_NAME_B = "LastNameB";
+	private static final String FIRST_NAME_C = "FirstNameC";
+	private static final String LAST_NAME_C = "LastNameC";
+	private static final String GROUP_NAME = "G1";
+	private static final String GROUP_NAME2 = "G2";
+	private static final String GROUP_NAME3 = "G2";
+	private static final String NONE = "NONE";
 
-	@PersistenceContext
-	private EntityManager entityManager;
+	@Mock
+	private ModelMapper mockModelMapper;
+
+	@Mock
+	private StudentDAO mockStudentDAO;
+
+	@Mock
+	private GroupDAO mockGroupDAO;
+
+	@Mock
+	private GroupService mockGroupService;
+
+	@InjectMocks
+	private StudentService studentService;
 
 	@Test
 	void testCreate() {
-		StudentDTO studentDTO = createDTO("FirstName", "LastName", "Group");
-		StudentDTO retrievedDTO = studentService.findAll().get(0);
-		assertEquals(studentDTO, retrievedDTO);
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
+		studentService.create(studentDTO);
+		verify(mockStudentDAO, times(1)).create(any(Student.class));
 	}
 
 	@Test
 	void testRetrieve() {
-		StudentDTO studentDTO = createDTO("FirstName", "LastName", "Group");
-		StudentDTO retrievedDTO = studentService.retrieve("FirstName", "LastName");
-		assertEquals(studentDTO, retrievedDTO);
-	}
-
-	@Test
-	void testRetrieveByFindAll() {
-		createDTO("FirstName", "LastName", "Group");
-		StudentDTO expectedDTO = createDTO("FirstNameA", "LastNameA", "Group2");
-		StudentDTO retrievedDTO = studentService.findAll().get(1);
-		assertEquals(expectedDTO, retrievedDTO);
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		when(mockStudentDAO.retrieve(FIRST_NAME, LAST_NAME)).thenReturn(studentEntity);
+		when(mockModelMapper.map(studentEntity, StudentDTO.class)).thenReturn(studentDTO);
+		studentService.retrieve("FirstName", "LastName");
+		verify(mockStudentDAO, times(1)).retrieve(FIRST_NAME, LAST_NAME);
 	}
 
 	@Test
 	void testUpdate() {
-		createDTO("FirstName", "LastName", "Group");
-		StudentDTO initialDTO = studentService.findAll().get(0);
-		StudentDTO newDTO = new StudentDTO();
-		newDTO.setFirstName("NewName");
-		newDTO.setLastName("NewLastName");
-		newDTO.setGroupDTO(null);
-		studentService.update(initialDTO, newDTO);
-		StudentDTO updatedStudentDTO = studentService.findAll().get(0);
-		assertEquals(newDTO, updatedStudentDTO);
-	}
-
-	@Test
-	void testUpdateGroup_shouldReturnSecondGroupForStudentAfterUpdate() {
-		createDTO("FirstName", "LastName", "Group");
-		createDTO("FirstNameB", "LastNameB", "Group2");
-		StudentDTO studentDTO = studentService.findAll().get(0);
-		assertEquals("Group", studentDTO.getGroupDTO().getName());
-		studentService.updateGroup(studentDTO, studentService.findAll().get(1).getGroupDTO());
-		studentDTO = studentService.findAll().get(0);
-		assertEquals("Group2", studentDTO.getGroupDTO().getName());
+		StudentDTO oldDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student oldEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		StudentDTO newDTO = createStudentDTO(FIRST_NAME_B, LAST_NAME_B, GROUP_NAME);
+		Student newEntity = createStudentEntity(1, FIRST_NAME_B, LAST_NAME_B, 1, GROUP_NAME);
+		when(mockModelMapper.map(newDTO, Student.class)).thenReturn(newEntity);
+		when(mockModelMapper.map(oldDTO, Student.class)).thenReturn(oldEntity);
+		when(mockStudentDAO.getId(oldEntity)).thenReturn(1);
+		studentService.update(oldDTO, newDTO);
+		verify(mockStudentDAO, times(1)).update(any(Student.class));
 	}
 
 	@Test
 	void testDelete() {
-		List<StudentDTO> expectedList = new ArrayList<>();
-		expectedList.add(createDTO("FirstName", "LastName", "Group"));
-		expectedList.add(createDTO("FirstNameB", "LastNameB", "Group2"));
-		expectedList.add(createDTO("FirstNameC", "LastNameC", "Group3"));
-		List<StudentDTO> listBeforeDel = studentService.findAll();
-		assertEquals(expectedList, listBeforeDel);
-		studentService.delete(expectedList.get(0));
-		List<StudentDTO> listAfterDel = studentService.findAll();
-		expectedList.remove(0);
-		assertEquals(expectedList, listAfterDel);
-		assertEquals(1, listBeforeDel.size() - listAfterDel.size());
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
+		studentService.delete(studentDTO);
+		verify(mockStudentDAO, times(1)).delete(studentEntity);
 	}
 
 	@Test
 	void testFindAll() {
-		List<StudentDTO> expectedList = new ArrayList<>();
-		expectedList.add(createDTO("FirstName", "LastName", "Group"));
-		expectedList.add(createDTO("FirstNameB", "LastNameB", "Group2"));
-		expectedList.add(createDTO("FirstNameC", "LastNameC", "Group3"));
+		StudentDTO DTO1 = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		StudentDTO DTO2 = createStudentDTO(FIRST_NAME_B, LAST_NAME_B, "Group2");
+		StudentDTO DTO3 = createStudentDTO(FIRST_NAME_C, LAST_NAME_C, "Group3");
+		List<StudentDTO> expectedListDTO = new ArrayList<>();
+		expectedListDTO.add(DTO1);
+		expectedListDTO.add(DTO2);
+		expectedListDTO.add(DTO3);
+		Student entity1 = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		Student entity2 = createStudentEntity(2, FIRST_NAME_B, LAST_NAME_B, 2, GROUP_NAME2);
+		Student entity3 = createStudentEntity(3, FIRST_NAME_C, LAST_NAME_C, 3, GROUP_NAME3);
+		List<Student> listOfStudents = new ArrayList<>();
+		listOfStudents.add(entity1);
+		listOfStudents.add(entity2);
+		listOfStudents.add(entity3);
+		when(mockStudentDAO.findAll()).thenReturn(listOfStudents);
+		when(mockModelMapper.map(entity1, StudentDTO.class)).thenReturn(DTO1);
+		when(mockModelMapper.map(entity2, StudentDTO.class)).thenReturn(DTO2);
+		when(mockModelMapper.map(entity3, StudentDTO.class)).thenReturn(DTO3);
 		List<StudentDTO> retrievedList = studentService.findAll();
-		assertEquals(expectedList, retrievedList);
+		assertEquals(retrievedList, expectedListDTO);
 	}
 
 	@Test
 	void testFindAllUnassignedStudents() {
-		createDTO("FirstName", "LastName", "Group");
-		StudentDTO studentDTO = createDTO("FirstNameB", "LastNameB", "Group2");
-		createDTO("FirstNameC", "LastNameC", "Group3");
-		studentService.removeStudentFromGroup(studentDTO);
-		studentDTO = studentService.retrieve("FirstNameB", "LastNameB");
-		Set<StudentDTO> listOfStudents = studentService.findAllUnassignedStudents();
-		assertTrue(listOfStudents.contains(studentDTO));
-		assertEquals(1, listOfStudents.size());
+		StudentDTO DTO1 = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		StudentDTO DTO2 = createStudentDTO(FIRST_NAME_B, LAST_NAME_B, GROUP_NAME2);
+		StudentDTO DTO3 = createStudentDTO(FIRST_NAME_C, LAST_NAME_C, GROUP_NAME3);
+		List<StudentDTO> fullListDTO = new ArrayList<>();
+		fullListDTO.add(DTO1);
+		fullListDTO.add(DTO2);
+		fullListDTO.add(DTO3);
+		Set<StudentDTO> setOfUnassignedDTO = new HashSet<>();
+		DTO1.setGroupDTO(null);
+		DTO3.setGroupDTO(null);
+		setOfUnassignedDTO.add(DTO1);
+		setOfUnassignedDTO.add(DTO3);
+
+		Student entity1 = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		Student entity2 = createStudentEntity(2, FIRST_NAME_B, LAST_NAME_B, 2, GROUP_NAME2);
+		Student entity3 = createStudentEntity(3, FIRST_NAME_C, LAST_NAME_C, 3, GROUP_NAME3);
+		entity1.setGroup(null);
+		entity3.setGroup(null);
+		List<Student> listOfEntities = new ArrayList<>();
+		listOfEntities.add(entity1);
+		listOfEntities.add(entity2);
+		listOfEntities.add(entity3);
+		when(mockStudentDAO.findAll()).thenReturn(listOfEntities);
+		when(mockModelMapper.map(entity1, StudentDTO.class)).thenReturn(DTO1);
+		when(mockModelMapper.map(entity3, StudentDTO.class)).thenReturn(DTO3);
+
+		Set<StudentDTO> retrievedSet = studentService.findAllUnassignedStudents();
+		verify(mockStudentDAO, times(1)).findAll();
+		assertEquals(retrievedSet, setOfUnassignedDTO);
 	}
 
 	@Test
 	void testBuildStudentGroupMap() {
-		StudentDTO studentDTO = createDTO("FirstName", "LastName", "Group");
-		StudentDTO studentDTO2 = createDTO("FirstNameB", "LastNameB", "Group2");
-		StudentDTO studentDTO3 = createDTO("FirstNameC", "LastNameC", "Group2");
-		StudentDTO studentDTO4 = createDTO("FirstNameD", "LastNameD", "Group3");
-		studentService.removeStudentFromGroup(studentDTO4);
-		studentDTO4 = studentService.findAll().get(3);
-		Map<StudentDTO, String> mapOfStudents = studentService.buildStudentGroupMap();
-		assertEquals(4, mapOfStudents.size());
-		assertEquals("Group", mapOfStudents.get(studentDTO));
-		assertEquals("Group2", mapOfStudents.get(studentDTO2));
-		assertEquals("Group2", mapOfStudents.get(studentDTO3));
-		assertEquals("NONE", mapOfStudents.get(studentDTO4));
+		StudentDTO DTO1 = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		StudentDTO DTO2 = createStudentDTO(FIRST_NAME_B, LAST_NAME_B, GROUP_NAME2);
+		StudentDTO DTO3 = createStudentDTO(FIRST_NAME_C, LAST_NAME_C, GROUP_NAME3);
+		DTO1.setGroupDTO(null);
+		DTO3.setGroupDTO(null);
+		Map<StudentDTO, String> expectedStudentGroupMap = new LinkedHashMap<>();
+		expectedStudentGroupMap.put(DTO1, NONE);
+		expectedStudentGroupMap.put(DTO2, DTO2.getGroupDTO().getName());
+		expectedStudentGroupMap.put(DTO3, NONE);
+
+		Student entity1 = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		Student entity2 = createStudentEntity(2, FIRST_NAME_B, LAST_NAME_B, 2, GROUP_NAME2);
+		Student entity3 = createStudentEntity(3, FIRST_NAME_C, LAST_NAME_C, 3, GROUP_NAME3);
+		entity1.setGroup(null);
+		entity3.setGroup(null);
+		List<Student> listOfEntities = new ArrayList<>();
+		listOfEntities.add(entity1);
+		listOfEntities.add(entity2);
+		listOfEntities.add(entity3);
+		when(mockStudentDAO.findAll()).thenReturn(listOfEntities);
+		when(mockModelMapper.map(entity1, StudentDTO.class)).thenReturn(DTO1);
+		when(mockModelMapper.map(entity2, StudentDTO.class)).thenReturn(DTO2);
+		when(mockModelMapper.map(entity3, StudentDTO.class)).thenReturn(DTO3);
+		Map<StudentDTO, String> retrievedStudentGroupMap = studentService.buildStudentGroupMap();
+		verify(mockStudentDAO, times(1)).findAll();
+		assertEquals(3, retrievedStudentGroupMap.size());
+		assertEquals(NONE, retrievedStudentGroupMap.get(DTO1));
+		assertEquals(GROUP_NAME2, retrievedStudentGroupMap.get(DTO2));
+		assertEquals(NONE, retrievedStudentGroupMap.get(DTO3));
 	}
 
 	@Test
 	void testAddToGroup() {
-		StudentDTO studentDTO = createDTO("FirstName", "LastName", "Group");
-		StudentDTO studentDTO2 = createDTO("FirstNameB", "LastNameB", "Group2");
-		assertEquals("Group", studentDTO.getGroupDTO().getName());
-		studentService.removeStudentFromGroup(studentDTO);
-		studentDTO = studentService.retrieve("FirstName", "LastName");
-		assertNull(studentDTO.getGroupDTO());
-		studentService.addToGroup(studentDTO, studentDTO2.getGroupDTO());
-		studentDTO = studentService.retrieve("FirstName", "LastName");
-		assertEquals("Group2", studentDTO.getGroupDTO().getName());
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		GroupDTO newGroupDTO = new GroupDTO();
+		newGroupDTO.setName(GROUP_NAME2);
+		Group newGroupEntity = new Group(2, GROUP_NAME2);
+
+		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
+		when(mockGroupService.convertToEntity(newGroupDTO)).thenReturn(newGroupEntity);
+		studentService.addToGroup(studentDTO, newGroupDTO);
+		verify(mockStudentDAO, times(1)).addStudentToGroup(studentEntity, newGroupEntity);
 	}
 
 	@Test
 	void testRemoveStudentFromGroup() {
-		StudentDTO studentDTO = createDTO("FirstNameB", "LastNameB", "Group2");
-		assertEquals("Group2", studentDTO.getGroupDTO().getName());
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
 		studentService.removeStudentFromGroup(studentDTO);
-		studentDTO = studentService.retrieve("FirstNameB", "LastNameB");
-		assertNull(studentDTO.getGroupDTO());
+		verify(mockStudentDAO, times(1)).removeStudentFromGroups(studentEntity);
 	}
 
-	private StudentDTO createDTO(String firstName, String lastName, String groupName) {
-		Group group = new Group();
-		group.setName(groupName);
-		entityManager.persist(group);
-		Student student = new Student();
-		student.setFirstName(firstName);
-		student.setLastName(lastName);
+	private Student createStudentEntity(Integer studentID, String firstName, String lastName, Integer groupID,
+			String groupName) {
+		Group group = new Group(groupID, groupName);
+		Student student = new Student(studentID, firstName, lastName);
 		student.setGroup(group);
-		entityManager.persist(student);
-		return studentService.retrieve(firstName, lastName);
+		return student;
 	}
+
+	private StudentDTO createStudentDTO(String firstName, String lastName, String groupName) {
+		GroupDTO groupDTO = new GroupDTO();
+		groupDTO.setName(groupName);
+		StudentDTO studentDTO = new StudentDTO();
+		studentDTO.setFirstName(firstName);
+		studentDTO.setLastName(lastName);
+		studentDTO.setGroupDTO(groupDTO);
+		return studentDTO;
+	}
+
 }
