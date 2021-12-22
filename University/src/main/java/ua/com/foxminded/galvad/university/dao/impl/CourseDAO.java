@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
 import org.slf4j.Logger;
@@ -47,9 +48,10 @@ public class CourseDAO implements DAO<Integer, Course> {
 		if (course == null) {
 			LOGGER.info("A course with ID={} is not found", id);
 			throw new DataNotFoundException(String.format("A course with ID=%d is not found", id));
+		} else {
+			LOGGER.trace("The course with id={} retrieved from DB successfully", id);
+			return course;
 		}
-		LOGGER.trace("The course with id={} retrieved from DB successfully", id);
-		return course;
 	}
 
 	public Course retrieve(String courseName) throws DataNotFoundException {
@@ -58,13 +60,12 @@ public class CourseDAO implements DAO<Integer, Course> {
 		try {
 			course = (Course) entityManager.createQuery("from Course where name=:name").setParameter("name", courseName)
 					.getSingleResult();
+		} catch (NoResultException ex) {
+			LOGGER.info("A course with Name={} is not found", courseName);
+			throw new DataNotFoundException(String.format("A course with Name=%s is not found", courseName));
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a course from DB. Name={}", courseName);
 			throw new DataNotFoundException(String.format("Can't retrieve a course from DB. Name=%s", courseName));
-		}
-		if (course == null) {
-			LOGGER.info("A course with Name={} is not found", courseName);
-			throw new DataNotFoundException(String.format("A course with Name=%s is not found", courseName));
 		}
 		LOGGER.trace("The course with name={} retrieved from DB successfully", courseName);
 		return course;

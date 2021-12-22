@@ -102,6 +102,20 @@ class StudentsControllerTest {
 						model().attribute("result", "A student was successfully added."))
 				.andExpect(result -> assertEquals("students/result", result.getModelAndView().getViewName()));
 	}
+	
+	@Test
+	void testAddViewPostWithUnassignedStudent() throws Exception {
+		StudentDTO expectedStudentDTO = new StudentDTO();
+		expectedStudentDTO.setFirstName("TestName");
+		expectedStudentDTO.setFirstName("TestLastName");
+		RequestBuilder request = post("/students/add").flashAttr("studentDTO", expectedStudentDTO).flashAttr("group",
+				"NONE");
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("student", expectedStudentDTO),
+						model().attribute("groupName", "NONE"),
+						model().attribute("result", "A student was successfully added."))
+				.andExpect(result -> assertEquals("students/result", result.getModelAndView().getViewName()));
+	}
 
 	@Test
 	void testEditViewPost() throws Exception {

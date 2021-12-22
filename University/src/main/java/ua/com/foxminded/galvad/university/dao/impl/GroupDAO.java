@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
 import org.slf4j.Logger;
@@ -48,9 +49,10 @@ public class GroupDAO implements DAO<Integer, Group> {
 		if (group == null) {
 			LOGGER.info("A group with ID={} is not found", id);
 			throw new DataNotFoundException(String.format("A group with ID=%d is not found", id));
+		} else {
+			LOGGER.trace("The group with id={} retrieved from DB successfully", id);
+			return group;
 		}
-		LOGGER.trace("The group with id={} retrieved from DB successfully", id);
-		return group;
 	}
 
 	public Group retrieve(String groupName) throws DataNotFoundException {
@@ -59,13 +61,12 @@ public class GroupDAO implements DAO<Integer, Group> {
 		try {
 			group = (Group) entityManager.createQuery("from Group where name=:name").setParameter("name", groupName)
 					.getSingleResult();
+		} catch (NoResultException ex) {
+			LOGGER.info("A group with Name={} is not found", groupName);
+			throw new DataNotFoundException(String.format("A group with Name=%s is not found", groupName));
 		} catch (Exception e) {
 			LOGGER.info("Can't retrieve a group from DB. Name={}", groupName);
 			throw new DataNotFoundException(String.format("Can't retrieve a group from DB. Name=%s", groupName));
-		}
-		if (group == null) {
-			LOGGER.info("A group with Name={} is not found", groupName);
-			throw new DataNotFoundException(String.format("A group with Name=%s is not found", groupName));
 		}
 		LOGGER.trace("The group with name={} retrieved from DB successfully", groupName);
 		return group;

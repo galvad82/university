@@ -41,6 +41,11 @@ class GroupServiceTest {
 	private GroupService groupService;
 
 	@Test
+	void testConvertionOfNullShouldReturnNull() {
+		assertNull(groupService.convertToEntity(null));
+	}
+	
+	@Test
 	void testCreate() {
 		GroupDTO groupDTO = createDTO(GROUP_NAME);
 		Group groupEntity = createEntity(1, GROUP_NAME);

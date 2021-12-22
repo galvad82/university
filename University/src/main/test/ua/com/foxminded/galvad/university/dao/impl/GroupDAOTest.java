@@ -116,13 +116,16 @@ class GroupDAOTest {
 
 	@Test
 	void testRetrieveByNameWithNonexistentID_shouldThrowDataNotFoundException() {
-		assertThrows(DataNotFoundException.class, () -> groupDAO.retrieve("WrongName"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class,
+				() -> groupDAO.retrieve("WrongName"));
+		assertEquals(exception.getErrorMessage(), "A group with Name=WrongName is not found");
 	}
 
 	@Test
 	void testRetrieveByName_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> groupDAO.retrieve("ABCDEF"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> groupDAO.retrieve("ABCDEF"));
+		assertEquals(exception.getErrorMessage(), "Can't retrieve a group from DB. Name=ABCDEF");
 	}
 
 	@Test

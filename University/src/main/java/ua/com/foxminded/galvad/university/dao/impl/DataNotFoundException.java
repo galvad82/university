@@ -12,7 +12,7 @@ public class DataNotFoundException extends RuntimeException {
 
 	public DataNotFoundException(String errorMessage, Exception e) {
 		this.errorMessage = errorMessage;
-		this.causeDescription = e.getCause().toString();
+		this.causeDescription = e.getMessage();
 		this.exception = e;
 	}
 

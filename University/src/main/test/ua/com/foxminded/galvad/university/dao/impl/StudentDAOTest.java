@@ -36,7 +36,10 @@ class StudentDAOTest {
 	void testCreate_shouldThrowDataAreNotUpdatedException() {
 		dropDB();
 		Student student = new Student(1, "FirstName", "LastName");
-		assertThrows(DataAreNotUpdatedException.class, () -> studentDAO.create(student));
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentDAO.create(student));
+		assertEquals(exception.getErrorMessage(),
+				String.format("Student with firstName=%s, lastName=%s wasn't added to DB.", "FirstName", "LastName"));
 	}
 
 	@Test
@@ -47,13 +50,15 @@ class StudentDAOTest {
 
 	@Test
 	void testRetrieveWithNonexistentID_shouldThrowDataNotFoundException() {
-		assertThrows(DataNotFoundException.class, () -> studentDAO.retrieve(100));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> studentDAO.retrieve(100));
+		assertEquals(exception.getErrorMessage(), String.format("A student with ID=%d is not found", 100));
 	}
 
 	@Test
 	void testRetrieve_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> studentDAO.retrieve(100));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> studentDAO.retrieve(100));
+		assertEquals(exception.getErrorMessage(), String.format("Can't retrieve a student from DB. ID=%d", 100));
 	}
 
 	@Test
@@ -64,13 +69,19 @@ class StudentDAOTest {
 
 	@Test
 	void testRetrieveByNameWithNonexistentName_shouldThrowDataNotFoundException() {
-		assertThrows(DataNotFoundException.class, () -> studentDAO.retrieve("NONE", "NONE"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class,
+				() -> studentDAO.retrieve("NONE", "NONE"));
+		assertEquals(exception.getErrorMessage(),
+				String.format("A student with First_Name=%s, Last_Name=%s is not found", "NONE", "NONE"));
 	}
 
 	@Test
 	void testRetrieveByName_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> studentDAO.retrieve("NONE", "NONE"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class,
+				() -> studentDAO.retrieve("NONE", "NONE"));
+		assertEquals(exception.getErrorMessage(),
+				String.format("Can't retrieve a student from DB. First_Name=%s, Last_Name=%s", "NONE", "NONE"));
 	}
 
 	@Test
@@ -84,7 +95,9 @@ class StudentDAOTest {
 		Student student = new Student();
 		student.setFirstName("NONE");
 		student.setLastName("NONE");
-		assertThrows(DataNotFoundException.class, () -> studentDAO.getId(student));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> studentDAO.getId(student));
+		assertEquals(exception.getErrorMessage(),
+				String.format("A student with First_Name=%s, Last_Name=%s is not found", "NONE", "NONE"));
 	}
 
 	@Test
@@ -93,7 +106,9 @@ class StudentDAOTest {
 		Student student = new Student();
 		student.setFirstName("NONE");
 		student.setLastName("NONE");
-		assertThrows(DataNotFoundException.class, () -> studentDAO.getId(student));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> studentDAO.getId(student));
+		assertEquals(exception.getErrorMessage(),
+				String.format("Can't retrieve a student from DB. First_Name=%s, Last_Name=%s", "NONE", "NONE"));
 	}
 
 	@Test
@@ -117,7 +132,9 @@ class StudentDAOTest {
 		dropDB();
 		Student student = new Student();
 		student.setId(1);
-		assertThrows(DataAreNotUpdatedException.class, () -> studentDAO.update(student));
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentDAO.update(student));
+		assertEquals(exception.getErrorMessage(), "Can't update a student. ID=1");
 	}
 
 	@Test
@@ -135,7 +152,9 @@ class StudentDAOTest {
 	void testDeleteByEntity_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
 		Student student = new Student();
 		student.setId(100);
-		assertThrows(DataAreNotUpdatedException.class, () -> studentDAO.delete(student));
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentDAO.delete(student));
+		assertEquals(exception.getErrorMessage(), "A student with ID=100 is not found!");
 	}
 
 	@Test
@@ -143,7 +162,9 @@ class StudentDAOTest {
 		dropDB();
 		Student student = new Student();
 		student.setId(1);
-		assertThrows(DataAreNotUpdatedException.class, () -> studentDAO.delete(student));
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentDAO.delete(student));
+		assertEquals(exception.getErrorMessage(), "Can't delete a student. ID=1");
 	}
 
 	@Test
@@ -160,7 +181,9 @@ class StudentDAOTest {
 	@Test
 	void testDeleteByID_shouldThrowDataAreNotUpdatedExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataAreNotUpdatedException.class, () -> studentDAO.delete(1));
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentDAO.delete(1));
+		assertEquals(exception.getErrorMessage(), "Can't delete a student. ID=1");
 	}
 
 	@Test
@@ -175,7 +198,8 @@ class StudentDAOTest {
 	@Test
 	void testFindAll_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> studentDAO.findAll());
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> studentDAO.findAll());
+		assertEquals(exception.getErrorMessage(), "Can't retrieve a list of students.");
 	}
 
 	@Test

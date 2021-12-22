@@ -48,6 +48,12 @@ class ClassroomDAOTest {
 		Classroom resultClassroom = classroomDAO.retrieve(1);
 		assertEquals(1, resultClassroom.getId());
 	}
+	
+	@Test
+	void testGetId_shouldReturnIDForEntity() {
+		Classroom classroom = createEntity("TestName");
+		assertEquals(1, classroomDAO.getId(classroom));
+	}
 
 	@Test
 	void testGetIdWithNonexistentName_shouldThrowDataNotFoundException() {
@@ -75,12 +81,14 @@ class ClassroomDAOTest {
 	@Test
 	void testRetrieve_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve(1));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve(1));
+		assertEquals(exception.getErrorMessage(), "Can't retrieve a classroom from DB. ID=1");
 	}
 
 	@Test
 	void testRetrieve_shouldThrowDataNotFoundExceptionForNonexistentID() {
-		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve(100));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve(100));
+		assertEquals(exception.getErrorMessage(), "A classroom with ID=100 is not found");
 	}
 
 	@Test
@@ -93,12 +101,14 @@ class ClassroomDAOTest {
 	@Test
 	void testRetrieveByName_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve("TestName"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve("TestName"));
+		assertEquals(exception.getErrorMessage(), "Can't retrieve a classroom from DB. Name=TestName");
 	}
 
 	@Test
 	void testRetrieveByName_shouldThrowDataNotFoundExceptionForNonexistentID() {
-		assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve("ROOM-77"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> classroomDAO.retrieve("ROOM-77"));
+		assertEquals(exception.getErrorMessage(), "A classroom with Name=ROOM-77 is not found");
 	}
 
 	@Test

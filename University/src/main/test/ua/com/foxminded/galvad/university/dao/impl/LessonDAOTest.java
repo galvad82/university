@@ -38,6 +38,12 @@ class LessonDAOTest {
 		Lesson lesson = createEntity("Name", "FirstName", "LastName");
 		assertEquals(lesson, lessonDAO.retrieve(1));
 	}
+	
+	@Test
+	void testGetID_ShouldReturnIDForEntity() {
+		Lesson lesson = createEntity("Name", "FirstName", "LastName");
+		assertEquals(1, lessonDAO.getId(lesson));
+	}
 
 	@Test
 	void testCreate_shouldThrowDataAreNotUpdatedException() {

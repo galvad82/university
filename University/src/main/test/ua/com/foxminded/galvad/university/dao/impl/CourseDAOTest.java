@@ -72,13 +72,15 @@ class CourseDAOTest {
 
 	@Test
 	void testRetrieveWithNonexistentID_shouldThrowDataNotFoundExceptionForNonExistedID() {
-		assertThrows(DataNotFoundException.class, () -> courseDAO.retrieve(100));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> courseDAO.retrieve(100));
+		assertEquals(exception.getErrorMessage(), "A course with ID=100 is not found");
 	}
 
 	@Test
 	void testRetrieve_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> courseDAO.retrieve(100));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> courseDAO.retrieve(100));
+		assertEquals(exception.getErrorMessage(), "Can't retrieve a course from DB. ID=100");
 	}
 
 	@Test
@@ -89,13 +91,15 @@ class CourseDAOTest {
 
 	@Test
 	void testRetrieveByNameWithNonexistentName_shouldThrowDataNotFoundException() {
-		assertThrows(DataNotFoundException.class, () -> courseDAO.retrieve("ABCDEF"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> courseDAO.retrieve("ABCDEF"));
+		assertEquals(exception.getErrorMessage(), "A course with Name=ABCDEF is not found");
 	}
 
 	@Test
 	void testRetrieveByName_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> courseDAO.retrieve("ABCDEF"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> courseDAO.retrieve("ABCDEF"));
+		assertEquals(exception.getErrorMessage(), "Can't retrieve a course from DB. Name=ABCDEF");
 	}
 
 	@Test

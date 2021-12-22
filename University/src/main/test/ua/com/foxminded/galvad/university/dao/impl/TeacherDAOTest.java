@@ -13,6 +13,8 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
+
+import ua.com.foxminded.galvad.university.model.Course;
 import ua.com.foxminded.galvad.university.model.Teacher;
 
 @DataJpaTest
@@ -75,13 +77,15 @@ class TeacherDAOTest {
 
 	@Test
 	void testRetrieveWithNonexistentID_shouldThrowDataNotFoundException() {
-		assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve(100));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve(100));
+		assertEquals(exception.getErrorMessage(), "A teacher with ID=100 is not found");
 	}
 
 	@Test
 	void testRetrieve_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve(100));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve(100));
+		assertEquals(exception.getErrorMessage(), "Can't retrieve a teacher from DB. ID=100");
 	}
 
 	@Test
@@ -94,13 +98,15 @@ class TeacherDAOTest {
 
 	@Test
 	void testRetrieveByNameWithNonexistentID_shouldThrowDataNotFoundException() {
-		assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve("NONE", "NONE"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve("NONE", "NONE"));
+		assertEquals(exception.getErrorMessage(), "A teacher with First_Name=NONE, Last_Name=NONE is not found");
 	}
 
 	@Test
 	void testRetrieveByName_shouldThrowDataNotFoundExceptionAfterDropDB() {
 		dropDB();
-		assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve("NONE", "NONE"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> teacherDAO.retrieve("NONE", "NONE"));
+		assertEquals(exception.getErrorMessage(), "Can't retrieve a teacher from DB. First_Name=NONE, Last_Name=NONE");
 	}
 
 	@Test
@@ -141,6 +147,17 @@ class TeacherDAOTest {
 	void testDeleteByEntity_shouldThrowDataAreNotUpdatedExceptionForNonexistentId() {
 		Teacher teacher = new Teacher();
 		teacher.setId(100);
+		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.delete(teacher));
+	}
+	
+	@Test
+	void testDelete_shouldThrowDataAreNotUpdatedExceptionBecauseOfAttachedCourseForTeacher() {
+		createEntity("TestFirstName", "TestLastName");
+		Teacher teacher = teacherDAO.retrieve(1);
+		Course course = new Course();
+		course.setName("Test");
+		course.setTeacher(teacher);
+		entityManager.persist(course);
 		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.delete(teacher));
 	}
 
