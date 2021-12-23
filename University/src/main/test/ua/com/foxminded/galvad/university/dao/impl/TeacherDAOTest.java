@@ -158,7 +158,8 @@ class TeacherDAOTest {
 		course.setName("Test");
 		course.setTeacher(teacher);
 		entityManager.persist(course);
-		assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.delete(teacher));
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class, () -> teacherDAO.delete(teacher));
+		assertEquals(exception.getErrorMessage(), "Can't delete a teacher (ID=1) because of Course-Teacher connection");		
 	}
 
 	@Test
