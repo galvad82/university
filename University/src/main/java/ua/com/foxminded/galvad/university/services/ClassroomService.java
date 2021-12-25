@@ -3,20 +3,19 @@ package ua.com.foxminded.galvad.university.services;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.transaction.Transactional;
-
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import ua.com.foxminded.galvad.university.dao.impl.ClassroomDAO;
-import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
-import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
-import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
+import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.model.Classroom;
+import ua.com.foxminded.galvad.university.repository.ClassroomRepository;
+import ua.com.foxminded.galvad.university.repository.LessonRepository;
 
 @Service
 public class ClassroomService {
@@ -24,21 +23,21 @@ public class ClassroomService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClassroomService.class);
 	private static final String CONVERSION_COMPLETED = "Conversion of classroomDTO (name={}) to classroom completed";
 	private static final String CONVERSION_TO_ENTITY_COMPLETED = "Converted classroomDTO to entity (name={})";
+
 	@Autowired
 	private ModelMapper modelMapper;
 	@Autowired
-	private ClassroomDAO classroomDAO;
+	private ClassroomRepository classroomRepository;
 	@Autowired
-	private LessonDAO lessonDAO;
+	private LessonRepository lessonRepository;
 
-	@Transactional
 	public void create(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
-		classroomDAO.create(convertToEntityWithoutID(classroomDTO));
+		classroomRepository.save(convertToEntityWithoutID(classroomDTO));
 	}
 
 	public ClassroomDTO retrieve(String classroomName) {
 		LOGGER.trace("Going to retrieve classroom by name={}", classroomName);
-		Classroom classroom = classroomDAO.retrieve(classroomName);
+		Classroom classroom = classroomRepository.findByName(classroomName);
 		LOGGER.trace("Retrieved a classroom with name={}", classroom.getName());
 		LOGGER.trace("Converting classroom with name={} to DTO", classroom.getName());
 		ClassroomDTO classroomDTO = convertToDTO(classroom);
@@ -50,21 +49,22 @@ public class ClassroomService {
 	public void update(ClassroomDTO oldDTO, ClassroomDTO newDTO)
 			throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update ClassroomDTO with newName={} ", newDTO.getName());
-		classroomDAO.update(convertToEntity(oldDTO, newDTO));
+		classroomRepository.save(convertToEntity(oldDTO, newDTO));
 		LOGGER.trace("Updated ClassroomDTO with newName={} ", newDTO.getName());
 	}
 
 	@Transactional
 	public void delete(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete all the lessons for classroomDTO (name={})", classroomDTO.getName());	
-		lessonDAO.deleteByClassroomID(convertToEntity(classroomDTO).getId());
+		LOGGER.trace("Going to delete all the lessons for classroomDTO (name={})", classroomDTO.getName());
+		lessonRepository.deleteByClassroom(convertToEntity(classroomDTO));
 		LOGGER.trace("Going to delete ClassroomDTO (name={})", classroomDTO.getName());
-		classroomDAO.delete(convertToEntity(classroomDTO));
+		classroomRepository.delete(convertToEntity(classroomDTO));
 	}
 
 	public List<ClassroomDTO> findAll() throws DataNotFoundException {
 		LOGGER.trace("Going to get list of ALL ClassroomDTO from DB");
-		List<ClassroomDTO> list = classroomDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+		List<ClassroomDTO> list = classroomRepository.findAll().stream().map(this::convertToDTO)
+				.collect(Collectors.toList());
 		LOGGER.trace("List of ALL ClassroomDTO retrieved from DB, {} were found", list.size());
 		return list;
 	}
@@ -82,7 +82,7 @@ public class ClassroomService {
 		Classroom entity = modelMapper.map(classroomDTO, Classroom.class);
 		LOGGER.trace(CONVERSION_TO_ENTITY_COMPLETED, entity.getName());
 		LOGGER.trace("Going to set ID for entity classroom (name={})", entity.getName());
-		Integer id = classroomDAO.getId(entity);
+		Integer id = classroomRepository.findByName(entity.getName()).getId();
 		entity.setId(id);
 		LOGGER.trace("Set ID={} for entity classroom (name={})", id, entity.getName());
 		LOGGER.trace(CONVERSION_COMPLETED, classroomDTO.getName());
@@ -102,7 +102,7 @@ public class ClassroomService {
 		Classroom entity = modelMapper.map(newDTO, Classroom.class);
 		LOGGER.trace(CONVERSION_TO_ENTITY_COMPLETED, entity.getName());
 		LOGGER.trace("Going to set ID for entity classroom (name={})", entity.getName());
-		Integer id = classroomDAO.getId(convertToEntity(oldDTO));
+		Integer id = classroomRepository.findByName(convertToEntity(oldDTO).getName()).getId();
 		entity.setId(id);
 		LOGGER.trace("Set ID={} for entity classroom (name={})", id, entity.getName());
 		LOGGER.trace(CONVERSION_COMPLETED, newDTO.getName());

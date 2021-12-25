@@ -20,12 +20,12 @@ import org.modelmapper.ModelMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import ua.com.foxminded.galvad.university.dao.impl.GroupDAO;
-import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
+import ua.com.foxminded.galvad.university.repository.GroupRepository;
+import ua.com.foxminded.galvad.university.repository.StudentRepository;
 
 @ExtendWith(MockitoExtension.class)
 class StudentServiceTest {
@@ -45,10 +45,10 @@ class StudentServiceTest {
 	private ModelMapper mockModelMapper;
 
 	@Mock
-	private StudentDAO mockStudentDAO;
+	private StudentRepository mockStudentRepository;
 
 	@Mock
-	private GroupDAO mockGroupDAO;
+	private GroupRepository mockGroupRepository;
 
 	@Mock
 	private GroupService mockGroupService;
@@ -62,17 +62,17 @@ class StudentServiceTest {
 		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
 		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
 		studentService.create(studentDTO);
-		verify(mockStudentDAO, times(1)).create(any(Student.class));
+		verify(mockStudentRepository, times(1)).save(any(Student.class));
 	}
 
 	@Test
 	void testRetrieve() {
 		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
 		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
-		when(mockStudentDAO.retrieve(FIRST_NAME, LAST_NAME)).thenReturn(studentEntity);
+		when(mockStudentRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(studentEntity);
 		when(mockModelMapper.map(studentEntity, StudentDTO.class)).thenReturn(studentDTO);
 		studentService.retrieve("FirstName", "LastName");
-		verify(mockStudentDAO, times(1)).retrieve(FIRST_NAME, LAST_NAME);
+		verify(mockStudentRepository, times(1)).findByFirstNameAndLastName(FIRST_NAME, LAST_NAME);
 	}
 
 	@Test
@@ -83,9 +83,9 @@ class StudentServiceTest {
 		Student newEntity = createStudentEntity(1, FIRST_NAME_B, LAST_NAME_B, 1, GROUP_NAME);
 		when(mockModelMapper.map(newDTO, Student.class)).thenReturn(newEntity);
 		when(mockModelMapper.map(oldDTO, Student.class)).thenReturn(oldEntity);
-		when(mockStudentDAO.getId(oldEntity)).thenReturn(1);
+		when(mockStudentRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(oldEntity);
 		studentService.update(oldDTO, newDTO);
-		verify(mockStudentDAO, times(1)).update(any(Student.class));
+		verify(mockStudentRepository, times(1)).save(any(Student.class));
 	}
 
 	@Test
@@ -94,7 +94,7 @@ class StudentServiceTest {
 		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
 		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
 		studentService.delete(studentDTO);
-		verify(mockStudentDAO, times(1)).delete(studentEntity);
+		verify(mockStudentRepository, times(1)).delete(studentEntity);
 	}
 
 	@Test
@@ -113,7 +113,7 @@ class StudentServiceTest {
 		listOfStudents.add(entity1);
 		listOfStudents.add(entity2);
 		listOfStudents.add(entity3);
-		when(mockStudentDAO.findAll()).thenReturn(listOfStudents);
+		when(mockStudentRepository.findAll()).thenReturn(listOfStudents);
 		when(mockModelMapper.map(entity1, StudentDTO.class)).thenReturn(DTO1);
 		when(mockModelMapper.map(entity2, StudentDTO.class)).thenReturn(DTO2);
 		when(mockModelMapper.map(entity3, StudentDTO.class)).thenReturn(DTO3);
@@ -145,12 +145,12 @@ class StudentServiceTest {
 		listOfEntities.add(entity1);
 		listOfEntities.add(entity2);
 		listOfEntities.add(entity3);
-		when(mockStudentDAO.findAll()).thenReturn(listOfEntities);
+		when(mockStudentRepository.findAll()).thenReturn(listOfEntities);
 		when(mockModelMapper.map(entity1, StudentDTO.class)).thenReturn(DTO1);
 		when(mockModelMapper.map(entity3, StudentDTO.class)).thenReturn(DTO3);
 
 		Set<StudentDTO> retrievedSet = studentService.findAllUnassignedStudents();
-		verify(mockStudentDAO, times(1)).findAll();
+		verify(mockStudentRepository, times(1)).findAll();
 		assertEquals(retrievedSet, setOfUnassignedDTO);
 	}
 
@@ -175,12 +175,12 @@ class StudentServiceTest {
 		listOfEntities.add(entity1);
 		listOfEntities.add(entity2);
 		listOfEntities.add(entity3);
-		when(mockStudentDAO.findAll()).thenReturn(listOfEntities);
+		when(mockStudentRepository.findAll()).thenReturn(listOfEntities);
 		when(mockModelMapper.map(entity1, StudentDTO.class)).thenReturn(DTO1);
 		when(mockModelMapper.map(entity2, StudentDTO.class)).thenReturn(DTO2);
 		when(mockModelMapper.map(entity3, StudentDTO.class)).thenReturn(DTO3);
 		Map<StudentDTO, String> retrievedStudentGroupMap = studentService.buildStudentGroupMap();
-		verify(mockStudentDAO, times(1)).findAll();
+		verify(mockStudentRepository, times(1)).findAll();
 		assertEquals(3, retrievedStudentGroupMap.size());
 		assertEquals(NONE, retrievedStudentGroupMap.get(DTO1));
 		assertEquals(GROUP_NAME2, retrievedStudentGroupMap.get(DTO2));
@@ -198,7 +198,7 @@ class StudentServiceTest {
 		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
 		when(mockGroupService.convertToEntity(newGroupDTO)).thenReturn(newGroupEntity);
 		studentService.addToGroup(studentDTO, newGroupDTO);
-		verify(mockStudentDAO, times(1)).addStudentToGroup(studentEntity, newGroupEntity);
+		verify(mockStudentRepository, times(1)).addStudentToGroup(studentEntity.getId(), newGroupEntity);
 	}
 
 	@Test
@@ -207,7 +207,7 @@ class StudentServiceTest {
 		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
 		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
 		studentService.removeStudentFromGroup(studentDTO);
-		verify(mockStudentDAO, times(1)).removeStudentFromGroups(studentEntity);
+		verify(mockStudentRepository, times(1)).removeStudentFromGroups(studentEntity.getId());
 	}
 	
 	private Student createStudentEntity(Integer studentID, String firstName, String lastName, Integer groupID,

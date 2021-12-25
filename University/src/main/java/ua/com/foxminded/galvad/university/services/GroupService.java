@@ -15,18 +15,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
-import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
-import ua.com.foxminded.galvad.university.dao.impl.GroupDAO;
-import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
-import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
+import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
+import ua.com.foxminded.galvad.university.repository.GroupRepository;
+import ua.com.foxminded.galvad.university.repository.LessonRepository;
+import ua.com.foxminded.galvad.university.repository.StudentRepository;
 
 @Service
-@Transactional
 public class GroupService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GroupService.class);
@@ -35,29 +34,31 @@ public class GroupService {
 	private static final String GOING_TO_CONVERT = "Going to convert groupDTO (name={}) to group";
 
 	private ModelMapper modelMapper;
-	private GroupDAO groupDAO;
-	private StudentDAO studentDAO;
-	private LessonDAO lessonDAO;
+	private GroupRepository groupRepository;
+	private StudentRepository studentRepository;
+	private LessonRepository lessonRepository;
 
 	@Autowired
-	public GroupService(ModelMapper modelMapper, GroupDAO groupDAO, StudentDAO studentDAO, LessonDAO lessonDAO) {
+	public GroupService(ModelMapper modelMapper, GroupRepository groupRepository, StudentRepository studentRepository,
+			LessonRepository lessonRepository) {
 		this.modelMapper = modelMapper;
 		this.modelMapper.addConverter(entityToDTO);
 		this.modelMapper.addConverter(dtoToEntity);
-		this.groupDAO = groupDAO;
-		this.studentDAO = studentDAO;
-		this.lessonDAO = lessonDAO;
+		this.groupRepository = groupRepository;
+		this.studentRepository = studentRepository;
+		this.lessonRepository = lessonRepository;
 	}
 
 	public void create(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
-		Group entity = convertToEntity(groupDTO);
-		groupDAO.create(entity);
+		LOGGER.trace("Going to create a group with the name={}", groupDTO.getName());
+		groupRepository.save(convertToEntity(groupDTO));
+		LOGGER.trace("The group with the name={} created", groupDTO.getName());
 	}
 
 	public GroupDTO retrieve(String groupName) throws DataNotFoundException {
 		LOGGER.trace("Going to retrieve groupDTO from group with name={}", groupName);
 		LOGGER.trace("Going to retrieve group by name={}", groupName);
-		Group group = groupDAO.retrieve(groupName);
+		Group group = groupRepository.findByName(groupName);
 		LOGGER.trace("Retrieved a group with name={}", group.getName());
 		LOGGER.trace("Going to retrieve groupDTO from a group with name={}", group.getName());
 		GroupDTO groupDTO = convertToDTO(group);
@@ -65,33 +66,41 @@ public class GroupService {
 		return groupDTO;
 	}
 
+	@Transactional
 	public void update(GroupDTO oldDTO, GroupDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update GroupDTO with newName={} ", newDTO.getName());
-		groupDAO.update(convertToEntity(oldDTO, newDTO));
+		groupRepository.save(convertToEntity(oldDTO, newDTO));
 		LOGGER.trace("Updated GroupDTO with newName={} ", newDTO.getName());
 	}
 
-	public void removeStudentsFromGroup(GroupDTO groupDTO)throws DataNotFoundException, DataAreNotUpdatedException {
+	@Transactional
+	public GroupDTO removeStudentsFromGroup(GroupDTO groupDTO)
+			throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to convert DTO (name={}) to group", groupDTO.getName());
 		Group group = convertToEntity(groupDTO);
 		LOGGER.trace("Going to delete students from group (name={})", group.getName());
-		group.getSetOfStudent().stream().forEach(studentDAO::removeStudentFromGroups);
+		group.getSetOfStudent().stream().forEach(s -> {
+			s.setGroup(null);
+			studentRepository.save(s);
+		});
 		LOGGER.trace("Students were deleted from group (name={})", group.getName());
 		group.setSetOfStudent(new HashSet<>());
+		return convertToDTO(group);
 	}
-	
+
+	@Transactional
 	public void delete(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to convert DTO (name={}) to group", groupDTO.getName());
 		Group group = convertToEntity(groupDTO);
 		LOGGER.trace("Going to delete all the lessons for GroupDTO (name={})", groupDTO.getName());
-		lessonDAO.deleteByGroupID(group.getId());
+		lessonRepository.deleteByGroup(group);
 		LOGGER.trace("Going to delete GroupDTO (name={})", groupDTO.getName());
-		groupDAO.delete(group);
+		groupRepository.delete(group);
 	}
 
 	public List<GroupDTO> findAll() throws DataNotFoundException {
 		LOGGER.trace("Going to get list of ALL ClassroomDTO from DB");
-		List<GroupDTO> list = groupDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+		List<GroupDTO> list = groupRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
 		LOGGER.trace("List of ALL GroupDTO retrieved from DB, {} were found", list.size());
 		return list;
 	}
@@ -118,15 +127,17 @@ public class GroupService {
 		LOGGER.trace(GOING_TO_CONVERT, oldDTO.getName());
 		Group oldEntity = modelMapper.map(oldDTO, Group.class);
 		LOGGER.trace(CONVERTED, oldEntity.getName());
-		oldEntity.getSetOfStudent().stream().forEach(s -> studentDAO.removeStudentFromGroups(s));
-
+		oldEntity.getSetOfStudent().stream().forEach(s -> studentRepository.removeStudentFromGroups(s.getId()));
 		LOGGER.trace(GOING_TO_CONVERT, newDTO.getName());
 		Group newEntity = modelMapper.map(newDTO, Group.class);
 		LOGGER.trace(CONVERTED, newEntity.getName());
 		LOGGER.trace("Going to set an ID for a group (name={})", newEntity.getName());
-		Integer id = groupDAO.getId(oldEntity);
+		Integer id = groupRepository.findByName(oldEntity.getName()).getId();
 		newEntity.setId(id);
 		LOGGER.trace("Set an ID={} for a group (name={})", id, newEntity.getName());
+		newDTO.getListOfStudent().stream()
+				.map(s -> studentRepository.findByFirstNameAndLastName(s.getFirstName(), s.getLastName()))
+				.forEach(s -> studentRepository.addStudentToGroup(s.getId(), newEntity));
 		LOGGER.trace(CONVERSION_TO_ENTITY_COMPLETED, newDTO.getName());
 		return newEntity;
 	}
@@ -152,9 +163,10 @@ public class GroupService {
 		@Override
 		public Group convert(MappingContext<GroupDTO, Group> context) {
 			GroupDTO groupDTO = context.getSource();
-			try {
-				return groupDAO.retrieve(groupDTO.getName());
-			} catch (DataNotFoundException e) {
+			Group retrievedEntity = groupRepository.findByName(groupDTO.getName());
+			if (retrievedEntity != null) {
+				return retrievedEntity;
+			} else {
 				Group group = new Group();
 				group.setName(groupDTO.getName());
 				return group;

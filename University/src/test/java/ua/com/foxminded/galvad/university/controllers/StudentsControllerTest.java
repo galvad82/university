@@ -20,9 +20,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
+
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.services.GroupService;
 import ua.com.foxminded.galvad.university.services.StudentService;
 

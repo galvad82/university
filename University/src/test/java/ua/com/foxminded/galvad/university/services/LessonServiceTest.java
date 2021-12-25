@@ -17,7 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
+
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
@@ -31,6 +31,7 @@ import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Lesson;
 import ua.com.foxminded.galvad.university.model.Student;
 import ua.com.foxminded.galvad.university.model.Teacher;
+import ua.com.foxminded.galvad.university.repository.LessonRepository;
 
 @ExtendWith(MockitoExtension.class)
 class LessonServiceTest {
@@ -54,7 +55,7 @@ class LessonServiceTest {
 	private GroupService mockGroupService;
 
 	@Mock
-	private LessonDAO mockLessonDAO;
+	private LessonRepository mockLessonRepository;
 
 	@InjectMocks
 	private LessonService lessonService;
@@ -69,7 +70,7 @@ class LessonServiceTest {
 		when(mockCourseService.convertToEntity(lessonDTO.getCourse())).thenReturn(lessonEntity.getCourse());
 		when(mockClassroomService.convertToEntity(lessonDTO.getClassroom())).thenReturn(lessonEntity.getClassroom());
 		lessonService.create(lessonDTO);
-		verify(mockLessonDAO, times(1)).create(any(Lesson.class));
+		verify(mockLessonRepository, times(1)).save(any(Lesson.class));
 	}
 
 	@Test
@@ -82,10 +83,10 @@ class LessonServiceTest {
 		Lesson lessonEntity = createLesson(GROUP_NAME, COURSE_NAME, CLASSROOM_NAME, FIRST_NAME, LAST_NAME, FIRST_NAME,
 				LAST_NAME);
 		listOfLessonEntities.add(lessonEntity);
-		when(mockLessonDAO.findAll()).thenReturn(listOfLessonEntities);
+		when(mockLessonRepository.findAll()).thenReturn(listOfLessonEntities);
 		when(mockModelMapper.map(lessonEntity, LessonDTO.class)).thenReturn(lessonDTO);
 		List<LessonDTO> retrievedListDTO = lessonService.findAll();
-		verify(mockLessonDAO, times(1)).findAll();
+		verify(mockLessonRepository, times(1)).findAll();
 		assertEquals(retrievedListDTO, listOfLessonDTO);
 	}
 
@@ -105,9 +106,9 @@ class LessonServiceTest {
 		when(mockGroupService.convertToEntity(oldDTO.getGroup())).thenReturn(oldEntity.getGroup());
 		when(mockCourseService.convertToEntity(oldDTO.getCourse())).thenReturn(oldEntity.getCourse());
 		when(mockClassroomService.convertToEntity(oldDTO.getClassroom())).thenReturn(oldEntity.getClassroom());
-		when(mockLessonDAO.getId(any(Lesson.class))).thenReturn(1);
+//		when(lessonService.getId(any(Lesson.class))).thenReturn(1);
 		lessonService.update(oldDTO, newDTO);
-		verify(mockLessonDAO, times(1)).update(any(Lesson.class));
+		verify(mockLessonRepository, times(1)).save(any(Lesson.class));
 	}
 
 	@Test
@@ -119,9 +120,10 @@ class LessonServiceTest {
 		when(mockGroupService.convertToEntity(lessonDTO.getGroup())).thenReturn(lessonEntity.getGroup());
 		when(mockCourseService.convertToEntity(lessonDTO.getCourse())).thenReturn(lessonEntity.getCourse());
 		when(mockClassroomService.convertToEntity(lessonDTO.getClassroom())).thenReturn(lessonEntity.getClassroom());
-		when(mockLessonDAO.getId(any(Lesson.class))).thenReturn(1);
+		when(mockLessonRepository.getID(lessonEntity.getGroup(), lessonEntity.getCourse(), lessonEntity.getClassroom(),
+				lessonEntity.getStartTime(), lessonEntity.getDuration())).thenReturn(1);
 		lessonService.delete(lessonDTO);
-		verify(mockLessonDAO, times(1)).delete(lessonEntity);
+		verify(mockLessonRepository, times(1)).delete(lessonEntity);
 	}
 
 	@Test
@@ -134,7 +136,7 @@ class LessonServiceTest {
 		Lesson lessonEntity = createLesson(GROUP_NAME, COURSE_NAME, CLASSROOM_NAME, FIRST_NAME, LAST_NAME, FIRST_NAME,
 				LAST_NAME);
 		listOfLessonEntities.add(lessonEntity);
-		when(mockLessonDAO.findAll()).thenReturn(listOfLessonEntities);
+		when(mockLessonRepository.findAll()).thenReturn(listOfLessonEntities);
 		when(mockModelMapper.map(lessonEntity, LessonDTO.class)).thenReturn(lessonDTO);
 		List<LessonDTO> retrievedListDTO = lessonService.findAllLessonsForClassroom(CLASSROOM_NAME);
 		assertEquals(retrievedListDTO, listOfLessonDTO);
@@ -150,7 +152,7 @@ class LessonServiceTest {
 		Lesson lessonEntity = createLesson(GROUP_NAME, COURSE_NAME, CLASSROOM_NAME, FIRST_NAME, LAST_NAME, FIRST_NAME,
 				LAST_NAME);
 		listOfLessonEntities.add(lessonEntity);
-		when(mockLessonDAO.findAll()).thenReturn(listOfLessonEntities);
+		when(mockLessonRepository.findAll()).thenReturn(listOfLessonEntities);
 		when(mockModelMapper.map(lessonEntity, LessonDTO.class)).thenReturn(lessonDTO);
 		List<LessonDTO> retrievedListDTO = lessonService.findAllLessonsForCourse(COURSE_NAME);
 		assertEquals(retrievedListDTO, listOfLessonDTO);
@@ -166,7 +168,7 @@ class LessonServiceTest {
 		Lesson lessonEntity = createLesson(GROUP_NAME, COURSE_NAME, CLASSROOM_NAME, FIRST_NAME, LAST_NAME, FIRST_NAME,
 				LAST_NAME);
 		listOfLessonEntities.add(lessonEntity);
-		when(mockLessonDAO.findAll()).thenReturn(listOfLessonEntities);
+		when(mockLessonRepository.findAll()).thenReturn(listOfLessonEntities);
 		when(mockModelMapper.map(lessonEntity, LessonDTO.class)).thenReturn(lessonDTO);
 		List<LessonDTO> retrievedListDTO = lessonService.findAllLessonsForGroup(GROUP_NAME);
 		assertEquals(retrievedListDTO, listOfLessonDTO);
@@ -180,7 +182,7 @@ class LessonServiceTest {
 				LAST_NAME);
 		when(mockClassroomService.convertToEntity(lessonDTO.getClassroom())).thenReturn(lessonEntity.getClassroom());
 		lessonService.deleteByClassroom(lessonDTO.getClassroom());
-		verify(mockLessonDAO, times(1)).deleteByClassroomID(1);
+		verify(mockLessonRepository, times(1)).deleteByClassroom(lessonEntity.getClassroom());
 	}
 
 	@Test
@@ -191,7 +193,7 @@ class LessonServiceTest {
 				LAST_NAME);
 		when(mockCourseService.convertToEntity(lessonDTO.getCourse())).thenReturn(lessonEntity.getCourse());
 		lessonService.deleteByCourse(lessonDTO.getCourse());
-		verify(mockLessonDAO, times(1)).deleteByCourseID(1);
+		verify(mockLessonRepository, times(1)).deleteByCourse(lessonEntity.getCourse());
 	}
 
 	@Test
@@ -202,7 +204,7 @@ class LessonServiceTest {
 				LAST_NAME);
 		when(mockGroupService.convertToEntity(lessonDTO.getGroup())).thenReturn(lessonEntity.getGroup());
 		lessonService.deleteByGroup(lessonDTO.getGroup());
-		verify(mockLessonDAO, times(1)).deleteByGroupID(1);
+		verify(mockLessonRepository, times(1)).deleteByGroup(lessonEntity.getGroup());
 	}
 
 	@Test

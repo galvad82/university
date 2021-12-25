@@ -16,7 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
+
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
@@ -29,6 +29,7 @@ import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Lesson;
 import ua.com.foxminded.galvad.university.model.Student;
 import ua.com.foxminded.galvad.university.model.Teacher;
+import ua.com.foxminded.galvad.university.repository.TeacherRepository;
 
 @ExtendWith(MockitoExtension.class)
 class TeacherServiceTest {
@@ -40,7 +41,7 @@ class TeacherServiceTest {
 	private ModelMapper mockModelMapper;
 
 	@Mock
-	private TeacherDAO mockTeacherDAO;
+	private TeacherRepository mockTeacherRepository;
 
 	@Mock
 	private LessonService mockLessonService;
@@ -54,17 +55,17 @@ class TeacherServiceTest {
 		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
 		when(mockModelMapper.map(teacherDTO, Teacher.class)).thenReturn(teacherEntity);
 		teacherService.create(teacherDTO);
-		verify(mockTeacherDAO, times(1)).create(teacherEntity);
+		verify(mockTeacherRepository, times(1)).save(teacherEntity);
 	}
 
 	@Test
 	void testRetrieve() {
 		TeacherDTO teacherDTO = createDTO(FIRST_NAME, LAST_NAME);
 		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
-		when(mockTeacherDAO.retrieve(FIRST_NAME, LAST_NAME)).thenReturn(teacherEntity);
+		when(mockTeacherRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(teacherEntity);
 		when(mockModelMapper.map(teacherEntity, TeacherDTO.class)).thenReturn(teacherDTO);
 		teacherService.retrieve(FIRST_NAME, LAST_NAME);
-		verify(mockTeacherDAO, times(1)).retrieve(FIRST_NAME, LAST_NAME);
+		verify(mockTeacherRepository, times(1)).findByFirstNameAndLastName(FIRST_NAME, LAST_NAME);
 	}
 
 	@Test
@@ -75,9 +76,9 @@ class TeacherServiceTest {
 		Teacher newEntity = new Teacher(1, "NewFName", "NewLName");
 		when(mockModelMapper.map(newDTO, Teacher.class)).thenReturn(newEntity);
 		when(mockModelMapper.map(oldDTO, Teacher.class)).thenReturn(oldEntity);
-		when(mockTeacherDAO.getId(oldEntity)).thenReturn(1);
+		when(mockTeacherRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(oldEntity);
 		teacherService.update(oldDTO, newDTO);
-		verify(mockTeacherDAO, times(1)).update(newEntity);
+		verify(mockTeacherRepository, times(1)).save(newEntity);
 	}
 
 	@Test
@@ -85,9 +86,9 @@ class TeacherServiceTest {
 		TeacherDTO teacherDTO = createDTO(FIRST_NAME, LAST_NAME);
 		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
 		when(mockModelMapper.map(teacherDTO, Teacher.class)).thenReturn(teacherEntity);
-		when(mockTeacherDAO.getId(teacherEntity)).thenReturn(teacherEntity.getId());
+		when(mockTeacherRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(teacherEntity);
 		teacherService.delete(teacherDTO);
-		verify(mockTeacherDAO, times(1)).delete(teacherEntity);
+		verify(mockTeacherRepository, times(1)).delete(teacherEntity);
 	}
 
 	@Test
@@ -96,17 +97,17 @@ class TeacherServiceTest {
 		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
 		List<Teacher> list = new ArrayList<>();
 		list.add(teacherEntity);
-		when(mockTeacherDAO.findAll()).thenReturn(list);
+		when(mockTeacherRepository.findAll()).thenReturn(list);
 		when(mockModelMapper.map(teacherEntity, TeacherDTO.class)).thenReturn(teacherDTO);
 		teacherService.findAll();
-		verify(mockTeacherDAO, times(1)).findAll();
+		verify(mockTeacherRepository, times(1)).findAll();
 	}
 
 	@Test
 	void testFindAllLessonsForTeacher() {
 		TeacherDTO teacherDTO = createDTO(FIRST_NAME, LAST_NAME);
 		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
-		when(mockTeacherDAO.retrieve(FIRST_NAME, LAST_NAME)).thenReturn(teacherEntity);
+		when(mockTeacherRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(teacherEntity);
 		when(mockModelMapper.map(teacherEntity, TeacherDTO.class)).thenReturn(teacherDTO);
 		Lesson lessonEntity = createLesson("G1", "Marketing", "A-101", FIRST_NAME, LAST_NAME, FIRST_NAME, LAST_NAME);
 		List<Lesson> list = new ArrayList<>();
@@ -116,7 +117,7 @@ class TeacherServiceTest {
 		listOfLessonDTO.add(lessonDTO);
 		when(mockLessonService.findAll()).thenReturn(listOfLessonDTO);
 		List<LessonDTO> retrievedList = teacherService.findAllLessonsForTeacher(FIRST_NAME, LAST_NAME);
-		verify(mockTeacherDAO, times(1)).retrieve(FIRST_NAME, LAST_NAME);
+		verify(mockTeacherRepository, times(1)).findByFirstNameAndLastName(FIRST_NAME, LAST_NAME);
 		assertEquals(retrievedList, listOfLessonDTO);
 	}
 

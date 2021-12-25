@@ -1,25 +1,25 @@
 package ua.com.foxminded.galvad.university.services;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
-
-import javax.transaction.Transactional;
 
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import ua.com.foxminded.galvad.university.dao.impl.CourseDAO;
-import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
-import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
-import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
-import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
+import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.model.Course;
 import ua.com.foxminded.galvad.university.model.Teacher;
+import ua.com.foxminded.galvad.university.repository.CourseRepository;
+import ua.com.foxminded.galvad.university.repository.LessonRepository;
+import ua.com.foxminded.galvad.university.repository.TeacherRepository;
 
 @Service
 public class CourseService {
@@ -33,24 +33,22 @@ public class CourseService {
 
 	private ModelMapper modelMapper = new ModelMapper();
 	@Autowired
-	private CourseDAO courseDAO;
+	private CourseRepository courseRepository;
 	@Autowired
-	private TeacherDAO teacherDAO;
+	private TeacherRepository teacherRepository;
 	@Autowired
-	private LessonDAO lessonDAO;
-	
-	@Transactional
+	private LessonRepository lessonRepository;
+
 	public void create(CourseDTO courseDTO) throws DataNotFoundException, DataAreNotUpdatedException {
-		Course course = convertToEntityWithoutID(courseDTO);
-		courseDAO.create(course);
+		courseRepository.save(convertToEntityWithoutID(courseDTO));
 	}
 
 	public CourseDTO retrieve(String courseName) throws DataNotFoundException {
 		LOGGER.trace("Going to retrieve course by name={}", courseName);
-		Course course = courseDAO.retrieve(courseName);
+		Course course = courseRepository.findByName(courseName);
 		LOGGER.trace("Retrieved a course with name={}", courseName);
 		LOGGER.trace("Going to set a teacher for the course with name={}", courseName);
-		Teacher teacher = teacherDAO.retrieve(course.getTeacher().getId());
+		Teacher teacher = teacherRepository.findById(course.getTeacher().getId()).orElse(null);
 		course.setTeacher(teacher);
 		LOGGER.trace("Going to retrieve CourseDTO from a course with name={}", courseName);
 		CourseDTO courseDTO = convertToDTO(course);
@@ -61,21 +59,21 @@ public class CourseService {
 	@Transactional
 	public void update(CourseDTO oldDTO, CourseDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update CourseDTO with newName={} ", newDTO.getName());
-		courseDAO.update(convertToEntity(oldDTO, newDTO));
+		courseRepository.save(convertToEntity(oldDTO, newDTO));
 		LOGGER.trace("Updated CourseDTO with newName={} ", newDTO.getName());
 	}
 
 	@Transactional
 	public void delete(CourseDTO courseDTO) throws DataNotFoundException, DataAreNotUpdatedException {
-		LOGGER.trace("Going to delete all the lessons for courseDTO (name={})", courseDTO.getName());	
-		lessonDAO.deleteByCourseID(convertToEntity(courseDTO).getId());		
+		LOGGER.trace("Going to delete all the lessons for courseDTO (name={})", courseDTO.getName());
+		lessonRepository.deleteByCourse(convertToEntity(courseDTO));
 		LOGGER.trace("Going to delete CourseDTO by entity (name={})", courseDTO.getName());
-		courseDAO.delete(convertToEntity(courseDTO));
+		courseRepository.delete(convertToEntity(courseDTO));
 	}
 
 	public List<CourseDTO> findAll() throws DataNotFoundException {
 		LOGGER.trace("Going to get list of ALL CourseDTO from DB");
-		List<CourseDTO> list = courseDAO.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
+		List<CourseDTO> list = courseRepository.findAll().stream().map(this::convertToDTO).collect(Collectors.toList());
 		LOGGER.trace("List of ALL CourseDTO retrieved from DB, {} were found", list.size());
 		return list;
 	}
@@ -85,7 +83,12 @@ public class CourseService {
 		CourseDTO courseDTO = modelMapper.map(entity, CourseDTO.class);
 		LOGGER.trace("Converted course to courseDTO (name={})", courseDTO.getName());
 		LOGGER.trace("Going to set a teacher for courseDTO(name={})", courseDTO.getName());
-		courseDTO.setTeacher(modelMapper.map(teacherDAO.retrieve(entity.getTeacher().getId()), TeacherDTO.class));
+		Optional<Teacher> optionalTeacher = teacherRepository.findById(entity.getTeacher().getId());
+		if (optionalTeacher.isPresent()) {
+			courseDTO.setTeacher(modelMapper.map(optionalTeacher.get(), TeacherDTO.class));
+		} else {
+			courseDTO.setTeacher(null);
+		}
 		LOGGER.trace("Set a teacher for courseDTO(name={})", courseDTO.getName());
 		LOGGER.trace("Conversion of a course (name={}) to courseDTO completed successfully", entity.getName());
 		return courseDTO;
@@ -97,13 +100,14 @@ public class CourseService {
 		LOGGER.trace(CONVERTED_DTO_TO_ENTITY, entity.getName());
 		LOGGER.trace(GOING_TO_SET_TEACHER, entity.getName());
 		Teacher teacher = entity.getTeacher();
-		Integer id = teacherDAO.getId(teacher);
+		Integer id = teacherRepository.findByFirstNameAndLastName(teacher.getFirstName(), teacher.getLastName())
+				.getId();
 		teacher.setId(id);
 		LOGGER.trace(SET_ID, id, entity.getName());
 		entity.setTeacher(teacher);
 		LOGGER.trace(SET_TEACHER_FOR_ENTITY, entity.getName());
 		LOGGER.trace("Going to set ID for entity course (name={})", entity.getName());
-		id = courseDAO.getId(entity);
+		id = courseRepository.findByName(entity.getName()).getId();
 		entity.setId(id);
 		LOGGER.trace("Set ID={} for entity course (name={})", id, entity.getName());
 		return entity;
@@ -115,7 +119,8 @@ public class CourseService {
 		LOGGER.trace(CONVERTED_DTO_TO_ENTITY, entity.getName());
 		LOGGER.trace(GOING_TO_SET_TEACHER, entity.getName());
 		Teacher teacher = entity.getTeacher();
-		Integer id = teacherDAO.getId(teacher);
+		Integer id = teacherRepository.findByFirstNameAndLastName(teacher.getFirstName(), teacher.getLastName())
+				.getId();
 		teacher.setId(id);
 		LOGGER.trace(SET_ID, id, entity.getName());
 		entity.setTeacher(teacher);
@@ -129,13 +134,14 @@ public class CourseService {
 		LOGGER.trace(CONVERTED_DTO_TO_ENTITY, entity.getName());
 		LOGGER.trace(GOING_TO_SET_TEACHER, entity.getName());
 		Teacher teacher = entity.getTeacher();
-		Integer id = teacherDAO.getId(teacher);
+		Integer id = teacherRepository.findByFirstNameAndLastName(teacher.getFirstName(), teacher.getLastName())
+				.getId();
 		teacher.setId(id);
 		LOGGER.trace(SET_ID, id, entity.getName());
 		entity.setTeacher(teacher);
 		LOGGER.trace(SET_TEACHER_FOR_ENTITY, entity.getName());
 		LOGGER.trace("Going to set ID for entity course (name={})", entity.getName());
-		entity.setId(courseDAO.getId(convertToEntity(oldDTO)));
+		entity.setId(courseRepository.findByName(convertToEntity(oldDTO).getName()).getId());
 		LOGGER.trace("Set ID={} for entity course (name={})", id, entity.getName());
 		return entity;
 	}

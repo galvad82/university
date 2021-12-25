@@ -1,4 +1,4 @@
-package ua.com.foxminded.galvad.university.dao.impl;
+package ua.com.foxminded.galvad.university.exceptions;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -11,16 +11,15 @@ class DataNotFoundExceptionTest {
 	@Test
 	void test() {
 		DataNotFoundException dataNotFoundExceptionException = new DataNotFoundException("ErrorMessage");
-		assertEquals(dataNotFoundExceptionException.getErrorMessage(), "ErrorMessage");
+		assertEquals("ErrorMessage", dataNotFoundExceptionException.getErrorMessage());
 	}
 
 	@Test
 	void testWithException() {
 		Exception exception = new NoResultException("Error");
-		DataNotFoundException dataNotFoundExceptionException = new DataNotFoundException("ErrorMessage",
-				exception);
-		assertEquals(dataNotFoundExceptionException.getErrorMessage(), "ErrorMessage");
-		assertEquals(dataNotFoundExceptionException.getCauseDescription(), "Error");
+		DataNotFoundException dataNotFoundExceptionException = new DataNotFoundException("ErrorMessage", exception);
+		assertEquals("ErrorMessage", dataNotFoundExceptionException.getErrorMessage());
+		assertEquals("Error", dataNotFoundExceptionException.getCauseDescription());
 		assertEquals(dataNotFoundExceptionException.getException(), exception);
 	}
 

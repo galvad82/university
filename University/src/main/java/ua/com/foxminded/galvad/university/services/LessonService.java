@@ -6,29 +6,26 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.transaction.Transactional;
-
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import ua.com.foxminded.galvad.university.dao.impl.DataAreNotUpdatedException;
-import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
-import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
+import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.model.Classroom;
 import ua.com.foxminded.galvad.university.model.Course;
 import ua.com.foxminded.galvad.university.model.Event;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Lesson;
+import ua.com.foxminded.galvad.university.repository.LessonRepository;
 
 @Service
-@Transactional
 public class LessonService {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LessonService.class);
@@ -41,27 +38,27 @@ public class LessonService {
 	@Autowired
 	private ClassroomService classroomService;
 	@Autowired
-	private LessonDAO lessonDAO;
+	private LessonRepository lessonRepository;
 
 	public void create(LessonDTO lessonDTO) throws DataNotFoundException, DataAreNotUpdatedException {
-		lessonDAO.create(convertToEntityWithoutID(lessonDTO));
+		Lesson lesson = convertToEntityWithoutID(lessonDTO);
+		lessonRepository.save(lesson);
 	}
 
 	public void update(LessonDTO oldDTO, LessonDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update LessonDTO");
-		lessonDAO.update(convertToEntity(oldDTO, newDTO));
+		lessonRepository.save(convertToEntity(oldDTO, newDTO));
 		LOGGER.trace("Updated LessonDTO successfully");
 	}
 
-	@Transactional
 	public void delete(LessonDTO lessonDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to delete LessonDTO");
-		lessonDAO.delete(convertToEntity(lessonDTO));
+		lessonRepository.delete(convertToEntity(lessonDTO));
 	}
 
 	public List<LessonDTO> findAll() throws DataNotFoundException {
 		LOGGER.trace("Going to get list of ALL LessonDTO from DB");
-		List<Lesson> listOfLessons = lessonDAO.findAll();
+		List<Lesson> listOfLessons = lessonRepository.findAll();
 		List<LessonDTO> list = listOfLessons.stream().map(this::convertToDTO).collect(Collectors.toList());
 		LOGGER.trace("List of ALL LessonDTO retrieved from DB, {} were found", list.size());
 		return list;
@@ -100,7 +97,7 @@ public class LessonService {
 		Integer id = classroom.getId();
 		LOGGER.trace("Retrieved ID={} for classroom (name={})", id, classroom.getName());
 		LOGGER.trace("Going to delete LessonDTO by classroom (id={}, name={})", id, classroomDTO.getName());
-		lessonDAO.deleteByClassroomID(id);
+		lessonRepository.deleteByClassroom(classroom);
 		LOGGER.trace("Deleted LessonDTO by classroom (id={}, name={}) successfully", id, classroomDTO.getName());
 	}
 
@@ -113,7 +110,7 @@ public class LessonService {
 		Integer id = course.getId();
 		LOGGER.trace("Retrieved ID={} for course (name={})", id, course.getName());
 		LOGGER.trace("Going to delete LessonDTO by course (id={}, name={})", id, courseDTO.getName());
-		lessonDAO.deleteByCourseID(id);
+		lessonRepository.deleteByCourse(course);
 		LOGGER.trace("Deleted LessonDTO by course (id={}, name={}) successfully", id, courseDTO.getName());
 	}
 
@@ -126,11 +123,10 @@ public class LessonService {
 		Integer id = group.getId();
 		LOGGER.trace("Retrieved ID={} for group (name={})", id, group.getName());
 		LOGGER.trace("Going to delete LessonDTO by group (id={}, name={})", id, groupDTO.getName());
-		lessonDAO.deleteByGroupID(id);
+		lessonRepository.deleteByGroup(group);
 		LOGGER.trace("Deleted LessonDTO by group (id={}, name={}) successfully", id, groupDTO.getName());
 	}
 
-	@Transactional
 	private LessonDTO convertToDTO(Lesson entity) throws DataNotFoundException {
 		LOGGER.trace("Converting lesson to LessonDTO");
 		LessonDTO lessonDTO = modelMapper.map(entity, LessonDTO.class);
@@ -141,7 +137,7 @@ public class LessonService {
 	private Lesson convertToEntity(LessonDTO lessonDTO) throws DataNotFoundException {
 		Lesson entity = convertToEntityWithoutID(lessonDTO);
 		LOGGER.trace("Setting ID for the lesson");
-		Integer id = lessonDAO.getId(entity);
+		Integer id = getId(entity);
 		entity.setId(id);
 		LOGGER.trace("Set ID={} for the lesson", id);
 		LOGGER.trace("Finished conversion of LessonDTO to lesson");
@@ -151,7 +147,7 @@ public class LessonService {
 	private Lesson convertToEntity(LessonDTO oldDTO, LessonDTO newDTO) throws DataNotFoundException {
 		Lesson entity = convertToEntityWithoutID(newDTO);
 		LOGGER.trace("Setting ID for the lesson");
-		Integer id = lessonDAO.getId(convertToEntity(oldDTO));
+		Integer id = getId(convertToEntity(oldDTO));
 		entity.setId(id);
 		LOGGER.trace("Set ID={} for the lesson", id);
 		LOGGER.trace("Finished conversion of LessonDTO to lesson");
@@ -193,6 +189,11 @@ public class LessonService {
 				lesson.getGroup().getName(), lesson.getCourse().getName(), lesson.getClassroom().getName(),
 				lesson.getCourse().getTeacher().getFirstName(), lesson.getCourse().getTeacher().getLastName());
 		return new Event(title, lesson.getStartTime(), lesson.getStartTime() + lesson.getDuration());
+	}
+
+	private Integer getId(Lesson entity) {
+		return lessonRepository.getID(entity.getGroup(), entity.getCourse(), entity.getClassroom(),
+				entity.getStartTime(), entity.getDuration());
 	}
 
 }

@@ -17,24 +17,25 @@ import org.mockito.Mock;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import ua.com.foxminded.galvad.university.dao.impl.GroupDAO;
-import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
-import ua.com.foxminded.galvad.university.dao.impl.StudentDAO;
+
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
+import ua.com.foxminded.galvad.university.repository.GroupRepository;
+import ua.com.foxminded.galvad.university.repository.LessonRepository;
+import ua.com.foxminded.galvad.university.repository.StudentRepository;
 
 @ExtendWith(MockitoExtension.class)
 class GroupServiceTest {
 
 	private static final String GROUP_NAME = "TestName";
 	@Mock
-	private GroupDAO mockGroupDAO;
+	private GroupRepository mockGroupRepository;
 	@Mock
-	private StudentDAO mockStudentDAO;
+	private StudentRepository mockStudentRepository;
 	@Mock
-	private LessonDAO mockLessonDAO;
+	private LessonRepository mockLessonRepository;
 	@Mock
 	private ModelMapper mockModelMapper;
 	@InjectMocks
@@ -51,17 +52,17 @@ class GroupServiceTest {
 		Group groupEntity = createEntity(1, GROUP_NAME);
 		when(mockModelMapper.map(groupDTO, Group.class)).thenReturn(groupEntity);
 		groupService.create(groupDTO);
-		verify(mockGroupDAO, times(1)).create(groupEntity);
+		verify(mockGroupRepository, times(1)).save(groupEntity);
 	}
 
 	@Test
 	void testRetrieve() {
 		Group groupEntity = createEntity(1, GROUP_NAME);
 		GroupDTO groupDTO = createDTO(GROUP_NAME);
-		when(mockGroupDAO.retrieve(GROUP_NAME)).thenReturn(groupEntity);
+		when(mockGroupRepository.findByName(GROUP_NAME)).thenReturn(groupEntity);
 		when(mockModelMapper.map(groupEntity, GroupDTO.class)).thenReturn(groupDTO);
 		groupService.retrieve("TestName");
-		verify(mockGroupDAO, times(1)).retrieve(GROUP_NAME);
+		verify(mockGroupRepository, times(1)).findByName(GROUP_NAME);
 	}
 
 	@Test
@@ -70,11 +71,13 @@ class GroupServiceTest {
 		Group oldEntity = createEntity(1, GROUP_NAME);
 		GroupDTO newDTO = createDTO("NEWNAME");
 		Group newEntity = createEntity(1, "NEWNAME");
+		Student student = newEntity.getSetOfStudent().stream().findFirst().get();
 		when(mockModelMapper.map(oldDTO, Group.class)).thenReturn(oldEntity);
 		when(mockModelMapper.map(newDTO, Group.class)).thenReturn(newEntity);
-		when(mockGroupDAO.getId(oldEntity)).thenReturn(1);
+		when(mockGroupRepository.findByName(GROUP_NAME)).thenReturn(oldEntity);
+		when(mockStudentRepository.findByFirstNameAndLastName(student.getFirstName(), student.getLastName())).thenReturn(student);
 		groupService.update(oldDTO, newDTO);
-		verify(mockGroupDAO, times(1)).update(any(Group.class));
+		verify(mockGroupRepository, times(1)).save(any(Group.class));
 	}
 	
 	@Test
@@ -82,8 +85,9 @@ class GroupServiceTest {
 		Group groupEntity = createEntity(1, GROUP_NAME);
 		GroupDTO groupDTO = createDTO(GROUP_NAME);
 		when(mockModelMapper.map(groupDTO, Group.class)).thenReturn(groupEntity);
+		when(mockModelMapper.map(groupEntity, GroupDTO.class)).thenReturn(groupDTO);
 		groupService.removeStudentsFromGroup(groupDTO);
-		verify(mockStudentDAO, times(1)).removeStudentFromGroups(any(Student.class));
+		verify(mockStudentRepository, times(1)).save(any(Student.class));
 	}
 	
 	@Test
@@ -92,7 +96,7 @@ class GroupServiceTest {
 		GroupDTO groupDTO = createDTO(GROUP_NAME);
 		when(mockModelMapper.map(groupDTO, Group.class)).thenReturn(groupEntity);
 		groupService.delete(groupDTO);
-		verify(mockGroupDAO, times(1)).delete(groupEntity);
+		verify(mockGroupRepository, times(1)).delete(groupEntity);
 	}
 
 	@Test
@@ -112,12 +116,12 @@ class GroupServiceTest {
 		listOfGroups.add(group);
 		listOfGroups.add(group1);
 		listOfGroups.add(group2);
-		when(mockGroupDAO.findAll()).thenReturn(listOfGroups);
+		when(mockGroupRepository.findAll()).thenReturn(listOfGroups);
 		when(mockModelMapper.map(group, GroupDTO.class)).thenReturn(groupDTO);
 		when(mockModelMapper.map(group1, GroupDTO.class)).thenReturn(groupDTO1);
 		when(mockModelMapper.map(group2, GroupDTO.class)).thenReturn(groupDTO2);
 		List<GroupDTO> retrievedList = groupService.findAll();
-		verify(mockGroupDAO, times(1)).findAll();
+		verify(mockGroupRepository, times(1)).findAll();
 		assertEquals(retrievedList, expectedList);
 	}
 
