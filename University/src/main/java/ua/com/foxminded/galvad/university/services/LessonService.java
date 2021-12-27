@@ -137,7 +137,7 @@ public class LessonService {
 	private Lesson convertToEntity(LessonDTO lessonDTO) throws DataNotFoundException {
 		Lesson entity = convertToEntityWithoutID(lessonDTO);
 		LOGGER.trace("Setting ID for the lesson");
-		Integer id = getId(entity);
+		Integer id = lessonRepository.getId(entity);
 		entity.setId(id);
 		LOGGER.trace("Set ID={} for the lesson", id);
 		LOGGER.trace("Finished conversion of LessonDTO to lesson");
@@ -147,7 +147,7 @@ public class LessonService {
 	private Lesson convertToEntity(LessonDTO oldDTO, LessonDTO newDTO) throws DataNotFoundException {
 		Lesson entity = convertToEntityWithoutID(newDTO);
 		LOGGER.trace("Setting ID for the lesson");
-		Integer id = getId(convertToEntity(oldDTO));
+		Integer id = lessonRepository.getId(convertToEntity(oldDTO));
 		entity.setId(id);
 		LOGGER.trace("Set ID={} for the lesson", id);
 		LOGGER.trace("Finished conversion of LessonDTO to lesson");
@@ -189,11 +189,6 @@ public class LessonService {
 				lesson.getGroup().getName(), lesson.getCourse().getName(), lesson.getClassroom().getName(),
 				lesson.getCourse().getTeacher().getFirstName(), lesson.getCourse().getTeacher().getLastName());
 		return new Event(title, lesson.getStartTime(), lesson.getStartTime() + lesson.getDuration());
-	}
-
-	private Integer getId(Lesson entity) {
-		return lessonRepository.getID(entity.getGroup(), entity.getCourse(), entity.getClassroom(),
-				entity.getStartTime(), entity.getDuration());
 	}
 
 }

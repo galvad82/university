@@ -7,6 +7,7 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +33,17 @@ public class ClassroomService {
 	private LessonRepository lessonRepository;
 
 	public void create(ClassroomDTO classroomDTO) throws DataNotFoundException, DataAreNotUpdatedException {
-		classroomRepository.save(convertToEntityWithoutID(classroomDTO));
+		try {
+			classroomRepository.save(convertToEntityWithoutID(classroomDTO));
+		} catch (IllegalArgumentException ex) {
+			LOGGER.info("ClassroomDTO is null! It cannot be added to DB.");
+			throw new DataAreNotUpdatedException("ClassroomDTO is null! It cannot be added to DB.");
+		} catch (DataAccessException e) {
+			LOGGER.info("Classroom with name={} wasn't added to DB.", classroomDTO.getName());
+			throw new DataAreNotUpdatedException(
+					String.format("Classroom with name=%s wasn't added to DB.", classroomDTO.getName()), e);
+		}
+		LOGGER.info("Classroom with name={} successfully added to DB.", classroomDTO.getName());
 	}
 
 	public ClassroomDTO retrieve(String classroomName) {

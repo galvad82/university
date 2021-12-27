@@ -79,10 +79,7 @@ public class GroupService {
 		LOGGER.trace("Going to convert DTO (name={}) to group", groupDTO.getName());
 		Group group = convertToEntity(groupDTO);
 		LOGGER.trace("Going to delete students from group (name={})", group.getName());
-		group.getSetOfStudent().stream().forEach(s -> {
-			s.setGroup(null);
-			studentRepository.save(s);
-		});
+		group.getSetOfStudent().stream().map(Student::getId).forEach(studentRepository::removeStudentFromGroups);
 		LOGGER.trace("Students were deleted from group (name={})", group.getName());
 		group.setSetOfStudent(new HashSet<>());
 		return convertToDTO(group);
