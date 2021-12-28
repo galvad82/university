@@ -7,19 +7,22 @@ import static org.mockito.ArgumentMatchers.any;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import ua.com.foxminded.galvad.university.dao.impl.CourseDAO;
-import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
-import ua.com.foxminded.galvad.university.dao.impl.TeacherDAO;
+
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
 import ua.com.foxminded.galvad.university.model.Course;
 import ua.com.foxminded.galvad.university.model.Teacher;
+import ua.com.foxminded.galvad.university.repository.CourseRepository;
+import ua.com.foxminded.galvad.university.repository.LessonRepository;
+import ua.com.foxminded.galvad.university.repository.TeacherRepository;
 
 @ExtendWith(MockitoExtension.class)
 class CourseServiceTest {
@@ -28,13 +31,13 @@ class CourseServiceTest {
 	private static final String NEWNAME = "NEWNAME";
 
 	@Mock
-	private CourseDAO mockCourseDAO;
+	private CourseRepository mockCourseRepository;
 
 	@Mock
-	private TeacherDAO mockTeacherDAO;
+	private TeacherRepository mockTeacherRepository;
 
 	@Mock
-	private LessonDAO mockLessonDAO;
+	private LessonRepository mockLessonRepository;
 
 	@Mock
 	private ModelMapper mockModelMapper;
@@ -49,9 +52,10 @@ class CourseServiceTest {
 		Teacher teacher = new Teacher(1, NAME, NAME);
 		course.setTeacher(teacher);
 		when(mockModelMapper.map(courseDTO, Course.class)).thenReturn(course);
-		when(mockTeacherDAO.getId(teacher)).thenReturn(1);
+		when(mockTeacherRepository.findByFirstNameAndLastName(teacher.getFirstName(), teacher.getLastName()))
+				.thenReturn(teacher);
 		courseService.create(courseDTO);
-		verify(mockCourseDAO, times(1)).create(any(Course.class));
+		verify(mockCourseRepository, times(1)).save(any(Course.class));
 	}
 
 	@Test
@@ -65,12 +69,12 @@ class CourseServiceTest {
 		Course courseWithTeacherSet = course;
 		courseWithTeacherSet.setTeacher(teacher);
 
-		when(mockCourseDAO.retrieve(NAME)).thenReturn(course);
-		when(mockTeacherDAO.retrieve(course.getTeacher().getId())).thenReturn(teacher);
+		when(mockCourseRepository.findByName(NAME)).thenReturn(course);
+		when(mockTeacherRepository.findById(course.getTeacher().getId())).thenReturn(Optional.of(teacher));
 		when(mockModelMapper.map(courseWithTeacherSet, CourseDTO.class)).thenReturn(courseDTO);
 		courseService.retrieve(NAME);
-		verify(mockCourseDAO, times(1)).retrieve(NAME);
-		verify(mockTeacherDAO, times(2)).retrieve(course.getTeacher().getId());
+		verify(mockCourseRepository, times(1)).findByName(NAME);
+		verify(mockTeacherRepository, times(2)).findById(course.getTeacher().getId());
 	}
 
 	@Test
@@ -86,26 +90,27 @@ class CourseServiceTest {
 		newCourseEntity.setTeacher(teacher);
 
 		when(mockModelMapper.map(newDTO, Course.class)).thenReturn(newCourseEntity);
-		when(mockTeacherDAO.getId(newCourseEntity.getTeacher())).thenReturn(teacher.getId());
+		when(mockTeacherRepository.findByFirstNameAndLastName(newCourseEntity.getTeacher().getFirstName(),
+				newCourseEntity.getTeacher().getLastName())).thenReturn(teacher);
 		when(mockModelMapper.map(oldDTO, Course.class)).thenReturn(oldCourseEntity);
-		when(mockCourseDAO.getId(any(Course.class))).thenReturn(1);
+		when(mockCourseRepository.findByName(NAME)).thenReturn(oldCourseEntity);
 		courseService.update(oldDTO, newDTO);
-		verify(mockCourseDAO, times(1)).update(newCourseEntity);
+		verify(mockCourseRepository, times(1)).save(newCourseEntity);
 
 	}
 
 	@Test
 	void testDelete() {
 		CourseDTO DTO = createDTO(NAME);
-		Course courseEntity = new Course(1, NEWNAME);
+		Course courseEntity = new Course(1, NAME);
 		Teacher teacherEntity = new Teacher(1, NAME, NAME);
 		courseEntity.setTeacher(teacherEntity);
 		when(mockModelMapper.map(DTO, Course.class)).thenReturn(courseEntity);
-		when(mockTeacherDAO.getId(any(Teacher.class))).thenReturn(1);
-		when(mockCourseDAO.getId(any(Course.class))).thenReturn(1);
+		when(mockTeacherRepository.findByFirstNameAndLastName(NAME, NAME)).thenReturn(teacherEntity);
+		when(mockCourseRepository.findByName(NAME)).thenReturn(courseEntity);
 		courseService.delete(DTO);
-		verify(mockLessonDAO, times(1)).deleteByCourseID(1);
-		verify(mockCourseDAO, times(1)).delete(courseEntity);
+		verify(mockLessonRepository, times(1)).deleteByCourse(courseEntity);
+		verify(mockCourseRepository, times(1)).delete(courseEntity);
 	}
 
 	@Test
@@ -116,12 +121,12 @@ class CourseServiceTest {
 		courseEntity.setTeacher(teacherEntity);
 		List<Course> listOfCourses = new ArrayList<>();
 		listOfCourses.add(courseEntity);
-		when(mockCourseDAO.findAll()).thenReturn(listOfCourses);
+		when(mockCourseRepository.findAll()).thenReturn(listOfCourses);
 		when(mockModelMapper.map(courseEntity, CourseDTO.class)).thenReturn(DTO);
-		when(mockTeacherDAO.retrieve(1)).thenReturn(teacherEntity);
+		when(mockTeacherRepository.findById(1)).thenReturn(Optional.of(teacherEntity));
 		when(mockModelMapper.map(teacherEntity, TeacherDTO.class)).thenReturn(DTO.getTeacher());
 		courseService.findAll();
-		verify(mockCourseDAO, times(1)).findAll();
+		verify(mockCourseRepository, times(1)).findAll();
 	}
 
 	private CourseDTO createDTO(String name) {

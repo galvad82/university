@@ -14,10 +14,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import ua.com.foxminded.galvad.university.dao.impl.ClassroomDAO;
-import ua.com.foxminded.galvad.university.dao.impl.LessonDAO;
+
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.model.Classroom;
+import ua.com.foxminded.galvad.university.repository.ClassroomRepository;
+import ua.com.foxminded.galvad.university.repository.LessonRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ClassroomServiceTest {
@@ -26,10 +27,10 @@ class ClassroomServiceTest {
 	private static final String NEWNAME = "NEWNAME";
 
 	@Mock
-	private ClassroomDAO mockClassroomDAO;
+	private ClassroomRepository mockClassroomRepository;
 
 	@Mock
-	private LessonDAO mockLessonDAO;
+	private LessonRepository mockLessonRepository;
 
 	@Mock
 	private ModelMapper mockModelMapper;
@@ -43,7 +44,7 @@ class ClassroomServiceTest {
 		DTO.setName(NAME);
 		when(mockModelMapper.map(DTO, Classroom.class)).thenReturn(new Classroom(1, NAME));
 		classroomService.create(DTO);
-		verify(mockClassroomDAO, times(1)).create(any(Classroom.class));
+		verify(mockClassroomRepository, times(1)).save(any(Classroom.class));
 	}
 
 	@Test
@@ -51,10 +52,10 @@ class ClassroomServiceTest {
 		ClassroomDTO DTO = new ClassroomDTO();
 		DTO.setName(NAME);
 		Classroom classroom = new Classroom(1, NAME);
-		when(mockClassroomDAO.retrieve(NAME)).thenReturn(classroom);
+		when(mockClassroomRepository.findByName(NAME)).thenReturn(classroom);
 		when(mockModelMapper.map(classroom, ClassroomDTO.class)).thenReturn(DTO);
 		classroomService.retrieve(NAME);
-		verify(mockClassroomDAO, times(1)).retrieve(NAME);
+		verify(mockClassroomRepository, times(1)).findByName(NAME);
 	}
 
 	@Test
@@ -63,21 +64,23 @@ class ClassroomServiceTest {
 		oldDTO.setName(NAME);
 		ClassroomDTO newDTO = new ClassroomDTO();
 		newDTO.setName(NEWNAME);
-		when(mockModelMapper.map(oldDTO, Classroom.class)).thenReturn(new Classroom(1, NAME));
+		Classroom oldEntity = new Classroom(1, NAME);
+		when(mockModelMapper.map(oldDTO, Classroom.class)).thenReturn(oldEntity);
 		when(mockModelMapper.map(newDTO, Classroom.class)).thenReturn(new Classroom(2, NEWNAME));
-		when(mockClassroomDAO.getId(any(Classroom.class))).thenReturn(1);
+		when(mockClassroomRepository.findByName(NAME)).thenReturn(oldEntity);
 		classroomService.update(oldDTO, newDTO);
-		verify(mockClassroomDAO, times(1)).update(any(Classroom.class));
+		verify(mockClassroomRepository, times(1)).save(any(Classroom.class));
 	}
 
 	@Test
 	void testDelete() {
 		ClassroomDTO DTO = new ClassroomDTO();
 		DTO.setName(NAME);
-		when(mockModelMapper.map(DTO, Classroom.class)).thenReturn(new Classroom(1, NAME));
-		when(mockClassroomDAO.getId(any(Classroom.class))).thenReturn(1);
+		Classroom entity = new Classroom(1, NAME);
+		when(mockModelMapper.map(DTO, Classroom.class)).thenReturn(entity);
+		when(mockClassroomRepository.findByName(NAME)).thenReturn(entity);
 		classroomService.delete(DTO);
-		verify(mockClassroomDAO, times(1)).delete(any(Classroom.class));
+		verify(mockClassroomRepository, times(1)).delete(any(Classroom.class));
 
 	}
 
@@ -88,9 +91,9 @@ class ClassroomServiceTest {
 		Classroom classroom = new Classroom(1, NAME);
 		List<Classroom> listOfClassrooms = new ArrayList<>();
 		listOfClassrooms.add(classroom);
-		when(mockClassroomDAO.findAll()).thenReturn(listOfClassrooms);
+		when(mockClassroomRepository.findAll()).thenReturn(listOfClassrooms);
 		when(mockModelMapper.map(classroom, ClassroomDTO.class)).thenReturn(DTO);
 		classroomService.findAll();
-		verify(mockClassroomDAO, times(1)).findAll();
+		verify(mockClassroomRepository, times(1)).findAll();
 	}
 }

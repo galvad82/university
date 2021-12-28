@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import ua.com.foxminded.galvad.university.dao.impl.DataNotFoundException;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.services.GroupService;
 import ua.com.foxminded.galvad.university.services.StudentService;
 
@@ -113,7 +113,7 @@ public class GroupsController {
 	@PostMapping("/delete/result")
 	public String deleteDTOResult(@ModelAttribute("name") String groupName, Model model) {
 		GroupDTO groupDTO = groupService.retrieve(groupName);
-		groupService.removeStudentsFromGroup(groupDTO);
+		groupDTO = groupService.removeStudentsFromGroup(groupDTO);
 		groupService.delete(groupDTO);
 		Boolean showTable = false;
 		model.addAttribute("groupName", groupName);

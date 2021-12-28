@@ -96,7 +96,7 @@ public class Lesson {
 		this.duration = duration;
 	}
 
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
 
