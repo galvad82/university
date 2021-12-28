@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
 
@@ -45,7 +46,7 @@ class GroupServiceTest {
 	void testConvertionOfNullShouldReturnNull() {
 		assertNull(groupService.convertToEntity(null));
 	}
-	
+
 	@Test
 	void testCreate() {
 		GroupDTO groupDTO = createDTO(GROUP_NAME);
@@ -75,11 +76,12 @@ class GroupServiceTest {
 		when(mockModelMapper.map(oldDTO, Group.class)).thenReturn(oldEntity);
 		when(mockModelMapper.map(newDTO, Group.class)).thenReturn(newEntity);
 		when(mockGroupRepository.findByName(GROUP_NAME)).thenReturn(oldEntity);
-		when(mockStudentRepository.findByFirstNameAndLastName(student.getFirstName(), student.getLastName())).thenReturn(student);
+		when(mockStudentRepository.findByFirstNameAndLastName(student.getFirstName(), student.getLastName()))
+				.thenReturn(student);
 		groupService.update(oldDTO, newDTO);
 		verify(mockGroupRepository, times(1)).save(any(Group.class));
 	}
-	
+
 	@Test
 	void testRemoveStudentsFromGroup() {
 		Group groupEntity = createEntity(1, GROUP_NAME);
@@ -87,9 +89,9 @@ class GroupServiceTest {
 		when(mockModelMapper.map(groupDTO, Group.class)).thenReturn(groupEntity);
 		when(mockModelMapper.map(groupEntity, GroupDTO.class)).thenReturn(groupDTO);
 		groupService.removeStudentsFromGroup(groupDTO);
-		verify(mockStudentRepository, times(1)).save(any(Student.class));
+		verify(mockStudentRepository, times(1)).removeStudentFromGroups(anyInt());
 	}
-	
+
 	@Test
 	void testDelete() {
 		Group groupEntity = createEntity(1, GROUP_NAME);

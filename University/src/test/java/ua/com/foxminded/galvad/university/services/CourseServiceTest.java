@@ -52,7 +52,8 @@ class CourseServiceTest {
 		Teacher teacher = new Teacher(1, NAME, NAME);
 		course.setTeacher(teacher);
 		when(mockModelMapper.map(courseDTO, Course.class)).thenReturn(course);
-		when(mockTeacherRepository.findByFirstNameAndLastName(teacher.getFirstName(), teacher.getLastName())).thenReturn(teacher);
+		when(mockTeacherRepository.findByFirstNameAndLastName(teacher.getFirstName(), teacher.getLastName()))
+				.thenReturn(teacher);
 		courseService.create(courseDTO);
 		verify(mockCourseRepository, times(1)).save(any(Course.class));
 	}
@@ -89,7 +90,8 @@ class CourseServiceTest {
 		newCourseEntity.setTeacher(teacher);
 
 		when(mockModelMapper.map(newDTO, Course.class)).thenReturn(newCourseEntity);
-		when(mockTeacherRepository.findByFirstNameAndLastName(newCourseEntity.getTeacher().getFirstName(),newCourseEntity.getTeacher().getLastName())).thenReturn(teacher);
+		when(mockTeacherRepository.findByFirstNameAndLastName(newCourseEntity.getTeacher().getFirstName(),
+				newCourseEntity.getTeacher().getLastName())).thenReturn(teacher);
 		when(mockModelMapper.map(oldDTO, Course.class)).thenReturn(oldCourseEntity);
 		when(mockCourseRepository.findByName(NAME)).thenReturn(oldCourseEntity);
 		courseService.update(oldDTO, newDTO);
@@ -104,7 +106,7 @@ class CourseServiceTest {
 		Teacher teacherEntity = new Teacher(1, NAME, NAME);
 		courseEntity.setTeacher(teacherEntity);
 		when(mockModelMapper.map(DTO, Course.class)).thenReturn(courseEntity);
-		when(mockTeacherRepository.findByFirstNameAndLastName(NAME,NAME)).thenReturn(teacherEntity);
+		when(mockTeacherRepository.findByFirstNameAndLastName(NAME, NAME)).thenReturn(teacherEntity);
 		when(mockCourseRepository.findByName(NAME)).thenReturn(courseEntity);
 		courseService.delete(DTO);
 		verify(mockLessonRepository, times(1)).deleteByCourse(courseEntity);
