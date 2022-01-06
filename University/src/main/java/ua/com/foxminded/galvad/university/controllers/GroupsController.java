@@ -1,20 +1,20 @@
 package ua.com.foxminded.galvad.university.controllers;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import ua.com.foxminded.galvad.university.controllers.validation.GroupValidator;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
-import ua.com.foxminded.galvad.university.dto.StudentDTO;
-import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.services.GroupService;
 import ua.com.foxminded.galvad.university.services.StudentService;
 
@@ -27,98 +27,88 @@ public class GroupsController {
 	private static final String GROUPS_ADD = "groups/add";
 	private static final String GROUPS_EDIT = "groups/edit";
 	private static final String GROUPS_DELETE = "groups/delete";
-	private static final String GROUP = "group";
+	private static final String GROUP_DTO = "groupDTO";
 	private static final String RESULT = "result";
 	private static final String SHOWTABLE = "showTable";
 	private final GroupService groupService;
 	private final StudentService studentService;
+	private final GroupValidator groupValidator;
 
 	@Autowired
-	public GroupsController(GroupService groupService, StudentService studentService) {
+	public GroupsController(GroupService groupService, StudentService studentService, GroupValidator groupValidator) {
 		this.groupService = groupService;
 		this.studentService = studentService;
+		this.groupValidator = groupValidator;
 	}
 
 	@GetMapping()
 	public String findAll(Model model) {
-		List<GroupDTO> listOfGroupDTOs = groupService.findAll();
-		model.addAttribute("groups", listOfGroupDTOs);
+		model.addAttribute("groups", groupService.findAll());
 		return GROUPS_LIST;
 	}
 
 	@PostMapping("/edit")
-	public String editDTO(@ModelAttribute("name") String name, Model model) {
-		GroupDTO groupDTO = groupService.retrieve(name);
-		model.addAttribute("groupDTO", groupDTO);
+	public String editDTO(String name, Model model) {
+		model.addAttribute(GROUP_DTO, groupService.retrieve(name));
 		return GROUPS_EDIT;
 	}
 
 	@PostMapping("/edit/result")
-	public String editDTOResult(@ModelAttribute("groupDTO") GroupDTO groupDTO,
-			@ModelAttribute("initialName") String initialName, Model model) {
-
+	public String editDTOResult(@Valid GroupDTO groupDTO, BindingResult result, String initialName, Model model) {
+		if (!groupDTO.getName().equals(initialName)) {
+			groupValidator.validate(groupDTO, result);
+		}
+		if (result.hasErrors()) {
+			return GROUPS_EDIT;
+		}
 		GroupDTO initialGroupDTO = groupService.retrieve(initialName);
 		groupDTO.setListOfStudent(groupDTO.getListOfStudent().stream().filter(s -> !s.getFirstName().isEmpty())
 				.collect(Collectors.toList()));
 		groupService.update(initialGroupDTO, groupDTO);
-		Boolean showTable = true;
-		model.addAttribute(SHOWTABLE, showTable);
+		model.addAttribute(SHOWTABLE, true);
 		model.addAttribute(RESULT, "Group was successfully updated");
-		model.addAttribute(GROUP, groupDTO);
 		return GROUPS_RESULT;
 	}
 
 	@GetMapping("/add")
 	public String create(Model model) {
 		GroupDTO groupDTO = new GroupDTO();
-		groupDTO.setName("");
 		groupDTO.setListOfStudent(new ArrayList<>(studentService.findAllUnassignedStudents()));
-		model.addAttribute("groupDTO", groupDTO);
+		model.addAttribute(GROUP_DTO, groupDTO);
 		return GROUPS_ADD;
 	}
 
 	@PostMapping("/add")
-	public String createDTO(@ModelAttribute("groupDTO") GroupDTO groupDTO, Model model) {
-		List<StudentDTO>listOfStudentDTOToAssign = groupDTO.getListOfStudent().stream().filter(s -> !s.getFirstName().isEmpty())
-				.collect(Collectors.toList());
-		groupDTO.setListOfStudent(new ArrayList<>());
+	public String createDTO(@Valid GroupDTO groupDTO, BindingResult result, Model model) {
+		groupValidator.validate(groupDTO, result);
+		if (result.hasErrors()) {
+			groupDTO.setListOfStudent(new ArrayList<>(studentService.findAllUnassignedStudents()));
+			return GROUPS_ADD;
+		}
+		groupDTO.setListOfStudent(groupDTO.getListOfStudent().stream().filter(s -> !s.getFirstName().isEmpty())
+				.collect(Collectors.toList()));
 		groupService.create(groupDTO);
-		listOfStudentDTOToAssign.stream().forEach(s->studentService.addToGroup(s, groupDTO));
-		groupDTO.setListOfStudent(listOfStudentDTOToAssign);
-		Boolean showTable = true;
-		model.addAttribute(SHOWTABLE, showTable);
-		model.addAttribute(GROUP, groupDTO);
+		groupDTO.getListOfStudent().stream().forEach(s -> studentService.addToGroup(s, groupDTO));
+
+		model.addAttribute(SHOWTABLE, true);
 		model.addAttribute(RESULT, "A group was successfully added.");
 		return GROUPS_RESULT;
 	}
 
 	@PostMapping("/delete")
-	public String deleteDTO(@ModelAttribute("name") String groupName, Model model) {
-		GroupDTO groupDTO = new GroupDTO();
-		groupDTO.setName(groupName);
-		try {
-			groupDTO = groupService.retrieve(groupName);
-		} catch (DataNotFoundException e) {
-			List<StudentDTO> listOfStudent = new ArrayList<>();
-			StudentDTO emptyDto = new StudentDTO();
-			emptyDto.setFirstName("NONE");
-			emptyDto.setLastName("");
-			listOfStudent.add(emptyDto);
-			groupDTO.setListOfStudent(listOfStudent);
-		}
-		model.addAttribute(GROUP, groupDTO);
+	public String deleteDTO(String name, Model model) {
+		model.addAttribute(GROUP_DTO, groupService.retrieve(name));
 		return GROUPS_DELETE;
 	}
 
 	@PostMapping("/delete/result")
-	public String deleteDTOResult(@ModelAttribute("name") String groupName, Model model) {
-		GroupDTO groupDTO = groupService.retrieve(groupName);
-		groupDTO = groupService.removeStudentsFromGroup(groupDTO);
-		groupService.delete(groupDTO);
-		Boolean showTable = false;
-		model.addAttribute("groupName", groupName);
-		model.addAttribute(SHOWTABLE, showTable);
-		model.addAttribute(RESULT, String.format("The group %s was successfully deleted.", groupName));
+	public String deleteDTOResult(@Valid GroupDTO groupDTO, BindingResult result, Model model) {
+		if (result.hasErrors()) {
+			return GROUPS_LIST;
+		}
+		groupService.delete(groupService.removeStudentsFromGroup(groupDTO));
+		model.addAttribute(SHOWTABLE, false);
+		model.addAttribute(RESULT, String.format("The group %s was successfully deleted.", groupDTO.getName()));
 		return GROUPS_RESULT;
 	}
 

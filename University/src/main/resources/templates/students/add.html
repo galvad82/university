@@ -8,7 +8,7 @@
 	<div th:insert="navbar :: bootstrap"></div>
 	<div th:insert="navbar :: navbar"></div>
 	
-	<h2>Add a new Student</h2>
+	<h2>Add a new Student </h2>
 
 	<div class="container">
 		<div class="row align-items-start">
@@ -17,11 +17,13 @@
 				<form class="row" th:action="@{/students/add}" th:method="POST" th:object="${studentDTO}">
 					<label><span class="red">*</span> First name:</label>
 					<input type="text" th:field="*{firstName}" class="form-control" />
+					<p th:if="${#fields.hasErrors('firstName')}" class="red" th:errors="*{firstName}" />
 					<label><span class="red">*</span> Last name:</label>
 					<input type="text" th:field="*{lastName}" class="form-control" />
+					<p th:if="${#fields.hasErrors('lastName')}" class="red" th:errors="*{lastName}" />
 					<label>Group:</label> 
 					<select	th:name="group" class="form-select" aria-label="Group List">
-						<option th:each="p : ${listGroupNames}" th:value="${p}"	th:text="${p}" />
+						<option th:each="p : ${listGroupNames}" th:value="${p}"	th:text="${p}" th:selected="${p==group}"/>
 					</select>
 					<p><span class="red">*</span> indicates a required field </p>
 					<button type="submit" class="btn btn-primary mb-3">Add</button>

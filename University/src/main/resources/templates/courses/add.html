@@ -16,6 +16,7 @@
 				<form class="row" th:action="@{/courses/add}" th:method="POST" th:object="${courseDTO}">
 					<label><span class="red">*</span> Course name:</label> 
 					<input type="text" th:field="*{name}" class="form-control" />
+					<p th:if="${#fields.hasErrors('name')}" class="red" th:errors="*{name}" />
 					<label>Teacher:</label>
 					<select name="sel" id="sel" class="form-select" th:onChange="changeTeacher()">
 						<option th:each="t : ${listOfTeachers}" th:value="${t}"

@@ -20,6 +20,7 @@
 						<label><span class="red">*</span> Name:</label> <input type="text"
 							th:field="*{name}" class="form-control" />
 							<p> </p>
+							<p th:if="${#fields.hasErrors('name')}" class="red" th:errors="*{name}" />
 						<button type="submit" class="btn btn-primary mb-3">Add</button>
 				</form>
 			</div>

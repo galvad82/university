@@ -4,14 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
+import ua.com.foxminded.galvad.university.controllers.validation.StudentValidator;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.services.GroupService;
@@ -26,19 +30,22 @@ public class StudentsController {
 	private static final String STUDENTS_ADD = "students/add";
 	private static final String STUDENTS_EDIT = "students/edit";
 	private static final String STUDENTS_DELETE = "students/delete";
-	private static final String STUDENT = "student";
 	private static final String RESULT = "result";
 	private static final String STUDENTDTO = "studentDTO";
 	private static final String GROUP_NAME = "groupName";
+	private static final String LIST_OF_GROUP_NAMES = "listGroupNames";
 
 	private final GroupService groupService;
 	private final StudentService studentService;
+	private final StudentValidator studentValidator;
 	private static final String NONE = "NONE";
 
 	@Autowired
-	public StudentsController(StudentService studentService, GroupService groupService) {
+	public StudentsController(StudentService studentService, GroupService groupService,
+			StudentValidator studentValidator) {
 		this.studentService = studentService;
 		this.groupService = groupService;
+		this.studentValidator = studentValidator;
 	}
 
 	@GetMapping()
@@ -52,85 +59,90 @@ public class StudentsController {
 
 	@GetMapping("/add")
 	public String create(Model model) {
-		StudentDTO studentDTO = new StudentDTO();
-		model.addAttribute(STUDENTDTO, studentDTO);
-		List<String> listGroupNames = new ArrayList<>();
-		listGroupNames.add(NONE);
-		groupService.findAll().stream().forEach(s -> listGroupNames.add(s.getName()));
-		model.addAttribute("listGroupNames", listGroupNames);
+		model.addAttribute(STUDENTDTO, new StudentDTO());
+		model.addAttribute(LIST_OF_GROUP_NAMES, getListOfGroupNames());
+		model.addAttribute("group", NONE);
 		return STUDENTS_ADD;
 	}
 
 	@PostMapping("/add")
-	public String createDTO(@ModelAttribute("studentDTO") StudentDTO studentDTO,
-			@ModelAttribute("group") String groupDTOName, Model model) {
+	public String createDTO(@Valid StudentDTO studentDTO, BindingResult result,
+			@ModelAttribute("group") String groupDTOName, String lastSelected, Model model) {
+		studentValidator.validate(studentDTO, result);
+		if (result.hasErrors()) {
+			model.addAttribute(LIST_OF_GROUP_NAMES, getListOfGroupNames());
+			return STUDENTS_ADD;
+		}
 		if (!groupDTOName.equals(NONE)) {
 			studentDTO.setGroupDTO(groupService.retrieve(groupDTOName));
 		} else {
 			studentDTO.setGroupDTO(null);
 		}
 		studentService.create(studentDTO);
-		model.addAttribute(STUDENT, studentDTO);
 		model.addAttribute(GROUP_NAME, groupDTOName);
 		model.addAttribute(RESULT, "A student was successfully added.");
 		return STUDENTS_RESULT;
 	}
 
 	@PostMapping("/edit")
-	public String editDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
-			@ModelAttribute("groupName") String groupName, Model model) {
-		List<GroupDTO> listOfGroups = groupService.findAll();
-		GroupDTO noneDto = new GroupDTO();
-		noneDto.setName(NONE);
-		listOfGroups.add(0, noneDto);
-		StudentDTO studentDTO = new StudentDTO();
-		studentDTO.setFirstName(firstName);
-		studentDTO.setLastName(lastName);
-
-		model.addAttribute("listOfGroups", listOfGroups);
-		model.addAttribute("initialGroup", groupName);
-		model.addAttribute(STUDENTDTO, studentDTO);
+	public String editDTO(String firstName, String lastName, String groupName, Model model) {
+		model.addAttribute(STUDENTDTO, studentService.retrieve(firstName, lastName));
+		model.addAttribute(LIST_OF_GROUP_NAMES, getListOfGroupNames());
+		model.addAttribute("initialFirstName", firstName);
+		model.addAttribute("initialLastName", lastName);
+		model.addAttribute(GROUP_NAME, groupName);
 		return STUDENTS_EDIT;
 	}
 
 	@PostMapping("/edit/result")
-	public String updateDTO(@ModelAttribute("studentDTO") StudentDTO updatedStudentDTO,
-			@ModelAttribute("groupName") String groupName, @ModelAttribute("initialGroup") String initialGroupName,
-			@ModelAttribute("initialFirstName") String initialFirstName,
-			@ModelAttribute("initialLastName") String initialLastName, Model model) {
+	public String updateDTO(@Valid StudentDTO studentDTO, BindingResult result, String groupName,
+			String initialFirstName, String initialLastName, Model model) {
+		if (!studentDTO.getFirstName().equals(initialFirstName) || !studentDTO.getLastName().equals(initialLastName)) {
+			studentValidator.validate(studentDTO, result);
+		}
+		if (result.hasErrors()) {
+			model.addAttribute(LIST_OF_GROUP_NAMES, getListOfGroupNames());
+			model.addAttribute("initialFirstName", initialFirstName);
+			model.addAttribute("initialLastName", initialLastName);
+			model.addAttribute(GROUP_NAME, groupName);
+			return STUDENTS_EDIT;
+		}
 		StudentDTO initialStudentDTO = studentService.retrieve(initialFirstName, initialLastName);
-		studentService.update(initialStudentDTO, updatedStudentDTO);
+		studentService.update(initialStudentDTO, studentDTO);
 		if (groupName.equals(NONE)) {
-			studentService.removeStudentFromGroup(updatedStudentDTO);
+			studentService.removeStudentFromGroup(studentDTO);
 		} else {
 			GroupDTO groupDTO = groupService.retrieve(groupName);
-			studentService.addToGroup(updatedStudentDTO, groupDTO);
-
+			studentService.addToGroup(studentDTO, groupDTO);
 		}
 		model.addAttribute(RESULT, "Student was successfully updated");
 		model.addAttribute(GROUP_NAME, groupName);
-		model.addAttribute(STUDENT, updatedStudentDTO);
 		return STUDENTS_RESULT;
 	}
 
 	@PostMapping("/delete")
-	public String deleteDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
-			@ModelAttribute("groupName") String groupName, Model model) {
+	public String deleteDTO(String firstName, String lastName, String groupName, Model model) {
+		model.addAttribute(STUDENTDTO, studentService.retrieve(firstName, lastName));
 		model.addAttribute(GROUP_NAME, groupName);
-		model.addAttribute("firstName", firstName);
-		model.addAttribute("lastName", lastName);
 		return STUDENTS_DELETE;
 	}
 
 	@PostMapping("/delete/result")
-	public String deleteDTOResult(@ModelAttribute("firstName") String firstName,
-			@ModelAttribute("lastName") String lastName, @ModelAttribute("groupName") String groupName, Model model) {
-		StudentDTO studentDTO = studentService.retrieve(firstName, lastName);
+	public String deleteDTOResult(@Valid StudentDTO studentDTO, BindingResult result, String groupName, Model model) {
+		if (result.hasErrors()) {
+			return STUDENTS_LIST;
+		}
 		studentService.delete(studentDTO);
-		model.addAttribute(STUDENT, studentDTO);
 		model.addAttribute(GROUP_NAME, groupName);
 		model.addAttribute(RESULT, "A student was successfully deleted.");
 		return STUDENTS_RESULT;
+	}
+
+	private List<String> getListOfGroupNames() {
+		List<String> list = new ArrayList<>();
+		list.add(NONE);
+		groupService.findAll().stream().forEach(s -> list.add(s.getName()));
+		return list;
 	}
 
 }

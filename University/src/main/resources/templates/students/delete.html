@@ -28,8 +28,8 @@
 			</thead>
 			<tbody>
 				<tr>
-					<td th:text="${firstName}"></td>
-					<td th:text="${lastName}"></td>
+					<td th:text="${studentDTO.firstName}"></td>
+					<td th:text="${studentDTO.lastName}"></td>
 					<td th:text="${groupName}"></td>
 				</tr>
 			</tbody>
@@ -50,9 +50,9 @@ function goBack() {
 			<div class="col"></div>
 			<div class="col">
 
-				<form class="row" th:action="@{/students/delete/result}" th:method="POST">
-					<input type="hidden" th:name="firstName" th:value="${firstName}" />
-					<input type="hidden" th:name="lastName" th:value="${lastName}" /> 
+				<form class="row" th:action="@{/students/delete/result}" th:method="POST" th:object="${studentDTO}">
+					<input type="hidden" th:field="*{firstName}" th:value="*{firstName}" class="form-control" />
+					<input type="hidden" th:field="*{lastName}" th:value="*{lastName}" class="form-control" />
 					<input type="hidden" th:name="groupName" th:value="${groupName}" /> 
 					<button type="submit" class="btn btn-danger">Yes, delete!</button>
 				</form>

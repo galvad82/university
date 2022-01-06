@@ -1,6 +1,10 @@
 package ua.com.foxminded.galvad.university.dto;
 
+import javax.validation.constraints.NotBlank;
+
 public class CourseDTO {
+	
+	@NotBlank(message = "Course name cannot be empty")
 	private String name;
 	private TeacherDTO teacher;
 

@@ -1,8 +1,16 @@
 package ua.com.foxminded.galvad.university.dto;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Pattern;
+
 public class TeacherDTO {
 
+	@NotBlank(message = "First name cannot be empty")
+	@Pattern(regexp="^[a-zA-Z ]+$",message="Only letters and spaces are accepted")
 	private String firstName;
+	
+	@NotBlank(message = "Last name cannot be empty")
+	@Pattern(regexp="^[a-zA-Z ]+$",message="Only letters and spaces are accepted")
 	private String lastName;
 
 	public String getFirstName() {
