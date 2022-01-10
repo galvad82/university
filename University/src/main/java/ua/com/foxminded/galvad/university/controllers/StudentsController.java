@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import ua.com.foxminded.galvad.university.controllers.validation.StudentValidator;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.services.GroupService;
@@ -34,18 +33,15 @@ public class StudentsController {
 	private static final String STUDENTDTO = "studentDTO";
 	private static final String GROUP_NAME = "groupName";
 	private static final String LIST_OF_GROUP_NAMES = "listGroupNames";
+	private static final String NONE = "NONE";
 
 	private final GroupService groupService;
 	private final StudentService studentService;
-	private final StudentValidator studentValidator;
-	private static final String NONE = "NONE";
 
 	@Autowired
-	public StudentsController(StudentService studentService, GroupService groupService,
-			StudentValidator studentValidator) {
+	public StudentsController(StudentService studentService, GroupService groupService) {
 		this.studentService = studentService;
 		this.groupService = groupService;
-		this.studentValidator = studentValidator;
 	}
 
 	@GetMapping()
@@ -67,8 +63,11 @@ public class StudentsController {
 
 	@PostMapping("/add")
 	public String createDTO(@Valid StudentDTO studentDTO, BindingResult result,
-			@ModelAttribute("group") String groupDTOName, String lastSelected, Model model) {
-		studentValidator.validate(studentDTO, result);
+			@ModelAttribute("group") String groupDTOName, Model model) {
+
+		if (studentService.checkIfExists(studentDTO)) {
+			result.rejectValue("firstName", "", "The student with the same name is already added to the database!");
+		}
 		if (result.hasErrors()) {
 			model.addAttribute(LIST_OF_GROUP_NAMES, getListOfGroupNames());
 			return STUDENTS_ADD;
@@ -85,7 +84,8 @@ public class StudentsController {
 	}
 
 	@PostMapping("/edit")
-	public String editDTO(String firstName, String lastName, String groupName, Model model) {
+	public String editDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
+			@ModelAttribute("groupName") String groupName, Model model) {
 		model.addAttribute(STUDENTDTO, studentService.retrieve(firstName, lastName));
 		model.addAttribute(LIST_OF_GROUP_NAMES, getListOfGroupNames());
 		model.addAttribute("initialFirstName", firstName);
@@ -95,10 +95,12 @@ public class StudentsController {
 	}
 
 	@PostMapping("/edit/result")
-	public String updateDTO(@Valid StudentDTO studentDTO, BindingResult result, String groupName,
-			String initialFirstName, String initialLastName, Model model) {
-		if (!studentDTO.getFirstName().equals(initialFirstName) || !studentDTO.getLastName().equals(initialLastName)) {
-			studentValidator.validate(studentDTO, result);
+	public String updateDTO(@Valid StudentDTO studentDTO, BindingResult result,
+			@ModelAttribute("groupName") String groupName, @ModelAttribute("initialFirstName") String initialFirstName,
+			@ModelAttribute("initialLastName") String initialLastName, Model model) {
+		if ((!studentDTO.getFirstName().equals(initialFirstName) || !studentDTO.getLastName().equals(initialLastName))
+				&& (studentService.checkIfExists(studentDTO))) {
+			result.rejectValue("firstName", "", "The student with the same name is already added to the database!");
 		}
 		if (result.hasErrors()) {
 			model.addAttribute(LIST_OF_GROUP_NAMES, getListOfGroupNames());
@@ -121,14 +123,16 @@ public class StudentsController {
 	}
 
 	@PostMapping("/delete")
-	public String deleteDTO(String firstName, String lastName, String groupName, Model model) {
+	public String deleteDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
+			@ModelAttribute("groupName") String groupName, Model model) {
 		model.addAttribute(STUDENTDTO, studentService.retrieve(firstName, lastName));
 		model.addAttribute(GROUP_NAME, groupName);
 		return STUDENTS_DELETE;
 	}
 
 	@PostMapping("/delete/result")
-	public String deleteDTOResult(@Valid StudentDTO studentDTO, BindingResult result, String groupName, Model model) {
+	public String deleteDTOResult(@Valid StudentDTO studentDTO, BindingResult result,
+			@ModelAttribute("groupName") String groupName, Model model) {
 		if (result.hasErrors()) {
 			return STUDENTS_LIST;
 		}

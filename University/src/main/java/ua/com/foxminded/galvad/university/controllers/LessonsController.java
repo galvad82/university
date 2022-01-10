@@ -1,19 +1,17 @@
 package ua.com.foxminded.galvad.university.controllers;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import ua.com.foxminded.galvad.university.controllers.validation.LessonValidator;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
@@ -45,16 +43,14 @@ public class LessonsController {
 	private final GroupService groupService;
 	private final CourseService courseService;
 	private final ClassroomService classroomService;
-	private final LessonValidator lessonValidator;
 
 	@Autowired
 	public LessonsController(LessonService lessonService, GroupService groupService, CourseService courseService,
-			ClassroomService classroomService, LessonValidator lessonValidator) {
+			ClassroomService classroomService) {
 		this.lessonService = lessonService;
 		this.groupService = groupService;
 		this.courseService = courseService;
 		this.classroomService = classroomService;
-		this.lessonValidator = lessonValidator;
 	}
 
 	@GetMapping()
@@ -76,24 +72,26 @@ public class LessonsController {
 	}
 
 	@PostMapping("/add")
-	public String createDTO(String group, String course, String classroom, String startTime, String duration,
-			Model model) {
+	public String createDTO(@ModelAttribute("group") String group, @ModelAttribute("course") String course,
+			@ModelAttribute("classroom") String classroom, @ModelAttribute("startTime") String startTime,
+			@ModelAttribute("duration") String duration, Model model) {
 		LessonDTO lessonDTO = new LessonDTO();
 		lessonDTO.setGroup(groupService.retrieve(group));
 		lessonDTO.setCourse(courseService.retrieve(course));
 		lessonDTO.setClassroom(classroomService.retrieve(classroom));
 		lessonDTO.setStartTime(lessonService.convertDateToMil(startTime));
 		lessonDTO.setDuration(lessonService.convertTimeToMil(duration));
-		Errors result = new BeanPropertyBindingResult(lessonDTO, LESSON_DTO);
-		lessonValidator.validate(lessonDTO, result);
-		if (result.hasErrors()) {
+		String error = validate(lessonDTO);
+		if (error.isEmpty() && lessonService.checkIfExists(lessonDTO)) {
+			error = "The same lesson is already added to the database!";
+		}
+		if (!error.isEmpty()) {
 			model.addAttribute("group", group);
 			model.addAttribute("course", course);
 			model.addAttribute("classroom", classroom);
 			model.addAttribute(START_TIME, startTime);
 			model.addAttribute(DURATION, duration);
-			model.addAttribute(ERROR,
-					result.getAllErrors().stream().map(ObjectError::getDefaultMessage).collect(Collectors.toList()));
+			model.addAttribute(ERROR, error);
 			model.addAttribute(GROUPS,
 					groupService.findAll().stream().map(GroupDTO::getName).collect(Collectors.toList()));
 			model.addAttribute(COURSES,
@@ -109,7 +107,8 @@ public class LessonsController {
 	}
 
 	@PostMapping("/edit")
-	public String editDTO(String groupName, String courseName, String classroomName,
+	public String editDTO(@ModelAttribute("groupName") String groupName,
+			@ModelAttribute("courseName") String courseName, @ModelAttribute("classroomName") String classroomName,
 			@ModelAttribute("startTime") String startTimeString, @ModelAttribute("duration") String durationString,
 			Model model) {
 
@@ -152,30 +151,32 @@ public class LessonsController {
 		updatedLessonDTO.setCourse(courseService.retrieve(updatedCourseName));
 		updatedLessonDTO.setStartTime(lessonService.convertDateToMil(updatedStartTimeString));
 		updatedLessonDTO.setDuration(lessonService.convertTimeToMil(updatedDurationString));
+		String error = "";
 		if (!updatedLessonDTO.equals(initialLessonDTO)) {
-			Errors result = new BeanPropertyBindingResult(updatedLessonDTO, LESSON_DTO);
-			lessonValidator.validate(updatedLessonDTO, result);
-			if (result.hasErrors()) {
-				model.addAttribute(ERROR, result.getAllErrors().stream().map(ObjectError::getDefaultMessage)
-						.collect(Collectors.toList()));
-				model.addAttribute(GROUPS,
-						groupService.findAll().stream().map(GroupDTO::getName).collect(Collectors.toList()));
-				model.addAttribute(COURSES,
-						courseService.findAll().stream().map(CourseDTO::getName).collect(Collectors.toList()));
-				model.addAttribute(CLASSROOMS,
-						classroomService.findAll().stream().map(ClassroomDTO::getName).collect(Collectors.toList()));
-				model.addAttribute("group", updatedGroupName);
-				model.addAttribute("course", updatedCourseName);
-				model.addAttribute("classroom", updatedClassroomName);
-				model.addAttribute(START_TIME, updatedStartTimeString);
-				model.addAttribute(DURATION, updatedDurationString);
-				model.addAttribute("initialGroup", initialGroupName);
-				model.addAttribute("initialCourse", initialCourseName);
-				model.addAttribute("initialClassroom", initialClassroomName);
-				model.addAttribute("initialStartTime", initialStartTimeString);
-				model.addAttribute("initialDuration", initialDurationString);
-				return LESSONS_EDIT;
-			}
+			error = validate(updatedLessonDTO);
+		}
+		if (error.isEmpty() && lessonService.checkIfExists(updatedLessonDTO)) {
+			error = "The same lesson is already added to the database!";
+		}
+		if (!error.isEmpty()) {
+			model.addAttribute(ERROR, error);
+			model.addAttribute(GROUPS,
+					groupService.findAll().stream().map(GroupDTO::getName).collect(Collectors.toList()));
+			model.addAttribute(COURSES,
+					courseService.findAll().stream().map(CourseDTO::getName).collect(Collectors.toList()));
+			model.addAttribute(CLASSROOMS,
+					classroomService.findAll().stream().map(ClassroomDTO::getName).collect(Collectors.toList()));
+			model.addAttribute("group", updatedGroupName);
+			model.addAttribute("course", updatedCourseName);
+			model.addAttribute("classroom", updatedClassroomName);
+			model.addAttribute(START_TIME, updatedStartTimeString);
+			model.addAttribute(DURATION, updatedDurationString);
+			model.addAttribute("initialGroup", initialGroupName);
+			model.addAttribute("initialCourse", initialCourseName);
+			model.addAttribute("initialClassroom", initialClassroomName);
+			model.addAttribute("initialStartTime", initialStartTimeString);
+			model.addAttribute("initialDuration", initialDurationString);
+			return LESSONS_EDIT;
 		}
 		lessonService.update(initialLessonDTO, updatedLessonDTO);
 		model.addAttribute(RESULT, "Lesson was successfully updated");
@@ -202,9 +203,7 @@ public class LessonsController {
 	@PostMapping("/delete/result")
 	public String deleteCourseFromDB(@ModelAttribute("lesson") LessonDTO lessonDTO, Model model) {
 		lessonDTO.setCourse(courseService.retrieve(lessonDTO.getCourse().getName()));
-		Errors result = new BeanPropertyBindingResult(lessonDTO, LESSON_DTO);
-		lessonValidator.validate(lessonDTO, result);
-		if (result.hasErrors()) {
+		if (!validate(lessonDTO).isEmpty()) {
 			return LESSONS_LIST;
 		}
 
@@ -212,5 +211,25 @@ public class LessonsController {
 		model.addAttribute(RESULT, "A lesson was successfully deleted.");
 		model.addAttribute(LESSON_DTO, lessonDTO);
 		return LESSON_RESULT;
+	}
+
+	private String validate(LessonDTO lessonDTO) {
+		List<String> listOfErrors = new ArrayList<>();
+		if (lessonDTO.getGroup() == null) {
+			listOfErrors.add("The group field cannot be blank!");
+		}
+		if (lessonDTO.getCourse() == null) {
+			listOfErrors.add("The course field cannot be blank!");
+		}
+		if (lessonDTO.getClassroom() == null) {
+			listOfErrors.add("The classroom field cannot be blank!");
+		}
+		if (lessonDTO.getStartTime() == null || lessonDTO.getStartTime() < 1609459201000l) {
+			listOfErrors.add("The startTime field cannot be blank or earlier than UTC Jan-01-2021 00:00:01!");
+		}
+		if (lessonDTO.getDuration() == null || lessonDTO.getDuration() < 1800000l) {
+			listOfErrors.add("The duration field cannot be blank or less than 30 minutes!");
+		}
+		return listOfErrors.stream().collect(Collectors.joining("<br>", "", ""));
 	}
 }

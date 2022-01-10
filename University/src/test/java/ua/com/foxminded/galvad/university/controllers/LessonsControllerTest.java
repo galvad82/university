@@ -9,8 +9,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -20,7 +20,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
@@ -67,10 +66,8 @@ class LessonsControllerTest {
 	private static final String DURATION_STRING = "01:00";
 	private static final String START_TIME_STRING_NEW = "10-10-2021 09:00";
 	private static final String DURATION_STRING_NEW = "02:00";
-
 	private static final String FIRST = "First";
 	private static final String SECOND = "Second";
-	private static final String EMPTY = "";
 
 	@BeforeEach
 	void setup() {
@@ -120,32 +117,28 @@ class LessonsControllerTest {
 		lessonDTO.setDuration(0);
 
 		List<String> listOfGroupNames = new ArrayList<>();
-		listOfGroupNames.add(EMPTY);
 		listOfGroupNames.add(FIRST);
 		listOfGroupNames.add(SECOND);
 		when(groupServiceMock.findAll()).thenReturn(createGroupList());
 
 		List<String> listOfCourseNames = new ArrayList<>();
-		listOfCourseNames.add(EMPTY);
 		listOfCourseNames.add(FIRST);
 		listOfCourseNames.add(SECOND);
 		when(courseServiceMock.findAll()).thenReturn(createCourseList());
 
 		List<String> listOfClassroomNames = new ArrayList<>();
-		listOfClassroomNames.add(EMPTY);
 		listOfClassroomNames.add(FIRST);
 		listOfClassroomNames.add(SECOND);
 		when(classroomServiceMock.findAll()).thenReturn(createClassroomList());
 
-		mockMvc.perform(get("/lessons/add"))
-				.andExpectAll(model().attribute("lessonDTO", lessonDTO), model().attribute("groups", listOfGroupNames),
-						model().attribute("courses", listOfCourseNames),
-						model().attribute("classrooms", listOfClassroomNames))
+		mockMvc.perform(get("/lessons/add")).andExpectAll(model().attribute("groups", listOfGroupNames),
+				model().attribute("courses", listOfCourseNames), model().attribute("classrooms", listOfClassroomNames),
+				model().attribute("startTime", "01-01-2021 02:00"), model().attribute("duration", "00:30"))
 				.andExpect(view().name("lessons/add"));
 	}
 
 	@Test
-	void testAddViewPost() throws Exception {
+	void testAddViewPostWithNewDTO_shouldReturnResultView() throws Exception {
 
 		LessonDTO lessonDTO = new LessonDTO();
 		lessonDTO.setCourse(createCourse(COURSE_NAME));
@@ -159,62 +152,108 @@ class LessonsControllerTest {
 		when(classroomServiceMock.retrieve(CLASSROOM_NAME)).thenReturn(createClassroom(CLASSROOM_NAME));
 		when(lessonServiceMock.convertDateToMil(START_TIME_STRING)).thenReturn(START_TIME);
 		when(lessonServiceMock.convertTimeToMil(DURATION_STRING)).thenReturn(DURATION);
+		when(lessonServiceMock.checkIfExists(lessonDTO)).thenReturn(false);
 		RequestBuilder request = post("/lessons/add").flashAttr("group", GROUP_NAME).flashAttr("course", COURSE_NAME)
 				.flashAttr("classroom", CLASSROOM_NAME).flashAttr("startTime", START_TIME_STRING)
 				.flashAttr("duration", DURATION_STRING);
 
 		mockMvc.perform(request)
-				.andExpectAll(model().attribute("lesson", lessonDTO),
+				.andExpectAll(model().attribute("lessonDTO", lessonDTO),
 						model().attribute("result", "A lesson was successfully added."))
 				.andExpect(view().name("lessons/result"));
 	}
 
 	@Test
-	void testEditViewPost_shouldReturnEditView() throws Exception {
-		List<String> listOfGroupNames = new ArrayList<>();
-		listOfGroupNames.add(FIRST);
-		listOfGroupNames.add(SECOND);
-		when(groupServiceMock.findAll()).thenReturn(createGroupList());
-
-		List<String> listOfCourseNames = new ArrayList<>();
-		listOfCourseNames.add(FIRST);
-		listOfCourseNames.add(SECOND);
-		when(courseServiceMock.findAll()).thenReturn(createCourseList());
-
-		List<String> listOfClassroomNames = new ArrayList<>();
-		listOfClassroomNames.add(FIRST);
-		listOfClassroomNames.add(SECOND);
-		when(classroomServiceMock.findAll()).thenReturn(createClassroomList());
+	void testAddViewPostWithExistentDTO_shouldReturnAddView() throws Exception {
 
 		LessonDTO lessonDTO = new LessonDTO();
+		lessonDTO.setCourse(createCourse(COURSE_NAME));
+		lessonDTO.setGroup(createGroup(GROUP_NAME));
+		lessonDTO.setClassroom(createClassroom(CLASSROOM_NAME));
 		lessonDTO.setStartTime(START_TIME);
 		lessonDTO.setDuration(DURATION);
+		List<String> expectedNameList = Arrays.asList("First", "Second");
 
+		when(courseServiceMock.retrieve(COURSE_NAME)).thenReturn(createCourse(COURSE_NAME));
+		when(groupServiceMock.retrieve(GROUP_NAME)).thenReturn(createGroup(GROUP_NAME));
+		when(classroomServiceMock.retrieve(CLASSROOM_NAME)).thenReturn(createClassroom(CLASSROOM_NAME));
 		when(lessonServiceMock.convertDateToMil(START_TIME_STRING)).thenReturn(START_TIME);
 		when(lessonServiceMock.convertTimeToMil(DURATION_STRING)).thenReturn(DURATION);
+		when(groupServiceMock.findAll()).thenReturn(createGroupList());
+		when(courseServiceMock.findAll()).thenReturn(createCourseList());
+		when(classroomServiceMock.findAll()).thenReturn(createClassroomList());
+		when(lessonServiceMock.checkIfExists(lessonDTO)).thenReturn(true);
+
+		RequestBuilder request = post("/lessons/add").flashAttr("group", GROUP_NAME).flashAttr("course", COURSE_NAME)
+				.flashAttr("classroom", CLASSROOM_NAME).flashAttr("startTime", START_TIME_STRING)
+				.flashAttr("duration", DURATION_STRING);
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("error", "The same lesson is already added to the database!"),
+						model().attribute("group", GROUP_NAME), model().attribute("course", COURSE_NAME),
+						model().attribute("classroom", CLASSROOM_NAME),
+						model().attribute("startTime", START_TIME_STRING),
+						model().attribute("duration", DURATION_STRING), model().attribute("groups", expectedNameList),
+						model().attribute("courses", expectedNameList),
+						model().attribute("classrooms", expectedNameList))
+				.andExpect(view().name("lessons/add"));
+	}
+
+	@Test
+	void testAddViewPostWithNonValidDTO_shouldReturnAddView() throws Exception {
+
+		LessonDTO lessonDTO = new LessonDTO();
+		lessonDTO.setCourse(createCourse(COURSE_NAME));
+		lessonDTO.setGroup(createGroup(GROUP_NAME));
+		lessonDTO.setClassroom(createClassroom(CLASSROOM_NAME));
+		lessonDTO.setStartTime(0);
+		lessonDTO.setDuration(0);
+		List<String> expectedNameList = Arrays.asList("First", "Second");
+
+		when(courseServiceMock.retrieve(COURSE_NAME)).thenReturn(createCourse(COURSE_NAME));
+		when(groupServiceMock.retrieve(GROUP_NAME)).thenReturn(createGroup(GROUP_NAME));
+		when(classroomServiceMock.retrieve(CLASSROOM_NAME)).thenReturn(createClassroom(CLASSROOM_NAME));
+		when(lessonServiceMock.convertDateToMil("0")).thenReturn(0l);
+		when(lessonServiceMock.convertTimeToMil("0")).thenReturn(0l);
+		when(groupServiceMock.findAll()).thenReturn(createGroupList());
+		when(courseServiceMock.findAll()).thenReturn(createCourseList());
+		when(classroomServiceMock.findAll()).thenReturn(createClassroomList());
+
+		RequestBuilder request = post("/lessons/add").flashAttr("group", GROUP_NAME).flashAttr("course", COURSE_NAME)
+				.flashAttr("classroom", CLASSROOM_NAME).flashAttr("startTime", "0").flashAttr("duration", "0");
+		mockMvc.perform(request).andExpectAll(model().attribute("error",
+				"The startTime field cannot be blank or earlier than UTC Jan-01-2021 00:00:01!<br>The duration field"
+						+ " cannot be blank or less than 30 minutes!"),
+				model().attribute("group", GROUP_NAME), model().attribute("course", COURSE_NAME),
+				model().attribute("classroom", CLASSROOM_NAME), model().attribute("startTime", "0"),
+				model().attribute("duration", "0"), model().attribute("groups", expectedNameList),
+				model().attribute("courses", expectedNameList), model().attribute("classrooms", expectedNameList))
+				.andExpect(view().name("lessons/add"));
+	}
+
+	@Test
+	void testEditViewPost() throws Exception {
+		List<String> expectedNameList = Arrays.asList("First", "Second");
+
+		when(groupServiceMock.findAll()).thenReturn(createGroupList());
+		when(courseServiceMock.findAll()).thenReturn(createCourseList());
+		when(classroomServiceMock.findAll()).thenReturn(createClassroomList());
+		when(courseServiceMock.retrieve(COURSE_NAME)).thenReturn(createCourse(COURSE_NAME));
+		when(groupServiceMock.retrieve(GROUP_NAME)).thenReturn(createGroup(GROUP_NAME));
+		when(classroomServiceMock.retrieve(CLASSROOM_NAME)).thenReturn(createClassroom(CLASSROOM_NAME));
 
 		RequestBuilder request = post("/lessons/edit").flashAttr("groupName", GROUP_NAME)
 				.flashAttr("courseName", COURSE_NAME).flashAttr("classroomName", CLASSROOM_NAME)
 				.flashAttr("startTime", START_TIME_STRING).flashAttr("duration", DURATION_STRING);
-
-		mockMvc.perform(request).andExpectAll(model().attribute("groups", listOfGroupNames),
-				model().attribute("courses", listOfCourseNames), model().attribute("classrooms", listOfClassroomNames),
-				model().attribute("lessonDTO", lessonDTO), model().attribute("initialGroup", GROUP_NAME),
-				model().attribute("initialCourse", COURSE_NAME), model().attribute("initialClassroom", CLASSROOM_NAME),
+		mockMvc.perform(request).andExpectAll(model().attribute("groups", expectedNameList),
+				model().attribute("courses", expectedNameList), model().attribute("classrooms", expectedNameList),
+				model().attribute("initialGroup", GROUP_NAME), model().attribute("initialCourse", COURSE_NAME),
+				model().attribute("initialClassroom", CLASSROOM_NAME),
 				model().attribute("initialStartTime", START_TIME_STRING),
 				model().attribute("initialDuration", DURATION_STRING)).andExpect(view().name("lessons/edit"));
 	}
 
 	@Test
-	void testEditResultViewPost() throws Exception {
-
-		LessonDTO initialLessonDTO = new LessonDTO();
-		initialLessonDTO.setGroup(createGroup(FIRST));
-		initialLessonDTO.setClassroom(createClassroom(FIRST));
-		initialLessonDTO.setCourse(createCourse(FIRST));
-		initialLessonDTO.setStartTime(START_TIME);
-		initialLessonDTO.setDuration(DURATION);
-
+	void testEditResultViewPostWithNewDTO_shouldReturnResultView() throws Exception {
 		when(courseServiceMock.retrieve(FIRST)).thenReturn(createCourse(FIRST));
 		when(groupServiceMock.retrieve(FIRST)).thenReturn(createGroup(FIRST));
 		when(classroomServiceMock.retrieve(FIRST)).thenReturn(createClassroom(FIRST));
@@ -227,21 +266,104 @@ class LessonsControllerTest {
 		updatedLessonDTO.setCourse(createCourse(SECOND));
 		updatedLessonDTO.setStartTime(START_TIME_NEW);
 		updatedLessonDTO.setDuration(DURATION_NEW);
-
 		when(courseServiceMock.retrieve(SECOND)).thenReturn(createCourse(SECOND));
 		when(groupServiceMock.retrieve(SECOND)).thenReturn(createGroup(SECOND));
 		when(classroomServiceMock.retrieve(SECOND)).thenReturn(createClassroom(SECOND));
 		when(lessonServiceMock.convertDateToMil(START_TIME_STRING_NEW)).thenReturn(START_TIME_NEW);
 		when(lessonServiceMock.convertTimeToMil(DURATION_STRING_NEW)).thenReturn(DURATION_NEW);
+		when(lessonServiceMock.checkIfExists(updatedLessonDTO)).thenReturn(false);
 
 		RequestBuilder request = post("/lessons/edit/result").flashAttr("initialGroup", FIRST)
 				.flashAttr("initialCourse", FIRST).flashAttr("initialClassroom", FIRST)
 				.flashAttr("initialStartTime", START_TIME_STRING).flashAttr("initialDuration", DURATION_STRING)
 				.flashAttr("group", SECOND).flashAttr("course", SECOND).flashAttr("classroom", SECOND)
 				.flashAttr("startTime", START_TIME_STRING_NEW).flashAttr("duration", DURATION_STRING_NEW);
-
 		mockMvc.perform(request).andExpectAll(model().attribute("result", "Lesson was successfully updated"),
-				model().attribute("lesson", updatedLessonDTO)).andExpect(view().name("lessons/result"));
+				model().attribute("lessonDTO", updatedLessonDTO)).andExpect(view().name("lessons/result"));
+	}
+
+	@Test
+	void testEditResultViewPostWithExistedDTO_shouldReturnEditView() throws Exception {
+		List<String> expectedNameList = Arrays.asList("First", "Second");
+		when(courseServiceMock.retrieve(FIRST)).thenReturn(createCourse(FIRST));
+		when(groupServiceMock.retrieve(FIRST)).thenReturn(createGroup(FIRST));
+		when(classroomServiceMock.retrieve(FIRST)).thenReturn(createClassroom(FIRST));
+		when(lessonServiceMock.convertDateToMil(START_TIME_STRING)).thenReturn(START_TIME);
+		when(lessonServiceMock.convertTimeToMil(DURATION_STRING)).thenReturn(DURATION);
+
+		LessonDTO updatedLessonDTO = new LessonDTO();
+		updatedLessonDTO.setGroup(createGroup(SECOND));
+		updatedLessonDTO.setClassroom(createClassroom(SECOND));
+		updatedLessonDTO.setCourse(createCourse(SECOND));
+		updatedLessonDTO.setStartTime(START_TIME_NEW);
+		updatedLessonDTO.setDuration(DURATION_NEW);
+		when(courseServiceMock.retrieve(SECOND)).thenReturn(createCourse(SECOND));
+		when(groupServiceMock.retrieve(SECOND)).thenReturn(createGroup(SECOND));
+		when(classroomServiceMock.retrieve(SECOND)).thenReturn(createClassroom(SECOND));
+		when(lessonServiceMock.convertDateToMil(START_TIME_STRING_NEW)).thenReturn(START_TIME_NEW);
+		when(lessonServiceMock.convertTimeToMil(DURATION_STRING_NEW)).thenReturn(DURATION_NEW);
+		when(lessonServiceMock.checkIfExists(updatedLessonDTO)).thenReturn(true);
+		when(groupServiceMock.findAll()).thenReturn(createGroupList());
+		when(courseServiceMock.findAll()).thenReturn(createCourseList());
+		when(classroomServiceMock.findAll()).thenReturn(createClassroomList());
+
+		RequestBuilder request = post("/lessons/edit/result").flashAttr("initialGroup", FIRST)
+				.flashAttr("initialCourse", FIRST).flashAttr("initialClassroom", FIRST)
+				.flashAttr("initialStartTime", START_TIME_STRING).flashAttr("initialDuration", DURATION_STRING)
+				.flashAttr("group", SECOND).flashAttr("course", SECOND).flashAttr("classroom", SECOND)
+				.flashAttr("startTime", START_TIME_STRING_NEW).flashAttr("duration", DURATION_STRING_NEW);
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("error", "The same lesson is already added to the database!"),
+						model().attribute("groups", expectedNameList), model().attribute("courses", expectedNameList),
+						model().attribute("classrooms", expectedNameList), model().attribute("group", SECOND),
+						model().attribute("course", SECOND), model().attribute("classroom", SECOND),
+						model().attribute("startTime", START_TIME_STRING_NEW),
+						model().attribute("duration", DURATION_STRING_NEW), model().attribute("initialGroup", FIRST),
+						model().attribute("initialCourse", FIRST), model().attribute("initialClassroom", FIRST),
+						model().attribute("initialStartTime", START_TIME_STRING),
+						model().attribute("initialDuration", DURATION_STRING))
+				.andExpect(view().name("lessons/edit"));
+	}
+
+	@Test
+	void testEditResultViewPostWithNonValidDTO_shouldReturnEditView() throws Exception {
+		List<String> expectedNameList = Arrays.asList("First", "Second");
+		LessonDTO initialLessonDTO = new LessonDTO();
+		initialLessonDTO.setGroup(createGroup(FIRST));
+		initialLessonDTO.setClassroom(createClassroom(FIRST));
+		initialLessonDTO.setCourse(createCourse(FIRST));
+		initialLessonDTO.setStartTime(START_TIME);
+		initialLessonDTO.setDuration(DURATION);
+		when(courseServiceMock.retrieve(FIRST)).thenReturn(createCourse(FIRST));
+		when(groupServiceMock.retrieve(FIRST)).thenReturn(createGroup(FIRST));
+		when(classroomServiceMock.retrieve(FIRST)).thenReturn(createClassroom(FIRST));
+		when(lessonServiceMock.convertDateToMil(START_TIME_STRING)).thenReturn(START_TIME);
+		when(lessonServiceMock.convertTimeToMil(DURATION_STRING)).thenReturn(DURATION);
+
+		when(courseServiceMock.retrieve(SECOND)).thenReturn(createCourse(SECOND));
+		when(groupServiceMock.retrieve(SECOND)).thenReturn(createGroup(SECOND));
+		when(classroomServiceMock.retrieve(SECOND)).thenReturn(createClassroom(SECOND));
+		when(lessonServiceMock.convertDateToMil("0")).thenReturn(0l);
+		when(lessonServiceMock.convertTimeToMil("0")).thenReturn(0l);
+		when(groupServiceMock.findAll()).thenReturn(createGroupList());
+		when(courseServiceMock.findAll()).thenReturn(createCourseList());
+		when(classroomServiceMock.findAll()).thenReturn(createClassroomList());
+
+		RequestBuilder request = post("/lessons/edit/result").flashAttr("initialGroup", FIRST)
+				.flashAttr("initialCourse", FIRST).flashAttr("initialClassroom", FIRST)
+				.flashAttr("initialStartTime", START_TIME_STRING).flashAttr("initialDuration", DURATION_STRING)
+				.flashAttr("group", SECOND).flashAttr("course", SECOND).flashAttr("classroom", SECOND)
+				.flashAttr("startTime", "0").flashAttr("duration", "0");
+		mockMvc.perform(request).andExpectAll(
+				model().attribute("error", "The startTime field cannot be blank or earlier than"
+						+ " UTC Jan-01-2021 00:00:01!<br>The duration field cannot be blank or less than 30 minutes!"),
+				model().attribute("groups", expectedNameList), model().attribute("courses", expectedNameList),
+				model().attribute("classrooms", expectedNameList), model().attribute("group", SECOND),
+				model().attribute("course", SECOND), model().attribute("classroom", SECOND),
+				model().attribute("startTime", "0"), model().attribute("duration", "0"),
+				model().attribute("initialGroup", FIRST), model().attribute("initialCourse", FIRST),
+				model().attribute("initialClassroom", FIRST), model().attribute("initialStartTime", START_TIME_STRING),
+				model().attribute("initialDuration", DURATION_STRING)).andExpect(view().name("lessons/edit"));
 	}
 
 	@Test
@@ -263,12 +385,12 @@ class LessonsControllerTest {
 				.flashAttr("classroomName", FIRST).flashAttr("startTime", START_TIME_STRING)
 				.flashAttr("duration", DURATION_STRING);
 
-		mockMvc.perform(request).andExpect(model().attribute("lesson", lessonDTO))
+		mockMvc.perform(request).andExpect(model().attribute("lessonDTO", lessonDTO))
 				.andExpect(view().name("lessons/delete"));
 	}
 
 	@Test
-	void testDeleteResultViewPost() throws Exception {
+	void testDeleteResultViewPostWithValidDTO_shouldReturnResultView() throws Exception {
 		LessonDTO lessonDTO = new LessonDTO();
 		lessonDTO.setGroup(createGroup(FIRST));
 		lessonDTO.setClassroom(createClassroom(FIRST));
@@ -276,11 +398,22 @@ class LessonsControllerTest {
 		lessonDTO.setStartTime(START_TIME);
 		lessonDTO.setDuration(DURATION);
 		when(courseServiceMock.retrieve(FIRST)).thenReturn(createCourse(FIRST));
-
 		RequestBuilder request = post("/lessons/delete/result").flashAttr("lesson", lessonDTO);
+		mockMvc.perform(request).andExpectAll(model().attribute("result", "A lesson was successfully deleted."),
+				model().attribute("lessonDTO", lessonDTO)).andExpect(view().name("lessons/result"));
+	}
 
-		mockMvc.perform(request).andExpectAll(model().attribute("result", "A lesson was successfully added"),
-				model().attribute("lesson", lessonDTO)).andExpect(view().name("lessons/result"));
+	@Test
+	void testDeleteResultViewPostWithNonValidDTO_shouldReturnListView() throws Exception {
+		LessonDTO lessonDTO = new LessonDTO();
+		lessonDTO.setGroup(createGroup(FIRST));
+		lessonDTO.setClassroom(createClassroom(FIRST));
+		lessonDTO.setCourse(createCourse(FIRST));
+		lessonDTO.setStartTime(0);
+		lessonDTO.setDuration(0);
+		when(courseServiceMock.retrieve(FIRST)).thenReturn(createCourse(FIRST));
+		RequestBuilder request = post("/lessons/delete/result").flashAttr("lesson", lessonDTO);
+		mockMvc.perform(request).andExpect(view().name("lessons/list"));
 	}
 
 	@Test

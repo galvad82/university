@@ -7,10 +7,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import ua.com.foxminded.galvad.university.controllers.validation.TeacherValidator;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
 import ua.com.foxminded.galvad.university.services.TeacherService;
 
@@ -26,12 +26,10 @@ public class TeachersController {
 	private static final String TEACHERDTO = "teacherDTO";
 	private static final String RESULT = "result";
 	private final TeacherService teacherService;
-	private final TeacherValidator teacherValidator;
 
 	@Autowired
-	public TeachersController(TeacherService teacherService, TeacherValidator teacherValidator) {
+	public TeachersController(TeacherService teacherService) {
 		this.teacherService = teacherService;
-		this.teacherValidator = teacherValidator;
 	}
 
 	@GetMapping()
@@ -48,7 +46,9 @@ public class TeachersController {
 
 	@PostMapping("/add")
 	public String createDTO(@Valid TeacherDTO teacherDTO, BindingResult result, Model model) {
-		teacherValidator.validate(teacherDTO, result);
+		if (teacherService.checkIfExists(teacherDTO)) {
+			result.rejectValue("firstName", "", "The teacher with the same name is already added to the database!");
+		}
 		if (result.hasErrors()) {
 			model.addAttribute(TEACHERDTO, teacherDTO);
 			return TEACHERS_ADD;
@@ -59,7 +59,8 @@ public class TeachersController {
 	}
 
 	@PostMapping("/edit")
-	public String editDTO(String firstName, String lastName, Model model) {
+	public String editDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
+			Model model) {
 		model.addAttribute(TEACHERDTO, teacherService.retrieve(firstName, lastName));
 		model.addAttribute("initialFirstName", firstName);
 		model.addAttribute("initialLastName", lastName);
@@ -67,10 +68,12 @@ public class TeachersController {
 	}
 
 	@PostMapping("/edit/result")
-	public String editDTOResult(@Valid TeacherDTO teacherDTO, BindingResult result, String initialFirstName,
-			String initialLastName, Model model) {
-		if (!teacherDTO.getFirstName().equals(initialFirstName) || !teacherDTO.getLastName().equals(initialLastName)) {
-			teacherValidator.validate(teacherDTO, result);
+	public String editDTOResult(@Valid TeacherDTO teacherDTO, BindingResult result,
+			@ModelAttribute("initialFirstName") String initialFirstName,
+			@ModelAttribute("initialLastName") String initialLastName, Model model) {
+		if ((!teacherDTO.getFirstName().equals(initialFirstName) || !teacherDTO.getLastName().equals(initialLastName))
+				&& (teacherService.checkIfExists(teacherDTO))) {
+			result.rejectValue("firstName", "", "The teacher with the same name is already added to the database!");
 		}
 		if (result.hasErrors()) {
 			model.addAttribute("initialFirstName", initialFirstName);
@@ -84,7 +87,8 @@ public class TeachersController {
 	}
 
 	@PostMapping("/delete")
-	public String deleteDTO(String firstName, String lastName, Model model) {
+	public String deleteDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
+			Model model) {
 		model.addAttribute(TEACHERDTO, teacherService.retrieve(firstName, lastName));
 		return TEACHERS_DELETE;
 	}

@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import ua.com.foxminded.galvad.university.controllers.validation.ClassroomValidator;
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.services.ClassroomService;
 
@@ -19,7 +18,6 @@ import ua.com.foxminded.galvad.university.services.ClassroomService;
 public class ClassroomsController {
 
 	public final ClassroomService classroomService;
-	public final ClassroomValidator classroomValidator;
 	private static final String CLASSROOMS_RESULT = "classrooms/result";
 	private static final String CLASSROOMS_LIST = "classrooms/list";
 	private static final String CLASSROOMS_ADD = "classrooms/add";
@@ -29,9 +27,8 @@ public class ClassroomsController {
 	private static final String RESULT = "result";
 
 	@Autowired
-	public ClassroomsController(ClassroomService classroomService, ClassroomValidator classroomValidator) {
+	public ClassroomsController(ClassroomService classroomService) {
 		this.classroomService = classroomService;
-		this.classroomValidator = classroomValidator;
 	}
 
 	@GetMapping()
@@ -48,7 +45,9 @@ public class ClassroomsController {
 
 	@PostMapping("/add")
 	public String createDTO(@Valid ClassroomDTO classroomDTO, BindingResult result, Model model) {
-		classroomValidator.validate(classroomDTO, result);
+		if (classroomService.checkIfExists(classroomDTO)) {
+			result.rejectValue("name", "", "The classroom with the same name is already added to the database!");
+		}
 		if (result.hasErrors()) {
 			return CLASSROOMS_ADD;
 		}
@@ -69,8 +68,8 @@ public class ClassroomsController {
 	@PostMapping("/edit/result")
 	public String editDTOResult(@Valid ClassroomDTO classroomDTO, BindingResult result,
 			@ModelAttribute("initialName") String initialName, Model model) {
-		if (!classroomDTO.getName().equals(initialName)) {
-			classroomValidator.validate(classroomDTO, result);
+		if (!classroomDTO.getName().equals(initialName) && classroomService.checkIfExists(classroomDTO)) {
+			result.rejectValue("name", "", "The classroom with the same name is already added to the database!");
 		}
 		if (result.hasErrors()) {
 			return CLASSROOMS_EDIT;

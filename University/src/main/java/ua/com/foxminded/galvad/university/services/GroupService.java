@@ -149,6 +149,15 @@ public class GroupService {
 		return list;
 	}
 
+	public boolean checkIfExists(GroupDTO groupDTO) {
+		try {
+			retrieve(groupDTO.getName());
+			return true;
+		} catch (DataNotFoundException e) {
+			return false;
+		}
+	}
+
 	private GroupDTO convertToDTO(Group entity) throws DataNotFoundException {
 		LOGGER.trace("Going to convert group (name={}) to DTO", entity.getName());
 		GroupDTO groupDTO = modelMapper.map(entity, GroupDTO.class);

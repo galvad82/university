@@ -11,8 +11,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -22,6 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.ModelAndView;
 
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
@@ -81,27 +81,26 @@ class GroupsControllerTest {
 
 	@Test
 	void testAddViewGet() throws Exception {
-		GroupDTO groupDTO = new GroupDTO();
-		groupDTO.setName("");
-		Set<StudentDTO> listOfStudents = new HashSet<>();
-		when(studentServiceMock.findAllUnassignedStudents()).thenReturn(listOfStudents);
-		mockMvc.perform(get("/groups/add")).andExpect(model().attribute("groupDTO", groupDTO))
+		when(studentServiceMock.findAllUnassignedStudents()).thenReturn(new HashSet<>());
+		mockMvc.perform(get("/groups/add")).andExpect(model().attribute("groupDTO", new GroupDTO()))
 				.andExpect(result -> assertEquals("groups/add", result.getModelAndView().getViewName()));
 	}
 
 	@Test
-	void testAddViewPost() throws Exception {
+	void testAddViewPostWithNewDTO() throws Exception {
 		GroupDTO groupDTO = new GroupDTO();
 		groupDTO.setName("TEST");
 		Boolean showTable = true;
+		when((groupServiceMock.checkIfExists(groupDTO))).thenReturn(false);
 		mockMvc.perform(post("/groups/add").param("name", "TEST"))
-				.andExpectAll(model().attribute("group", groupDTO), model().attribute("showTable", showTable),
+				.andExpectAll(model().attribute("groupDTO", groupDTO), model().attribute("showTable", showTable),
 						model().attribute("result", "A group was successfully added."))
 				.andExpect(result -> assertEquals("groups/result", result.getModelAndView().getViewName()));
 	}
 
 	@Test
-	void testAddViewPost_WithEmptyStudentsFirstName() throws Exception {
+	void testAddViewPostWithNewDTOAndEmptyStudentsFirstName_shouldAddDTOtoDBWithStudentsExcludingEmptyNames()
+			throws Exception {
 		List<StudentDTO> initialListOfStudents = new ArrayList<>();
 		StudentDTO firstStudentDTO = new StudentDTO();
 		firstStudentDTO.setFirstName("");
@@ -120,25 +119,63 @@ class GroupsControllerTest {
 		GroupDTO expectedGroupDTO = new GroupDTO();
 		expectedGroupDTO.setName(initialGroupDTO.getName());
 		expectedGroupDTO.setListOfStudent(listOfStudentsWithoutEmpty);
+		when((groupServiceMock.checkIfExists(initialGroupDTO))).thenReturn(false);
 
 		RequestBuilder request = post("/groups/add").flashAttr("groupDTO", initialGroupDTO);
 		Boolean showTable = true;
 
 		mockMvc.perform(request)
-				.andExpectAll(model().attribute("group", expectedGroupDTO), model().attribute("showTable", showTable),
+				.andExpectAll(model().attribute("groupDTO", expectedGroupDTO),
+						model().attribute("showTable", showTable),
 						model().attribute("result", "A group was successfully added."))
 				.andExpect(result -> assertEquals("groups/result", result.getModelAndView().getViewName()));
 	}
 
 	@Test
+	void testAddViewPostWithExistentDTO() throws Exception {
+		GroupDTO groupDTO = new GroupDTO();
+		groupDTO.setName("TEST");
+		when((groupServiceMock.checkIfExists(groupDTO))).thenReturn(true);
+		RequestBuilder request = post("/groups/add").flashAttr("groupDTO", groupDTO);
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.groupDTO");
+		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
+		assertEquals("The group with the same name is already added to the database!",
+				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("", bindingResult.getFieldErrors().get(0).getCode());
+		assertEquals(groupDTO, mockResult.getModel().get("groupDTO"));
+		assertEquals("groups/add", mockResult.getViewName());
+	}
+
+	@Test
+	void testAddViewPostWithBlankCourseName() throws Exception {
+		GroupDTO groupDTO = new GroupDTO();
+		groupDTO.setName(" ");
+		when((groupServiceMock.checkIfExists(groupDTO))).thenReturn(true);
+		RequestBuilder request = post("/groups/add").flashAttr("groupDTO", groupDTO);
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.groupDTO");
+		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
+		assertEquals("Group name cannot be empty", bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
+		assertEquals(groupDTO, mockResult.getModel().get("groupDTO"));
+		assertEquals("groups/add", mockResult.getViewName());
+	}
+
+	@Test
 	void testEditViewPost() throws Exception {
-		mockMvc.perform(post("/groups/edit").param("name", "TEST")).andExpectAll(model().attribute("name", "TEST"))
+		GroupDTO groupDTO = new GroupDTO();
+		groupDTO.setName("TEST");
+		when(groupServiceMock.retrieve("TEST")).thenReturn(groupDTO);
+		mockMvc.perform(post("/groups/edit").param("name", "TEST"))
+				.andExpectAll(model().attribute("groupDTO", groupDTO))
 				.andExpect(result -> assertEquals("groups/edit", result.getModelAndView().getViewName()));
 	}
 
 	@Test
-	void testEditResultViewPost() throws Exception {
-
+	void testEditResultViewPostWithNewDTO_shouldReturnResultView() throws Exception {
 		List<StudentDTO> listOfStudents = new ArrayList<>();
 		StudentDTO studentDTO = new StudentDTO();
 		studentDTO.setFirstName("FirstName");
@@ -152,14 +189,71 @@ class GroupsControllerTest {
 		GroupDTO expectedGroupDTO = new GroupDTO();
 		expectedGroupDTO.setName("NewName");
 		expectedGroupDTO.setListOfStudent(listOfStudents);
-
+		when(groupServiceMock.checkIfExists(expectedGroupDTO)).thenReturn(false);
 		when(groupServiceMock.retrieve(initialGroupDTO.getName())).thenReturn(initialGroupDTO);
 		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", expectedGroupDTO)
 				.flashAttr("initialName", initialGroupDTO.getName());
 		mockMvc.perform(request)
 				.andExpectAll(model().attribute("result", "Group was successfully updated"),
-						model().attribute("showTable", true), model().attribute("group", expectedGroupDTO))
+						model().attribute("showTable", true), model().attribute("groupDTO", expectedGroupDTO))
 				.andExpect(result -> assertEquals("groups/result", result.getModelAndView().getViewName()));
+	}
+
+	@Test
+	void testEditResultViewPostWithExistentDTO_shouldReturnEditView() throws Exception {
+		List<StudentDTO> listOfStudents = new ArrayList<>();
+		StudentDTO studentDTO = new StudentDTO();
+		studentDTO.setFirstName("FirstName");
+		studentDTO.setLastName("LastName");
+		listOfStudents.add(studentDTO);
+
+		GroupDTO groupDTO = new GroupDTO();
+		groupDTO.setName("OldName");
+		groupDTO.setListOfStudent(listOfStudents);
+
+		GroupDTO expectedGroupDTO = new GroupDTO();
+		expectedGroupDTO.setName("NewName");
+		expectedGroupDTO.setListOfStudent(listOfStudents);
+		when(groupServiceMock.checkIfExists(expectedGroupDTO)).thenReturn(true);
+		when(groupServiceMock.retrieve("OldName")).thenReturn(groupDTO);
+		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", expectedGroupDTO).flashAttr("initialName", "OldName");
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.groupDTO");
+		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
+		assertEquals("The group with the same name is already added to the database!",
+				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("", bindingResult.getFieldErrors().get(0).getCode());
+		assertEquals(expectedGroupDTO, mockResult.getModel().get("groupDTO"));
+		assertEquals("groups/edit", mockResult.getViewName());
+	}
+	
+	@Test
+	void testEditResultViewPostWithBlankGroupName_shouldReturnEditView() throws Exception {
+		List<StudentDTO> listOfStudents = new ArrayList<>();
+		StudentDTO studentDTO = new StudentDTO();
+		studentDTO.setFirstName("FirstName");
+		studentDTO.setLastName("LastName");
+		listOfStudents.add(studentDTO);
+
+		GroupDTO groupDTO = new GroupDTO();
+		groupDTO.setName("OldName");
+		groupDTO.setListOfStudent(listOfStudents);
+
+		GroupDTO expectedGroupDTO = new GroupDTO();
+		expectedGroupDTO.setName(" ");
+		expectedGroupDTO.setListOfStudent(listOfStudents);
+		when(groupServiceMock.checkIfExists(expectedGroupDTO)).thenReturn(true);
+		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", expectedGroupDTO).flashAttr("initialName", "OldName");
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.groupDTO");
+		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
+		assertEquals("Group name cannot be empty",
+				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
+		assertEquals(expectedGroupDTO, mockResult.getModel().get("groupDTO"));
+		assertEquals("groups/edit", mockResult.getViewName());
 	}
 
 	@Test
@@ -187,13 +281,13 @@ class GroupsControllerTest {
 		GroupDTO expectedGroupDTO = new GroupDTO();
 		expectedGroupDTO.setName("NewName");
 		expectedGroupDTO.setListOfStudent(listOfStudentsWithoutEmpty);
-
+		
 		when(groupServiceMock.retrieve(initialGroupDTO.getName())).thenReturn(initialGroupDTO);
 		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", newGroupDTO).flashAttr("initialName",
 				initialGroupDTO.getName());
 		mockMvc.perform(request)
 				.andExpectAll(model().attribute("result", "Group was successfully updated"),
-						model().attribute("showTable", true), model().attribute("group", expectedGroupDTO))
+						model().attribute("showTable", true), model().attribute("groupDTO", expectedGroupDTO))
 				.andExpect(result -> assertEquals("groups/result", result.getModelAndView().getViewName()));
 	}
 
@@ -202,32 +296,43 @@ class GroupsControllerTest {
 		GroupDTO groupDTO = new GroupDTO();
 		groupDTO.setName("AB-123");
 		when(groupServiceMock.retrieve("AB-123")).thenReturn(groupDTO);
-		mockMvc.perform(post("/groups/delete").param("name", "AB-123")).andExpect(model().attribute("group", groupDTO))
+		mockMvc.perform(post("/groups/delete").param("name", "AB-123"))
+				.andExpect(model().attribute("groupDTO", groupDTO))
 				.andExpect(result -> assertEquals("groups/delete", result.getModelAndView().getViewName()));
 	}
 
 	@Test
 	void testDeleteViewPost_withDataNotFoundException() throws Exception {
-		GroupDTO groupDTO = new GroupDTO();
-		groupDTO.setName("TEST");
-		List<StudentDTO> listOfStudent = new ArrayList<>();
-		StudentDTO emptyDto = new StudentDTO();
-		emptyDto.setFirstName("NONE");
-		emptyDto.setLastName("");
-		listOfStudent.add(emptyDto);
-		groupDTO.setListOfStudent(listOfStudent);
-
 		DataNotFoundException expectedException = new DataNotFoundException("Error Message");
 		when(groupServiceMock.retrieve("TEST")).thenThrow(expectedException);
-		mockMvc.perform(post("/groups/delete").param("name", "TEST")).andExpect(model().attribute("group", groupDTO))
-				.andExpect(result -> assertEquals("groups/delete", result.getModelAndView().getViewName()));
+		mockMvc.perform(post("/groups/delete").param("name", "TEST"))
+				.andExpect(result -> assertEquals(expectedException, result.getResolvedException()))
+				.andExpect(result -> assertEquals(expectedException.getException(),
+						result.getResolvedException().getCause()));
 	}
 
 	@Test
 	void testDeleteResultViewPost() throws Exception {
-		mockMvc.perform(post("/groups/delete/result").param("name", "name"))
-				.andExpect(model().attribute("result", "The group name was successfully deleted."))
+		GroupDTO groupDTO = new GroupDTO();
+		groupDTO.setName("name");
+		mockMvc.perform(post("/groups/delete/result").flashAttr("groupDTO", groupDTO))
+				.andExpectAll(model().attribute("result", "The group name was successfully deleted."), model().attribute("groupDTO", groupDTO))
 				.andExpect(result -> assertEquals("groups/result", result.getModelAndView().getViewName()));
+	}
+	
+	@Test
+	void testDeleteResultViewPostWithBlankGroupName_shouldReturnListView() throws Exception {
+		GroupDTO groupDTO = new GroupDTO();
+		groupDTO.setName(" ");
+		RequestBuilder request = post("/groups/delete/result").flashAttr("groupDTO", groupDTO);
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.groupDTO");
+		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
+		assertEquals("Group name cannot be empty",
+				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
+		assertEquals("groups/list", mockResult.getViewName());
 	}
 
 	@Test

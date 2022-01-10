@@ -154,6 +154,15 @@ public class StudentService {
 		return list;
 	}
 
+	public boolean checkIfExists(StudentDTO studentDTO) {
+		try {
+			retrieve(studentDTO.getFirstName(), studentDTO.getLastName());
+			return true;
+		} catch (DataNotFoundException e) {
+			return false;
+		}
+	}
+
 	public Map<StudentDTO, String> buildStudentGroupMap() throws DataNotFoundException {
 		LOGGER.trace("Going to get a map (StudentDTO,GroupName)");
 		Map<StudentDTO, String> studentGroupMap = new LinkedHashMap<>();

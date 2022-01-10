@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import ua.com.foxminded.galvad.university.controllers.validation.GroupValidator;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.services.GroupService;
 import ua.com.foxminded.galvad.university.services.StudentService;
@@ -32,13 +31,11 @@ public class GroupsController {
 	private static final String SHOWTABLE = "showTable";
 	private final GroupService groupService;
 	private final StudentService studentService;
-	private final GroupValidator groupValidator;
 
 	@Autowired
-	public GroupsController(GroupService groupService, StudentService studentService, GroupValidator groupValidator) {
+	public GroupsController(GroupService groupService, StudentService studentService) {
 		this.groupService = groupService;
 		this.studentService = studentService;
-		this.groupValidator = groupValidator;
 	}
 
 	@GetMapping()
@@ -55,8 +52,8 @@ public class GroupsController {
 
 	@PostMapping("/edit/result")
 	public String editDTOResult(@Valid GroupDTO groupDTO, BindingResult result, String initialName, Model model) {
-		if (!groupDTO.getName().equals(initialName)) {
-			groupValidator.validate(groupDTO, result);
+		if (!groupDTO.getName().equals(initialName) && groupService.checkIfExists(groupDTO)) {
+			result.rejectValue("name", "", "The group with the same name is already added to the database!");
 		}
 		if (result.hasErrors()) {
 			return GROUPS_EDIT;
@@ -80,7 +77,9 @@ public class GroupsController {
 
 	@PostMapping("/add")
 	public String createDTO(@Valid GroupDTO groupDTO, BindingResult result, Model model) {
-		groupValidator.validate(groupDTO, result);
+		if (groupService.checkIfExists(groupDTO)) {
+			result.rejectValue("name", "", "The group with the same name is already added to the database!");
+		}
 		if (result.hasErrors()) {
 			groupDTO.setListOfStudent(new ArrayList<>(studentService.findAllUnassignedStudents()));
 			return GROUPS_ADD;

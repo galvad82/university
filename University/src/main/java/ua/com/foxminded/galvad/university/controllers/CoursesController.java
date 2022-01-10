@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import ua.com.foxminded.galvad.university.controllers.validation.CourseValidator;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
 import ua.com.foxminded.galvad.university.services.CourseService;
@@ -24,7 +23,6 @@ public class CoursesController {
 
 	public final CourseService courseService;
 	public final TeacherService teacherService;
-	public final CourseValidator courseValidator;
 
 	private static final String COURSES_RESULT = "courses/result";
 	private static final String COURSES_LIST = "courses/list";
@@ -36,11 +34,9 @@ public class CoursesController {
 	private static final String RESULT = "result";
 
 	@Autowired
-	public CoursesController(CourseService courseService, TeacherService teacherService,
-			CourseValidator courseValidator) {
+	public CoursesController(CourseService courseService, TeacherService teacherService) {
 		this.courseService = courseService;
 		this.teacherService = teacherService;
-		this.courseValidator = courseValidator;
 	}
 
 	@GetMapping()
@@ -61,8 +57,8 @@ public class CoursesController {
 
 	@PostMapping("/edit/result")
 	public String editDTOResult(@Valid CourseDTO courseDTO, BindingResult result, String initialName, Model model) {
-		if (!courseDTO.getName().equals(initialName)) {
-			courseValidator.validate(courseDTO, result);
+		if (!courseDTO.getName().equals(initialName) && courseService.checkIfExists(courseDTO)) {
+			result.rejectValue("name", "", "The course with the same name is already added to the database!");
 		}
 		if (result.hasErrors()) {
 			model.addAttribute(LIST_OF_TEACHERS, teacherService.findAll());
@@ -88,7 +84,9 @@ public class CoursesController {
 
 	@PostMapping("/add")
 	public String addCourseToDB(@Valid CourseDTO courseDTO, BindingResult result, Model model) {
-		courseValidator.validate(courseDTO, result);
+		if (courseService.checkIfExists(courseDTO)) {
+			result.rejectValue("name", "", "The course with the same name is already added to the database!");
+		}
 		if (result.hasErrors()) {
 			model.addAttribute(LIST_OF_TEACHERS, teacherService.findAll());
 			return COURSES_ADD;

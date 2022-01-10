@@ -122,6 +122,15 @@ public class TeacherService {
 		return list;
 	}
 
+	public boolean checkIfExists(TeacherDTO teacherDTO) {
+		try {
+			retrieve(teacherDTO.getFirstName(), teacherDTO.getLastName());
+			return true;
+		} catch (DataNotFoundException e) {
+			return false;
+		}
+	}
+	
 	public List<LessonDTO> findAllLessonsForTeacher(String firstName, String lastName) throws DataNotFoundException {
 		LOGGER.trace("Going to get list of lessons for Teacher (firstName={}, lastName={})", firstName, lastName);
 		LOGGER.trace("Going to get DTO for Teacher (firstName={}, lastName={})", firstName, lastName);
