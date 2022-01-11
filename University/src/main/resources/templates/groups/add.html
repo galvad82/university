@@ -16,6 +16,7 @@
 				<form class="row" th:action="@{/groups/add}" th:method="POST" th:object="${groupDTO}">
 					<label><span class="red">*</span> Group name:</label>
 					<input type="text" th:field="*{name}" class="form-control" />
+					<p th:if="${#fields.hasErrors('name')}" class="red" th:errors="*{name}" />
 					<p />
 					<label>Unassigned students:</label> 
 					<p>

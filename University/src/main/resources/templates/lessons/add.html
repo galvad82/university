@@ -15,23 +15,26 @@
 		<div class="row align-items-start">
 			<div class="col"></div>
 			<div class="col">
+    			<p th:utext="${error}" class="red" />
 				<form class="row" th:action="@{/lessons/add}" th:method="POST">
 					<label for="group">Group:</label>
 					<select	name="group" id="group" class="form-select" >
 						<option th:each="t : ${groups}" th:value="${t}" th:text="${t}" />
 					</select>
+
 					<label for="course">Course:</label>
 					<select name="course" id="course" class="form-select" >
 						<option th:each="t : ${courses}" th:value="${t}" th:text="${t}" />
 					</select>
+
 					<label for="classroom">Classroom:</label>
 					<select name="classroom" id="classroom"	class="form-select" >
 						<option th:each="t : ${classrooms}" th:value="${t}" th:text="${t}" />
 					</select>
-					
+
 					<label for="startTime">Start at:</label>
 					<div class="input-group date m-0 p-0">
-						<input type="text" name="startTime" id="startTime"
+						<input type="text" name="startTime" id="startTime" th:value="${startTime}"
 							class="form-control" />
 						<div class="input-group-append">
 							<div class="input-group-text">
@@ -42,7 +45,7 @@
 
 					<label>Duration:</label>
 					<div class="input-group m-0 p-0">
-						<input class="form-control" type="text" name="duration"
+						<input class="form-control" type="text" name="duration" th:value="${duration}"
 							id="duration" />
 						<div class="input-group-append">
 							<div class="input-group-text">

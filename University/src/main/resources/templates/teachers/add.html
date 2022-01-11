@@ -16,8 +16,10 @@
 				<form class="row" th:action="@{/teachers/add}" th:method="POST" th:object="${teacherDTO}">
 					<label><span class="red">*</span> First name:</label> 
 					<input type="text" th:field="*{firstName}" class="form-control" />
+					<p th:if="${#fields.hasErrors('firstName')}" class="red" th:errors="*{firstName}" />
 					<label><span class="red">*</span> Last name:</label>
 					<input type="text" th:field="*{lastName}" class="form-control" />
+					<p th:if="${#fields.hasErrors('lastName')}" class="red" th:errors="*{lastName}" />
 					<p>
 						<span class="red">*</span> indicates a required field
 					</p>

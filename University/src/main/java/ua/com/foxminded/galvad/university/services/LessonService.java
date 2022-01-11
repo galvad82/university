@@ -172,6 +172,17 @@ public class LessonService {
 		LOGGER.trace("Deleted LessonDTO by group (id={}, name={}) successfully", id, groupDTO.getName());
 	}
 
+	public boolean checkIfExists(LessonDTO lessonDTO) {
+		List<LessonDTO> listOfLessons = findAll();
+		for (LessonDTO dto : listOfLessons) {
+			if (dto.equals(lessonDTO)) {
+				return true;
+			}
+		}
+		return false;
+
+	}
+
 	private LessonDTO convertToDTO(Lesson entity) throws DataNotFoundException {
 		LOGGER.trace("Converting lesson to LessonDTO");
 		LessonDTO lessonDTO = modelMapper.map(entity, LessonDTO.class);

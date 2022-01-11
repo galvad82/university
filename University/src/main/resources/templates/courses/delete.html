@@ -18,8 +18,8 @@
 			</thead>
 			<tbody>
 				<tr>
-					<td th:text="${course.name}"></td>
-					<td th:text="${course.teacher.firstName}+' '+${course.teacher.lastName}"></td>
+					<td th:text="${courseDTO.name}"></td>
+					<td th:text="${courseDTO.teacher.firstName}+' '+${courseDTO.teacher.lastName}"></td>
 				</tr>
 			</tbody>
 		</table>
@@ -30,7 +30,7 @@
 			<div class="col"></div>
 			<div class="col"></div>
 			<div class="col">
-				<form class="row" th:action="@{/courses/delete/result}" th:method="POST" th:object="${course}">
+				<form class="row" th:action="@{/courses/delete/result}" th:method="POST" th:object="${courseDTO}">
 					<input type="hidden" th:field="*{name}" th:value="*{name}" />
 					<input type="hidden" th:field="*{teacher.firstName}" th:value="*{teacher.firstName}" />
 					<input type="hidden" th:field="*{teacher.lastName}" th:value="*{teacher.lastName}" />

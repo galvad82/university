@@ -3,7 +3,11 @@ package ua.com.foxminded.galvad.university.dto;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.validation.constraints.NotBlank;
+
 public class GroupDTO {
+
+	@NotBlank(message = "Group name cannot be empty")
 	private String name;
 	private List<StudentDTO> listOfStudent = new ArrayList<>();
 

@@ -47,7 +47,7 @@ public class LessonDTO {
 		this.startTimeString = convertMilToDate(startTime);
 	}
 
-	public long getDuration() {
+	public Long getDuration() {
 		return duration;
 	}
 

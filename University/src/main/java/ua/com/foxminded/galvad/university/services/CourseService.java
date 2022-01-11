@@ -127,6 +127,15 @@ public class CourseService {
 		LOGGER.trace("List of ALL CourseDTO retrieved from DB, {} were found", list.size());
 		return list;
 	}
+	
+	public boolean checkIfExists(CourseDTO courseDTO) {
+		try {
+			retrieve(courseDTO.getName());
+			return true;
+		} catch (DataNotFoundException e) {
+			return false;
+		}
+	}
 
 	private CourseDTO convertToDTO(Course entity) throws DataNotFoundException {
 		LOGGER.trace("Going to convert course (name={}) to courseDTO", entity.getName());

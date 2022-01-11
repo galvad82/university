@@ -1,10 +1,11 @@
 package ua.com.foxminded.galvad.university.controllers;
 
-import java.util.List;
+import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,7 +23,7 @@ public class TeachersController {
 	private static final String TEACHERS_ADD = "teachers/add";
 	private static final String TEACHERS_EDIT = "teachers/edit";
 	private static final String TEACHERS_DELETE = "teachers/delete";
-	private static final String TEACHER = "teacher";
+	private static final String TEACHERDTO = "teacherDTO";
 	private static final String RESULT = "result";
 	private final TeacherService teacherService;
 
@@ -33,22 +34,26 @@ public class TeachersController {
 
 	@GetMapping()
 	public String findAll(Model model) {
-		List<TeacherDTO> listOfTeacherDTOs = teacherService.findAll();
-		model.addAttribute("teachers", listOfTeacherDTOs);
+		model.addAttribute("teachers", teacherService.findAll());
 		return TEACHERS_LIST;
 	}
 
 	@GetMapping("/add")
 	public String create(Model model) {
-		TeacherDTO teacherDTO = new TeacherDTO();
-		model.addAttribute("teacherDTO", teacherDTO);
+		model.addAttribute(TEACHERDTO, new TeacherDTO());
 		return TEACHERS_ADD;
 	}
 
 	@PostMapping("/add")
-	public String createDTO(@ModelAttribute("teacherDTO") TeacherDTO teacherDTO, Model model) {
+	public String createDTO(@Valid TeacherDTO teacherDTO, BindingResult result, Model model) {
+		if (teacherService.checkIfExists(teacherDTO)) {
+			result.rejectValue("firstName", "", "The teacher with the same name is already added to the database!");
+		}
+		if (result.hasErrors()) {
+			model.addAttribute(TEACHERDTO, teacherDTO);
+			return TEACHERS_ADD;
+		}
 		teacherService.create(teacherDTO);
-		model.addAttribute(TEACHER, teacherDTO);
 		model.addAttribute(RESULT, "A teacher was successfully added.");
 		return TEACHERS_RESULT;
 	}
@@ -56,46 +61,44 @@ public class TeachersController {
 	@PostMapping("/edit")
 	public String editDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
 			Model model) {
-		model.addAttribute("firstName", firstName);
-		model.addAttribute("lastName", lastName);
+		model.addAttribute(TEACHERDTO, teacherService.retrieve(firstName, lastName));
+		model.addAttribute("initialFirstName", firstName);
+		model.addAttribute("initialLastName", lastName);
 		return TEACHERS_EDIT;
 	}
 
 	@PostMapping("/edit/result")
-	public String editDTOResult(@ModelAttribute("firstName") String firstName,
-			@ModelAttribute("lastName") String lastName, @ModelAttribute("initialFirstName") String initialFirstName,
+	public String editDTOResult(@Valid TeacherDTO teacherDTO, BindingResult result,
+			@ModelAttribute("initialFirstName") String initialFirstName,
 			@ModelAttribute("initialLastName") String initialLastName, Model model) {
-
-		TeacherDTO initialTeacherDTO = new TeacherDTO();
-		initialTeacherDTO.setFirstName(initialFirstName);
-		initialTeacherDTO.setLastName(initialLastName);
-
-		TeacherDTO updatedTeacherDTO = new TeacherDTO();
-		updatedTeacherDTO.setFirstName(firstName);
-		updatedTeacherDTO.setLastName(lastName);
-
-		teacherService.update(initialTeacherDTO, updatedTeacherDTO);
+		if ((!teacherDTO.getFirstName().equals(initialFirstName) || !teacherDTO.getLastName().equals(initialLastName))
+				&& (teacherService.checkIfExists(teacherDTO))) {
+			result.rejectValue("firstName", "", "The teacher with the same name is already added to the database!");
+		}
+		if (result.hasErrors()) {
+			model.addAttribute("initialFirstName", initialFirstName);
+			model.addAttribute("initialLastName", initialLastName);
+			return TEACHERS_EDIT;
+		}
+		TeacherDTO initialTeacherDTO = teacherService.retrieve(initialFirstName, initialLastName);
+		teacherService.update(initialTeacherDTO, teacherDTO);
 		model.addAttribute(RESULT, "Teacher was successfully updated");
-		model.addAttribute(TEACHER, updatedTeacherDTO);
 		return TEACHERS_RESULT;
 	}
 
 	@PostMapping("/delete")
 	public String deleteDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
 			Model model) {
-		model.addAttribute("firstName", firstName);
-		model.addAttribute("lastName", lastName);
+		model.addAttribute(TEACHERDTO, teacherService.retrieve(firstName, lastName));
 		return TEACHERS_DELETE;
 	}
 
 	@PostMapping("/delete/result")
-	public String deleteDTOResult(@ModelAttribute("firstName") String firstName,
-			@ModelAttribute("lastName") String lastName, Model model) {
-		TeacherDTO teacherDTO = new TeacherDTO();
-		teacherDTO.setFirstName(firstName);
-		teacherDTO.setLastName(lastName);
+	public String deleteDTOResult(@Valid TeacherDTO teacherDTO, BindingResult result, Model model) {
+		if (result.hasErrors()) {
+			return TEACHERS_LIST;
+		}
 		teacherService.delete(teacherDTO);
-		model.addAttribute(TEACHER, teacherDTO);
 		model.addAttribute(RESULT, "A teacher was successfully deleted.");
 		return TEACHERS_RESULT;
 	}

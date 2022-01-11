@@ -20,6 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.servlet.ModelAndView;
 
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
@@ -78,41 +80,148 @@ class ClassroomsControllerTest {
 	}
 
 	@Test
-	void testAddViewPost() throws Exception {
+	void testAddViewPostWithNewDTO() throws Exception {
 		ClassroomDTO expectedClassroomDTO = new ClassroomDTO();
 		expectedClassroomDTO.setName("TEST");
+		when(classroomServiceMock.checkIfExists(expectedClassroomDTO)).thenReturn(false);
 		RequestBuilder request = post("/classrooms/add").flashAttr("classroomDTO", expectedClassroomDTO);
 		mockMvc.perform(request)
-				.andExpectAll(model().attribute("classroom", expectedClassroomDTO),
+				.andExpectAll(model().attribute("classroomDTO", expectedClassroomDTO),
 						model().attribute("result", "A classroom was successfully added."))
 				.andExpect(result -> assertEquals("classrooms/result", result.getModelAndView().getViewName()));
 	}
 
 	@Test
+	void testAddViewPostWithExistentDTO() throws Exception {
+		ClassroomDTO expectedClassroomDTO = new ClassroomDTO();
+		expectedClassroomDTO.setName("TEST");
+		when(classroomServiceMock.checkIfExists(expectedClassroomDTO)).thenReturn(true);
+		RequestBuilder request = post("/classrooms/add").flashAttr("classroomDTO", expectedClassroomDTO);
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.classroomDTO");
+		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
+		assertEquals("The classroom with the same name is already added to the database!",
+				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("", bindingResult.getFieldErrors().get(0).getCode());
+		assertEquals(expectedClassroomDTO, mockResult.getModel().get("classroomDTO"));
+		assertEquals("classrooms/add", mockResult.getViewName());
+	}
+
+	@Test
+	void testAddViewPostWithBlankDTO_shouldReturnAddView() throws Exception {
+		ClassroomDTO classroomDTO = new ClassroomDTO();
+		classroomDTO.setName(" ");
+		when(classroomServiceMock.checkIfExists(classroomDTO)).thenReturn(false);
+		RequestBuilder request = post("/classrooms/add").flashAttr("classroomDTO", classroomDTO);
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.classroomDTO");
+		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
+		assertEquals("Classroom name cannot be empty",
+				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
+		assertEquals(classroomDTO, mockResult.getModel().get("classroomDTO"));
+		assertEquals("classrooms/add", mockResult.getViewName());
+	}
+	
+	
+	
+	@Test
 	void testEditViewPost() throws Exception {
-		mockMvc.perform(post("/classrooms/edit").param("name", "TEST")).andExpectAll(model().attribute("name", "TEST"))
+		ClassroomDTO classroomDTO = new ClassroomDTO();
+		classroomDTO.setName("TEST");
+		when(classroomServiceMock.retrieve("TEST")).thenReturn(classroomDTO);
+		mockMvc.perform(post("/classrooms/edit").param("name", "TEST"))
+				.andExpectAll(model().attribute("classroomDTO", classroomDTO),
+						model().attribute("initialName", classroomDTO.getName()))
 				.andExpect(result -> assertEquals("classrooms/edit", result.getModelAndView().getViewName()));
 	}
 
 	@Test
-	void testEditResultViewPost() throws Exception {
-		mockMvc.perform(post("/classrooms/edit/result").param("name", "name").param("initialName", "initialName"))
-				.andExpectAll(model().attribute("result", "Classroom was successfully updated"))
+	void testEditResultViewPostWithNewDTO_shouldReturnResultView() throws Exception {
+		ClassroomDTO classroomDTO = new ClassroomDTO();
+		classroomDTO.setName("NAME");
+		when(classroomServiceMock.checkIfExists(classroomDTO)).thenReturn(false);
+		when(classroomServiceMock.retrieve(classroomDTO.getName())).thenReturn(classroomDTO);
+		RequestBuilder request = post("/classrooms/edit/result").flashAttr("classroomDTO", classroomDTO)
+				.flashAttr("initialName", "JustAnotherName");
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("classroomDTO", classroomDTO),
+						model().attribute("result", "Classroom was successfully updated"))
 				.andExpect(result -> assertEquals("classrooms/result", result.getModelAndView().getViewName()));
 	}
 
 	@Test
+	void testEditResultViewPostWithExistentDTO_shouldReturnEditView() throws Exception {
+		ClassroomDTO classroomDTO = new ClassroomDTO();
+		classroomDTO.setName("NAME");
+		when(classroomServiceMock.checkIfExists(classroomDTO)).thenReturn(true);
+		RequestBuilder request = post("/classrooms/edit/result").flashAttr("classroomDTO", classroomDTO)
+				.flashAttr("initialName", "JustAnotherName");
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.classroomDTO");
+		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
+		assertEquals("The classroom with the same name is already added to the database!",
+				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("", bindingResult.getFieldErrors().get(0).getCode());
+		assertEquals(classroomDTO, mockResult.getModel().get("classroomDTO"));
+		assertEquals("classrooms/edit", mockResult.getViewName());
+	}
+	
+	@Test
+	void testEditResultViewPostWithWithBlankClassroomName_ShouldReturnEditView() throws Exception {
+		ClassroomDTO classroomDTO = new ClassroomDTO();
+		classroomDTO.setName(" ");
+		RequestBuilder request = post("/classrooms/edit/result").flashAttr("classroomDTO", classroomDTO)
+				.flashAttr("initialName", "JustAnotherName");
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.classroomDTO");
+		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
+		assertEquals("Classroom name cannot be empty",
+				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
+		assertEquals(classroomDTO, mockResult.getModel().get("classroomDTO"));
+		assertEquals("classrooms/edit", mockResult.getViewName());
+	}
+
+	@Test
 	void testDeleteViewPost() throws Exception {
+		ClassroomDTO classroomDTO = new ClassroomDTO();
+		classroomDTO.setName("TEST");
+		when(classroomServiceMock.retrieve("TEST")).thenReturn(classroomDTO);
 		mockMvc.perform(post("/classrooms/delete").param("name", "TEST"))
-				.andExpectAll(model().attribute("name", "TEST"))
+				.andExpectAll(model().attribute("classroomDTO", classroomDTO))
 				.andExpect(result -> assertEquals("classrooms/delete", result.getModelAndView().getViewName()));
 	}
 
 	@Test
 	void testDeleteResultViewPost() throws Exception {
-		mockMvc.perform(post("/classrooms/delete/result").param("name", "name"))
-				.andExpectAll(model().attribute("result", "A classroom was successfully deleted."))
+		ClassroomDTO classroomDTO = new ClassroomDTO();
+		classroomDTO.setName("TEST");
+		RequestBuilder request = post("/classrooms/delete/result").flashAttr("classroomDTO", classroomDTO);
+		mockMvc.perform(request)
+				.andExpectAll(model().attribute("classroomDTO", classroomDTO),
+						model().attribute("result", "A classroom was successfully deleted."))
 				.andExpect(result -> assertEquals("classrooms/result", result.getModelAndView().getViewName()));
+	}
+	
+	@Test
+	void testDeleteResultViewPostWithBlankClassroomName_ShouldReturnClassroomListView() throws Exception {
+		ClassroomDTO classroomDTO = new ClassroomDTO();
+		classroomDTO.setName(" ");
+		RequestBuilder request = post("/classrooms/delete/result").flashAttr("classroomDTO", classroomDTO);
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.classroomDTO");
+		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
+		assertEquals("Classroom name cannot be empty",
+				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
+		assertEquals(classroomDTO, mockResult.getModel().get("classroomDTO"));
+		assertEquals("classrooms/list", mockResult.getViewName());
 	}
 
 	@Test

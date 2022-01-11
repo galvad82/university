@@ -114,6 +114,15 @@ public class ClassroomService {
 		return list;
 	}
 
+	public boolean checkIfExists(ClassroomDTO classroomDTO) {
+		try {
+			retrieve(classroomDTO.getName());
+			return true;
+		} catch (DataNotFoundException e) {
+			return false;
+		}
+	}
+
 	private ClassroomDTO convertToDTO(Classroom entity) {
 		LOGGER.trace("Going to convert classroom (name={}) to DTO", entity.getName());
 		ClassroomDTO classroomDTO = modelMapper.map(entity, ClassroomDTO.class);

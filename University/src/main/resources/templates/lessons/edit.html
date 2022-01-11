@@ -15,6 +15,7 @@
 		<div class="row align-items-start">
 			<div class="col"></div>
 			<div class="col">
+			<p th:utext="${error}" class="red" />
 				<form class="row" th:action="@{/lessons/edit/result}" th:method="POST">
 					<label for="group">Group:</label>
 					<select	name="group" id="group" class="form-select" >
@@ -34,7 +35,7 @@
 					
 					<label for="startTime">Start at:</label>
 					<div class="input-group date m-0 p-0">
-						<input type="text" name="startTime" id="startTime" class="form-control" th:value="${initialStartTime}" />
+						<input type="text" name="startTime" id="startTime" class="form-control" th:value="${startTime}" />
 						<div class="input-group-append">
 							<div class="input-group-text">
 								<em class="bi bi-calendar2-check"></em>
@@ -45,7 +46,7 @@
 					
 					<label>Duration:</label>
 					<div class="input-group m-0 p-0">
-						<input class="form-control" type="text" name="duration" id="duration" th:value="${initialDuration}" />
+						<input class="form-control" type="text" name="duration" id="duration" th:value="${duration}" />
 						<div class="input-group-append">
 							<div class="input-group-text">
 								<em class="bi-alarm"></em>

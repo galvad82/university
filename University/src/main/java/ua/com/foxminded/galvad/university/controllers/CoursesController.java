@@ -2,11 +2,13 @@ package ua.com.foxminded.galvad.university.controllers;
 
 import java.util.List;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -27,7 +29,8 @@ public class CoursesController {
 	private static final String COURSES_ADD = "courses/add";
 	private static final String COURSES_EDIT = "courses/edit";
 	private static final String COURSES_DELETE = "courses/delete";
-	private static final String COURSE = "course";
+	private static final String COURSE_DTO = "courseDTO";
+	private static final String LIST_OF_TEACHERS = "listOfTeachers";
 	private static final String RESULT = "result";
 
 	@Autowired
@@ -44,58 +47,68 @@ public class CoursesController {
 	}
 
 	@PostMapping("/edit")
-	public String editDTO(@ModelAttribute("name") String name, Model model) {
+	public String editDTO(String name, Model model) {
 		CourseDTO courseDTO = courseService.retrieve(name);
-		model.addAttribute("courseDTO", courseDTO);
-		List<TeacherDTO> listOfTeachers = teacherService.findAll();
-		model.addAttribute("listOfTeachers", listOfTeachers);
+		model.addAttribute(COURSE_DTO, courseDTO);
+		model.addAttribute(LIST_OF_TEACHERS, teacherService.findAll());
+		model.addAttribute("initialName", courseDTO.getName());
 		return COURSES_EDIT;
 	}
 
 	@PostMapping("/edit/result")
-	public String editDTOResult(@ModelAttribute("courseDTO") CourseDTO updatedCourseDTO,
-			@ModelAttribute("initialName") String initialName, Model model) {
+	public String editDTOResult(@Valid CourseDTO courseDTO, BindingResult result, String initialName, Model model) {
+		if (!courseDTO.getName().equals(initialName) && courseService.checkIfExists(courseDTO)) {
+			result.rejectValue("name", "", "The course with the same name is already added to the database!");
+		}
+		if (result.hasErrors()) {
+			model.addAttribute(LIST_OF_TEACHERS, teacherService.findAll());
+			model.addAttribute("initialName", initialName);
+			return COURSES_EDIT;
+		}
 		CourseDTO initialCourseDTO = courseService.retrieve(initialName);
-		courseService.update(initialCourseDTO, updatedCourseDTO);
+		courseService.update(initialCourseDTO, courseDTO);
 		model.addAttribute(RESULT, "Course was successfully updated");
-		model.addAttribute(COURSE, updatedCourseDTO);
 		return COURSES_RESULT;
 	}
 
 	@GetMapping("/add")
 	public String addCourse(Model model) {
 		List<TeacherDTO> listOfTeachers = teacherService.findAll();
-		TeacherDTO emptyDTO = new TeacherDTO();
-		emptyDTO.setFirstName("");
-		emptyDTO.setLastName("");
-		listOfTeachers.add(0, emptyDTO);
-		model.addAttribute("listOfTeachers", listOfTeachers);
+		model.addAttribute(LIST_OF_TEACHERS, listOfTeachers);
 		CourseDTO courseDTO = new CourseDTO();
 		courseDTO.setName("");
-		courseDTO.setTeacher(emptyDTO);
-		model.addAttribute("courseDTO", courseDTO);
+		courseDTO.setTeacher(listOfTeachers.get(0));
+		model.addAttribute(COURSE_DTO, courseDTO);
 		return COURSES_ADD;
 	}
 
 	@PostMapping("/add")
-	public String addCourseToDB(@ModelAttribute("courseDTO") CourseDTO courseDTO, Model model) {
+	public String addCourseToDB(@Valid CourseDTO courseDTO, BindingResult result, Model model) {
+		if (courseService.checkIfExists(courseDTO)) {
+			result.rejectValue("name", "", "The course with the same name is already added to the database!");
+		}
+		if (result.hasErrors()) {
+			model.addAttribute(LIST_OF_TEACHERS, teacherService.findAll());
+			return COURSES_ADD;
+		}
 		courseService.create(courseDTO);
 		model.addAttribute(RESULT, "A course was successfully added.");
-		model.addAttribute(COURSE, courseDTO);
 		return COURSES_RESULT;
 	}
 
 	@PostMapping("/delete")
-	public String deleteCourse(@ModelAttribute("name") String name, Model model) {
-		model.addAttribute(COURSE, courseService.retrieve(name));
+	public String deleteCourse(String name, Model model) {
+		model.addAttribute(COURSE_DTO, courseService.retrieve(name));
 		return COURSES_DELETE;
 	}
 
 	@PostMapping("/delete/result")
-	public String deleteCourseFromDB(@ModelAttribute("course") CourseDTO courseDTO, Model model) {
+	public String deleteCourseFromDB(@Valid CourseDTO courseDTO, BindingResult result, Model model) {
+		if (result.hasErrors()) {
+			return COURSES_LIST;
+		}
 		courseService.delete(courseDTO);
 		model.addAttribute(RESULT, "A course was successfully deleted.");
-		model.addAttribute(COURSE, courseDTO);
 		return COURSES_RESULT;
 	}
 

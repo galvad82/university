@@ -20,10 +20,10 @@
 			</thead>
 			<tbody>
 				<tr>
-					<td th:text="${group.getName()}" />
+					<td th:text="${groupDTO.getName()}" />
 					<td>
 						<ul>
-							<th:block th:each="student : ${group.getListOfStudent()}">
+							<th:block th:each="student : ${groupDTO.getListOfStudent()}">
 								<li th:utext="${student.getFirstName()}+' '+${student.getLastName()}" />
 							</th:block>
 						</ul>

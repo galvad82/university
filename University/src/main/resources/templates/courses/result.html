@@ -20,8 +20,8 @@
 			</thead>
 			<tbody>
 				<tr>
-					<td th:text="${course.getName()}" />
-					<td th:text="${course.getTeacher().getFirstName()}+' '+${course.getTeacher().getLastName()}" />
+					<td th:text="${courseDTO.getName()}" />
+					<td th:text="${courseDTO.getTeacher().getFirstName()}+' '+${courseDTO.getTeacher().getLastName()}" />
 				</tr>
 			</tbody>
 		</table>
