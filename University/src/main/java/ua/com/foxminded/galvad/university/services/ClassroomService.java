@@ -2,6 +2,7 @@ package ua.com.foxminded.galvad.university.services;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -33,16 +34,18 @@ public class ClassroomService {
 	@Autowired
 	private LessonRepository lessonRepository;
 
-	public void create(ClassroomDTO classroomDTO) throws DataAreNotUpdatedException, DataNotFoundException {
+	public ClassroomDTO create(ClassroomDTO classroomDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to create a classroom with the name={}", classroomDTO.getName());
+		Classroom result;
 		try {
-			classroomRepository.save(convertToEntityWithoutID(classroomDTO));
+			result = classroomRepository.save(convertToEntityWithoutID(classroomDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Classroom with name={} wasn't added to DB.", classroomDTO.getName());
 			throw new DataAreNotUpdatedException(
 					String.format("Classroom with name=%s wasn't added to DB.", classroomDTO.getName()), e);
 		}
 		LOGGER.info("Classroom with name={} successfully added to DB.", classroomDTO.getName());
+		return convertToDTO(result);
 	}
 
 	public ClassroomDTO retrieve(String classroomName) throws DataNotFoundException {
@@ -66,18 +69,42 @@ public class ClassroomService {
 		return classroomDTO;
 	}
 
+	public ClassroomDTO retrieve(Integer id) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve classroom by id={}", id);
+		Optional<Classroom> classroomOptional;
+
+		try {
+			classroomOptional = classroomRepository.findById(id);
+		} catch (DataAccessException e) {
+			LOGGER.info("Can't retrieve a classroom from DB. Id={}", id);
+			throw new DataNotFoundException(String.format("Can't retrieve a classroom from DB. Id=%s", id));
+		}
+		if (!classroomOptional.isPresent()) {
+			LOGGER.info("A classroom with id \"{}\" is not found.", id);
+			throw new DataNotFoundException(String.format("A classroom with id \"%s\" is not found.", id));
+		}
+		Classroom classroom = classroomOptional.get();
+		LOGGER.trace("Retrieved a classroom with name={}", classroom.getName());
+		LOGGER.trace("Converting classroom with name={} to DTO", classroom.getName());
+		ClassroomDTO classroomDTO = convertToDTO(classroom);
+		LOGGER.trace("Retrieved ClassroomDTO from a classroom with name={}", classroomDTO.getName());
+		return classroomDTO;
+	}
+
 	@Transactional
-	public void update(ClassroomDTO oldDTO, ClassroomDTO newDTO)
+	public ClassroomDTO update(ClassroomDTO oldDTO, ClassroomDTO newDTO)
 			throws DataAreNotUpdatedException, DataNotFoundException {
 		LOGGER.trace("Going to update ClassroomDTO with newName={} ", newDTO.getName());
+		Classroom result;
 		try {
-			classroomRepository.save(convertToEntity(oldDTO, newDTO));
+			result = classroomRepository.save(convertToEntity(oldDTO, newDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Can't update a classroom with name={}", oldDTO.getName());
 			throw new DataAreNotUpdatedException(
 					String.format("Can't update a classroom with name%s", oldDTO.getName()));
 		}
 		LOGGER.trace("Updated ClassroomDTO with newName={} ", newDTO.getName());
+		return convertToDTO(result);
 	}
 
 	@Transactional

@@ -42,7 +42,10 @@ class ClassroomServiceTest {
 	void testCreate() {
 		ClassroomDTO DTO = new ClassroomDTO();
 		DTO.setName(NAME);
-		when(mockModelMapper.map(DTO, Classroom.class)).thenReturn(new Classroom(1, NAME));
+		Classroom classroom = new Classroom(1, NAME);
+		when(mockModelMapper.map(DTO, Classroom.class)).thenReturn(classroom);
+		when(mockClassroomRepository.save(classroom)).thenReturn(classroom);
+		when(mockModelMapper.map(classroom, ClassroomDTO.class)).thenReturn(DTO);
 		classroomService.create(DTO);
 		verify(mockClassroomRepository, times(1)).save(any(Classroom.class));
 	}
@@ -65,9 +68,12 @@ class ClassroomServiceTest {
 		ClassroomDTO newDTO = new ClassroomDTO();
 		newDTO.setName(NEWNAME);
 		Classroom oldEntity = new Classroom(1, NAME);
+		Classroom newEntity = new Classroom(2, NEWNAME);
 		when(mockModelMapper.map(oldDTO, Classroom.class)).thenReturn(oldEntity);
-		when(mockModelMapper.map(newDTO, Classroom.class)).thenReturn(new Classroom(2, NEWNAME));
+		when(mockModelMapper.map(newDTO, Classroom.class)).thenReturn(newEntity);
 		when(mockClassroomRepository.findByName(NAME)).thenReturn(oldEntity);
+		when(mockClassroomRepository.save(newEntity)).thenReturn(newEntity);
+		when(mockModelMapper.map(newEntity, ClassroomDTO.class)).thenReturn(newDTO);
 		classroomService.update(oldDTO, newDTO);
 		verify(mockClassroomRepository, times(1)).save(any(Classroom.class));
 	}

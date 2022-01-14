@@ -54,6 +54,8 @@ class TeacherServiceTest {
 		TeacherDTO teacherDTO = createDTO(FIRST_NAME, LAST_NAME);
 		Teacher teacherEntity = new Teacher(1, FIRST_NAME, LAST_NAME);
 		when(mockModelMapper.map(teacherDTO, Teacher.class)).thenReturn(teacherEntity);
+		when(mockTeacherRepository.save(teacherEntity)).thenReturn(teacherEntity);
+		when(mockModelMapper.map(teacherEntity, TeacherDTO.class)).thenReturn(teacherDTO);
 		teacherService.create(teacherDTO);
 		verify(mockTeacherRepository, times(1)).save(teacherEntity);
 	}
@@ -77,6 +79,8 @@ class TeacherServiceTest {
 		when(mockModelMapper.map(newDTO, Teacher.class)).thenReturn(newEntity);
 		when(mockModelMapper.map(oldDTO, Teacher.class)).thenReturn(oldEntity);
 		when(mockTeacherRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(oldEntity);
+		when(mockTeacherRepository.save(newEntity)).thenReturn(newEntity);
+		when(mockModelMapper.map(newEntity, TeacherDTO.class)).thenReturn(newDTO);
 		teacherService.update(oldDTO, newDTO);
 		verify(mockTeacherRepository, times(1)).save(newEntity);
 	}

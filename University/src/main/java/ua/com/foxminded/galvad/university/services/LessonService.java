@@ -5,6 +5,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -42,26 +43,51 @@ public class LessonService {
 	@Autowired
 	private LessonRepository lessonRepository;
 
-	public void create(LessonDTO lessonDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+	public LessonDTO create(LessonDTO lessonDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to create a lesson");
+		Lesson lesson=null;
 		try {
-			lessonRepository.save(convertToEntityWithoutID(lessonDTO));
+			lesson = lessonRepository.save(convertToEntityWithoutID(lessonDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Lesson wasn't added to DB.");
 			throw new DataAreNotUpdatedException("Lesson wasn't added to DB.", e);
 		}
 		LOGGER.info("Lesson was added to DB.");
+		return convertToDTO(lesson);
+	}
+	
+	public LessonDTO retrieve(Integer id) throws DataNotFoundException, DataAreNotUpdatedException {
+		LOGGER.trace("Going to retrieve lesson by id={}", id);
+		Optional<Lesson> lessonOptional;
+		try {
+			lessonOptional = lessonRepository.findById(id);
+		} catch (DataAccessException e) {
+			LOGGER.info("Can't retrieve a lesson from DB. id={}", id);
+			throw new DataNotFoundException(String.format("Can't retrieve a lesson from DB. id=%s", id));
+		}
+		if (!lessonOptional.isPresent()) {
+			LOGGER.info("A lesson with name \"{}\" is not found.", id);
+			throw new DataNotFoundException(String.format("A lesson with id \"%s\" is not found.", id));
+		}
+		Lesson lesson = lessonOptional.get();
+		LOGGER.trace("Retrieved a course with id={}", id);
+		LOGGER.trace("Going to retrieve LessonDTO from a course with id={}", id);
+		LessonDTO lessonDTO = convertToDTO(lesson);
+		LOGGER.trace("Retrieved LessonDTO from a course with id={}", id);
+		return lessonDTO;
 	}
 
-	public void update(LessonDTO oldDTO, LessonDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+	public LessonDTO update(LessonDTO oldDTO, LessonDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update LessonDTO");
+		Lesson lesson=null;
 		try {
-			lessonRepository.save(convertToEntity(oldDTO, newDTO));
+			lesson = lessonRepository.save(convertToEntity(oldDTO, newDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Can't update a LessonDTO");
 			throw new DataAreNotUpdatedException("Can't update a LessonDTO");
 		}
 		LOGGER.trace("Updated LessonDTO successfully");
+		return convertToDTO(lesson);
 	}
 
 	public void delete(LessonDTO lessonDTO) throws DataNotFoundException, DataAreNotUpdatedException {

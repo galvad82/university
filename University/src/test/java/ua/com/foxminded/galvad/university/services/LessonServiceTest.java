@@ -66,9 +66,12 @@ class LessonServiceTest {
 				FIRST_NAME, LAST_NAME);
 		Lesson lessonEntity = createLesson(GROUP_NAME, COURSE_NAME, CLASSROOM_NAME, FIRST_NAME, LAST_NAME, FIRST_NAME,
 				LAST_NAME);
+		lessonEntity.setId(null);
 		when(mockGroupService.convertToEntity(lessonDTO.getGroup())).thenReturn(lessonEntity.getGroup());
 		when(mockCourseService.convertToEntity(lessonDTO.getCourse())).thenReturn(lessonEntity.getCourse());
 		when(mockClassroomService.convertToEntity(lessonDTO.getClassroom())).thenReturn(lessonEntity.getClassroom());
+		when(mockLessonRepository.save(lessonEntity)).thenReturn(lessonEntity);
+		when(mockModelMapper.map(lessonEntity, LessonDTO.class)).thenReturn(lessonDTO);
 		lessonService.create(lessonDTO);
 		verify(mockLessonRepository, times(1)).save(any(Lesson.class));
 	}
@@ -107,6 +110,8 @@ class LessonServiceTest {
 		when(mockCourseService.convertToEntity(oldDTO.getCourse())).thenReturn(oldEntity.getCourse());
 		when(mockClassroomService.convertToEntity(oldDTO.getClassroom())).thenReturn(oldEntity.getClassroom());
 		when(mockLessonRepository.getId(any(Lesson.class))).thenReturn(1);
+		when(mockLessonRepository.save(newEntity)).thenReturn(newEntity);
+		when(mockModelMapper.map(newEntity, LessonDTO.class)).thenReturn(newDTO);
 		lessonService.update(oldDTO, newDTO);
 		verify(mockLessonRepository, times(1)).save(any(Lesson.class));
 	}

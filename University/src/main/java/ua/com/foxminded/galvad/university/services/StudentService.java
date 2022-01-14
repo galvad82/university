@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,11 +48,12 @@ public class StudentService {
 		this.groupService = groupService;
 	}
 
-	public void create(StudentDTO studentDTO) throws DataAreNotUpdatedException, DataNotFoundException {
+	public StudentDTO create(StudentDTO studentDTO) throws DataAreNotUpdatedException, DataNotFoundException {
 		LOGGER.trace("Going to create a student with firstName={} and lastName={}", studentDTO.getFirstName(),
 				studentDTO.getLastName());
+		Student student = null;
 		try {
-			studentRepository.save(convertToEntity(studentDTO));
+			student = studentRepository.save(convertToEntity(studentDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Student with firstName={} and lastName={} wasn't added to DB.", studentDTO.getFirstName(),
 					studentDTO.getLastName());
@@ -62,6 +64,7 @@ public class StudentService {
 		}
 		LOGGER.trace("The student with firstName={} and lastName={} created", studentDTO.getFirstName(),
 				studentDTO.getLastName());
+		return convertToDTO(student);
 	}
 
 	public StudentDTO retrieve(String firstName, String lastName) throws DataNotFoundException {
@@ -88,12 +91,37 @@ public class StudentService {
 		return resultDTO;
 	}
 
+	public StudentDTO retrieve(Integer id) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve StudentDTO, id{}", id);
+		LOGGER.trace("Going to retrieve Student entity, id={}", id);
+		Optional<Student> studentOptional;
+		try {
+			studentOptional = studentRepository.findById(id);
+		} catch (DataAccessException e) {
+			LOGGER.info("Can't retrieve StudentDTO, id={}", id);
+			throw new DataNotFoundException(
+					String.format("Can't retrieve StudentDTO, id=%s", id));
+		}
+		if (!studentOptional.isPresent()) {
+			LOGGER.info("A student (id={}) is not found.", id);
+			throw new DataNotFoundException(
+					String.format("A student (id=%s) is not found.", id));
+		}
+		LOGGER.trace("Student entity retrieved, id={}", id);
+		LOGGER.trace("Converting Student entity to DTO, id={}", id);
+		StudentDTO resultDTO = convertToDTO(studentOptional.get());
+		LOGGER.trace("Student entity converted to DTO, firstName={}, lastName={}", resultDTO.getFirstName(),
+				resultDTO.getLastName());
+		return resultDTO;
+	}
+	
 	@Transactional
-	public void update(StudentDTO oldDTO, StudentDTO newDTO) throws DataAreNotUpdatedException, DataNotFoundException {
+	public StudentDTO update(StudentDTO oldDTO, StudentDTO newDTO) throws DataAreNotUpdatedException, DataNotFoundException {
 		LOGGER.trace("Going to update StudentDTO, firstName={}, lastName={}", newDTO.getFirstName(),
 				newDTO.getLastName());
+		Student result = null;
 		try {
-			studentRepository.save(convertToEntity(oldDTO, newDTO));
+			result = studentRepository.save(convertToEntity(oldDTO, newDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Can't update a student (firstName={}, lastName={})", oldDTO.getFirstName(),
 					oldDTO.getLastName());
@@ -101,6 +129,7 @@ public class StudentService {
 					oldDTO.getFirstName(), oldDTO.getLastName()));
 		}
 		LOGGER.trace("StudentDTO was updated successfully.");
+		return convertToDTO(result);
 	}
 
 	@Transactional
@@ -256,9 +285,12 @@ public class StudentService {
 			StudentDTO studentDTO = new StudentDTO();
 			studentDTO.setFirstName(context.getSource().getFirstName());
 			studentDTO.setLastName(context.getSource().getLastName());
+			studentDTO.setId(context.getSource().getId());
 			if (context.getSource().getGroup() != null) {
 				try {
-					studentDTO.setGroupDTO(groupService.retrieve(context.getSource().getGroup().getName()));
+					GroupDTO groupDTO = groupService.retrieve(context.getSource().getGroup().getName());
+					groupDTO.setListOfStudent(null);
+					studentDTO.setGroupDTO(groupDTO);
 				} catch (DataAccessException e) {
 					LOGGER.info("Can't find a groupDTO with name {} while converting Student entity to DTO.",
 							context.getSource().getGroup().getName());

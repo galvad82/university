@@ -43,17 +43,13 @@ class CoursesControllerTest {
 	@InjectMocks
 	CoursesController coursesControllerUnderTest;
 
-	@Mock
-	CustomExceptionHandler customExceptionHandlerMock;
-
 	@Autowired
 	MockMvc mockMvc;
 
 	@BeforeEach
 	void setup() {
 		this.mockMvc = null;
-		this.mockMvc = MockMvcBuilders.standaloneSetup(coursesControllerUnderTest)
-				.setControllerAdvice(customExceptionHandlerMock).build();
+		this.mockMvc = MockMvcBuilders.standaloneSetup(coursesControllerUnderTest).build();
 	}
 
 	@Test

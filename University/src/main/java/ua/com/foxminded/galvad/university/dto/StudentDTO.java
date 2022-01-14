@@ -3,18 +3,25 @@ package ua.com.foxminded.galvad.university.dto;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Pattern;
 
-public class StudentDTO {
-	
+import org.springframework.hateoas.RepresentationModel;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class StudentDTO extends RepresentationModel<StudentDTO> {
+
+	private Integer id;
+
 	@NotBlank(message = "First name cannot be empty")
-	@Pattern(regexp="^[a-zA-Z ]+$",message="Only letters and spaces are accepted")
+	@Pattern(regexp = "^[a-zA-Z ]+$", message = "Only letters and spaces are accepted")
 	private String firstName;
-	
+
 	@NotBlank(message = "Last name cannot be empty")
-	@Pattern(regexp="^[a-zA-Z ]+$",message="Only letters and spaces are accepted")
+	@Pattern(regexp = "^[a-zA-Z ]+$", message = "Only letters and spaces are accepted")
 	private String lastName;
-	
+
 	private GroupDTO groupDTO;
-	
+
 	public String getFirstName() {
 		return firstName;
 	}
@@ -30,7 +37,7 @@ public class StudentDTO {
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
 	}
-	
+
 	public GroupDTO getGroupDTO() {
 		return groupDTO;
 	}
@@ -39,12 +46,21 @@ public class StudentDTO {
 		this.groupDTO = groupDTO;
 	}
 
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((firstName == null) ? 0 : firstName.hashCode());
 		result = prime * result + ((groupDTO == null) ? 0 : groupDTO.hashCode());
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((lastName == null) ? 0 : lastName.hashCode());
 		return result;
 	}
@@ -68,6 +84,11 @@ public class StudentDTO {
 				return false;
 		} else if (!groupDTO.equals(other.groupDTO))
 			return false;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
 		if (lastName == null) {
 			if (other.lastName != null)
 				return false;
@@ -75,4 +96,5 @@ public class StudentDTO {
 			return false;
 		return true;
 	}
+
 }

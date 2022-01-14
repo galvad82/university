@@ -42,16 +42,12 @@ class GroupsControllerTest {
 	@InjectMocks
 	GroupsController groupsControllerUnderTest;
 
-	@Mock
-	CustomExceptionHandler customExceptionHandlerMock;
-
 	MockMvc mockMvc;
 
 	@BeforeEach
 	void setup() {
 		this.mockMvc = null;
-		this.mockMvc = MockMvcBuilders.standaloneSetup(groupsControllerUnderTest)
-				.setControllerAdvice(customExceptionHandlerMock).build();
+		this.mockMvc = MockMvcBuilders.standaloneSetup(groupsControllerUnderTest).build();
 	}
 
 	@Test
@@ -216,7 +212,8 @@ class GroupsControllerTest {
 		expectedGroupDTO.setListOfStudent(listOfStudents);
 		when(groupServiceMock.checkIfExists(expectedGroupDTO)).thenReturn(true);
 		when(groupServiceMock.retrieve("OldName")).thenReturn(groupDTO);
-		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", expectedGroupDTO).flashAttr("initialName", "OldName");
+		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", expectedGroupDTO)
+				.flashAttr("initialName", "OldName");
 		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
 		BindingResult bindingResult = (BindingResult) mockResult.getModel()
 				.get("org.springframework.validation.BindingResult.groupDTO");
@@ -227,7 +224,7 @@ class GroupsControllerTest {
 		assertEquals(expectedGroupDTO, mockResult.getModel().get("groupDTO"));
 		assertEquals("groups/edit", mockResult.getViewName());
 	}
-	
+
 	@Test
 	void testEditResultViewPostWithBlankGroupName_shouldReturnEditView() throws Exception {
 		List<StudentDTO> listOfStudents = new ArrayList<>();
@@ -244,13 +241,13 @@ class GroupsControllerTest {
 		expectedGroupDTO.setName(" ");
 		expectedGroupDTO.setListOfStudent(listOfStudents);
 		when(groupServiceMock.checkIfExists(expectedGroupDTO)).thenReturn(true);
-		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", expectedGroupDTO).flashAttr("initialName", "OldName");
+		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", expectedGroupDTO)
+				.flashAttr("initialName", "OldName");
 		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
 		BindingResult bindingResult = (BindingResult) mockResult.getModel()
 				.get("org.springframework.validation.BindingResult.groupDTO");
 		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
-		assertEquals("Group name cannot be empty",
-				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("Group name cannot be empty", bindingResult.getFieldErrors().get(0).getDefaultMessage());
 		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
 		assertEquals(expectedGroupDTO, mockResult.getModel().get("groupDTO"));
 		assertEquals("groups/edit", mockResult.getViewName());
@@ -281,7 +278,7 @@ class GroupsControllerTest {
 		GroupDTO expectedGroupDTO = new GroupDTO();
 		expectedGroupDTO.setName("NewName");
 		expectedGroupDTO.setListOfStudent(listOfStudentsWithoutEmpty);
-		
+
 		when(groupServiceMock.retrieve(initialGroupDTO.getName())).thenReturn(initialGroupDTO);
 		RequestBuilder request = post("/groups/edit/result").flashAttr("groupDTO", newGroupDTO).flashAttr("initialName",
 				initialGroupDTO.getName());
@@ -316,10 +313,11 @@ class GroupsControllerTest {
 		GroupDTO groupDTO = new GroupDTO();
 		groupDTO.setName("name");
 		mockMvc.perform(post("/groups/delete/result").flashAttr("groupDTO", groupDTO))
-				.andExpectAll(model().attribute("result", "The group name was successfully deleted."), model().attribute("groupDTO", groupDTO))
+				.andExpectAll(model().attribute("result", "The group name was successfully deleted."),
+						model().attribute("groupDTO", groupDTO))
 				.andExpect(result -> assertEquals("groups/result", result.getModelAndView().getViewName()));
 	}
-	
+
 	@Test
 	void testDeleteResultViewPostWithBlankGroupName_shouldReturnListView() throws Exception {
 		GroupDTO groupDTO = new GroupDTO();
@@ -329,8 +327,7 @@ class GroupsControllerTest {
 		BindingResult bindingResult = (BindingResult) mockResult.getModel()
 				.get("org.springframework.validation.BindingResult.groupDTO");
 		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
-		assertEquals("Group name cannot be empty",
-				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("Group name cannot be empty", bindingResult.getFieldErrors().get(0).getDefaultMessage());
 		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
 		assertEquals("groups/list", mockResult.getViewName());
 	}

@@ -3,8 +3,11 @@ package ua.com.foxminded.galvad.university.dto;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 
-public class LessonDTO {
-	
+import org.springframework.hateoas.RepresentationModel;
+
+public class LessonDTO extends RepresentationModel<LessonDTO> {
+
+	private Integer id;
 	private GroupDTO group;
 	private CourseDTO course;
 	private ClassroomDTO classroom;
@@ -12,7 +15,6 @@ public class LessonDTO {
 	private Long duration;
 	private String startTimeString;
 	private String durationString;
-
 
 	public GroupDTO getGroup() {
 		return group;
@@ -53,15 +55,35 @@ public class LessonDTO {
 
 	public void setDuration(long duration) {
 		this.duration = duration;
-		this.durationString=convertMilToTime(duration);
+		this.durationString = convertMilToTime(duration);
 	}
-	
+
 	public String getStartTimeString() {
 		return startTimeString;
 	}
 
 	public String getDurationString() {
 		return durationString;
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
+	}
+
+	private String convertMilToDate(long millis) {
+		Instant instance = java.time.Instant.ofEpochMilli(millis);
+		return java.time.LocalDateTime.ofInstant(instance, java.time.ZoneId.systemDefault())
+				.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"));
+	}
+
+	private String convertMilToTime(long millis) {
+		long minutes = (millis / (1000 * 60)) % 60;
+		long hours = (millis / (1000 * 60 * 60)) % 24;
+		return String.format("%02d:%02d", hours, minutes);
 	}
 
 	@Override
@@ -71,8 +93,11 @@ public class LessonDTO {
 		result = prime * result + ((classroom == null) ? 0 : classroom.hashCode());
 		result = prime * result + ((course == null) ? 0 : course.hashCode());
 		result = prime * result + ((duration == null) ? 0 : duration.hashCode());
+		result = prime * result + ((durationString == null) ? 0 : durationString.hashCode());
 		result = prime * result + ((group == null) ? 0 : group.hashCode());
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((startTime == null) ? 0 : startTime.hashCode());
+		result = prime * result + ((startTimeString == null) ? 0 : startTimeString.hashCode());
 		return result;
 	}
 
@@ -100,31 +125,32 @@ public class LessonDTO {
 				return false;
 		} else if (!duration.equals(other.duration))
 			return false;
+		if (durationString == null) {
+			if (other.durationString != null)
+				return false;
+		} else if (!durationString.equals(other.durationString))
+			return false;
 		if (group == null) {
 			if (other.group != null)
 				return false;
 		} else if (!group.equals(other.group))
+			return false;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
 			return false;
 		if (startTime == null) {
 			if (other.startTime != null)
 				return false;
 		} else if (!startTime.equals(other.startTime))
 			return false;
+		if (startTimeString == null) {
+			if (other.startTimeString != null)
+				return false;
+		} else if (!startTimeString.equals(other.startTimeString))
+			return false;
 		return true;
 	}
-	
-	
-	
-	private String convertMilToDate(long millis) {
-		Instant instance = java.time.Instant.ofEpochMilli(millis);
-		return java.time.LocalDateTime.ofInstant(instance, java.time.ZoneId.systemDefault())
-				.format(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm"));
-	}
 
-	private String convertMilToTime(long millis) {
-		long minutes = (millis / (1000*60)) % 60;
-		long hours   = (millis / (1000*60*60)) % 24;
-		return String.format("%02d:%02d",hours,minutes);
-	}
-	
 }

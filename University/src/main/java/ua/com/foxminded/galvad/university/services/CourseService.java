@@ -41,16 +41,18 @@ public class CourseService {
 	@Autowired
 	private LessonRepository lessonRepository;
 
-	public void create(CourseDTO courseDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+	public CourseDTO create(CourseDTO courseDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to create a course with the name={}", courseDTO.getName());
+		Course result;
 		try {
-			courseRepository.save(convertToEntityWithoutID(courseDTO));
+			result = courseRepository.save(convertToEntityWithoutID(courseDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Course with name={} wasn't added to DB.", courseDTO.getName());
 			throw new DataAreNotUpdatedException(
 					String.format("Course with name=%s wasn't added to DB.", courseDTO.getName()), e);
 		}
 		LOGGER.info("Course with name={} successfully added to DB.", courseDTO.getName());
+		return convertToDTO(result);
 	}
 
 	public CourseDTO retrieve(String courseName) throws DataNotFoundException {
@@ -82,16 +84,40 @@ public class CourseService {
 		return courseDTO;
 	}
 
-	@Transactional
-	public void update(CourseDTO oldDTO, CourseDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
-		LOGGER.trace("Going to update CourseDTO with newName={} ", newDTO.getName());
+	public CourseDTO retrieve(Integer id) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve course by id={}", id);
+		Optional<Course> courseOptional;
 		try {
-			courseRepository.save(convertToEntity(oldDTO, newDTO));
+			courseOptional = courseRepository.findById(id);
+		} catch (DataAccessException e) {
+			LOGGER.info("Can't retrieve a course from DB. id={}", id);
+			throw new DataNotFoundException(String.format("Can't retrieve a course from DB. id=%s", id));
+		}
+		if (!courseOptional.isPresent()) {
+			LOGGER.info("A course with name \"{}\" is not found.", id);
+			throw new DataNotFoundException(String.format("A course with id \"%s\" is not found.", id));
+		}
+		Course course = courseOptional.get();
+		LOGGER.trace("Retrieved a course with id={}", id);
+		LOGGER.trace("Going to retrieve CourseDTO from a course with id={}", id);
+		CourseDTO courseDTO = convertToDTO(course);
+		LOGGER.trace("Retrieved CourseDTO from a course with id={}", id);
+		return courseDTO;
+	}
+
+	@Transactional
+	public CourseDTO update(CourseDTO oldDTO, CourseDTO newDTO)
+			throws DataNotFoundException, DataAreNotUpdatedException {
+		LOGGER.trace("Going to update CourseDTO with newName={} ", newDTO.getName());
+		Course result = null;
+		try {
+			result = courseRepository.save(convertToEntity(oldDTO, newDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Can't update a course with name={}", oldDTO.getName());
 			throw new DataAreNotUpdatedException(String.format("Can't update a course with name%s", oldDTO.getName()));
 		}
 		LOGGER.trace("Updated CourseDTO with newName={} ", newDTO.getName());
+		return convertToDTO(result);
 	}
 
 	@Transactional
@@ -127,7 +153,7 @@ public class CourseService {
 		LOGGER.trace("List of ALL CourseDTO retrieved from DB, {} were found", list.size());
 		return list;
 	}
-	
+
 	public boolean checkIfExists(CourseDTO courseDTO) {
 		try {
 			retrieve(courseDTO.getName());
