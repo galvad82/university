@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.modelmapper.Converter;
@@ -51,16 +52,18 @@ public class GroupService {
 		this.lessonRepository = lessonRepository;
 	}
 
-	public void create(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+	public GroupDTO create(GroupDTO groupDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to create a group with the name={}", groupDTO.getName());
+		Group result = null;
 		try {
-			groupRepository.save(convertToEntity(groupDTO));
+			result = groupRepository.save(convertToEntity(groupDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Group with name={} wasn't added to DB.", groupDTO.getName());
 			throw new DataAreNotUpdatedException(
 					String.format("Group with name=%s wasn't added to DB.", groupDTO.getName()), e);
 		}
 		LOGGER.trace("The group with the name={} created", groupDTO.getName());
+		return convertToDTO(result);
 	}
 
 	public GroupDTO retrieve(String groupName) throws DataNotFoundException, DataAreNotUpdatedException {
@@ -82,17 +85,40 @@ public class GroupService {
 		LOGGER.trace("Retrieved groupDTO from a group with name={}", group.getName());
 		return groupDTO;
 	}
+	
+	public GroupDTO retrieve(Integer id) throws DataNotFoundException, DataAreNotUpdatedException {
+		LOGGER.trace("Going to retrieve group by id={}", id);
+		Optional<Group> groupOptional;
+		try {
+			groupOptional = groupRepository.findById(id);
+		} catch (DataAccessException e) {
+			LOGGER.info("Can't retrieve a group from DB. id={}", id);
+			throw new DataNotFoundException(String.format("Can't retrieve a group from DB. id=%s", id));
+		}
+		if (!groupOptional.isPresent()) {
+			LOGGER.info("A group with id \"{}\" is not found.", id);
+			throw new DataNotFoundException(String.format("A group with id \"%s\" is not found.", id));
+		}
+		Group group = groupOptional.get();
+		LOGGER.trace("Retrieved a group with id={}", group.getName());
+		LOGGER.trace("Going to retrieve groupDTO from a group with id={}", group.getName());
+		GroupDTO groupDTO = convertToDTO(group);
+		LOGGER.trace("Retrieved groupDTO from a group with id={}", group.getName());
+		return groupDTO;
+	}
 
 	@Transactional
-	public void update(GroupDTO oldDTO, GroupDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
+	public GroupDTO update(GroupDTO oldDTO, GroupDTO newDTO) throws DataNotFoundException, DataAreNotUpdatedException {
 		LOGGER.trace("Going to update GroupDTO with newName={} ", newDTO.getName());
+		Group result;
 		try {
-			groupRepository.save(convertToEntity(oldDTO, newDTO));
+			result = groupRepository.save(convertToEntity(oldDTO, newDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Can't update a group with name={}", oldDTO.getName());
 			throw new DataAreNotUpdatedException(String.format("Can't update a group with name%s", oldDTO.getName()));
 		}
 		LOGGER.trace("Updated GroupDTO with newName={} ", newDTO.getName());
+		return convertToDTO(result);
 	}
 
 	@Transactional
@@ -220,10 +246,12 @@ public class GroupService {
 		public GroupDTO convert(MappingContext<Group, GroupDTO> context) {
 			GroupDTO groupDTO = new GroupDTO();
 			groupDTO.setName(context.getSource().getName());
+			groupDTO.setId(context.getSource().getId());
 			for (Student student : context.getSource().getSetOfStudent()) {
 				StudentDTO studentDTO = new StudentDTO();
 				studentDTO.setFirstName(student.getFirstName());
 				studentDTO.setLastName(student.getLastName());
+				studentDTO.setId(student.getId());
 				groupDTO.getListOfStudent().add(studentDTO);
 			}
 			Collections.sort(groupDTO.getListOfStudent(),

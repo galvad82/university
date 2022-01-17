@@ -46,16 +46,12 @@ class StudentsControllerTest {
 	@InjectMocks
 	StudentsController studentsControllerUnderTest;
 
-	@Mock
-	CustomExceptionHandler customExceptionHandlerMock;
-
 	MockMvc mockMvc;
 
 	@BeforeEach
 	void setup() {
 		this.mockMvc = null;
-		this.mockMvc = MockMvcBuilders.standaloneSetup(studentsControllerUnderTest)
-				.setControllerAdvice(customExceptionHandlerMock).build();
+		this.mockMvc = MockMvcBuilders.standaloneSetup(studentsControllerUnderTest).build();
 	}
 
 	@Test
@@ -228,13 +224,13 @@ class StudentsControllerTest {
 		StudentDTO updatedStudentDTO = new StudentDTO();
 		updatedStudentDTO.setFirstName(" ");
 		updatedStudentDTO.setLastName(" ");
-		
+
 		List<GroupDTO> listOfGroups = new ArrayList<>();
 		GroupDTO groupDTO = new GroupDTO();
 		groupDTO.setName("TEST");
 		listOfGroups.add(groupDTO);
-		
-		List<String>expectedListOfGroupName = Arrays.asList("NONE","TEST");
+
+		List<String> expectedListOfGroupName = Arrays.asList("NONE", "TEST");
 
 		when(studentServiceMock.checkIfExists(updatedStudentDTO)).thenReturn(false);
 		when(groupServiceMock.findAll()).thenReturn(listOfGroups);

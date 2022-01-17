@@ -52,6 +52,8 @@ class GroupServiceTest {
 		GroupDTO groupDTO = createDTO(GROUP_NAME);
 		Group groupEntity = createEntity(1, GROUP_NAME);
 		when(mockModelMapper.map(groupDTO, Group.class)).thenReturn(groupEntity);
+		when(mockGroupRepository.save(groupEntity)).thenReturn(groupEntity);
+		when(mockModelMapper.map(groupEntity, GroupDTO.class)).thenReturn(groupDTO);
 		groupService.create(groupDTO);
 		verify(mockGroupRepository, times(1)).save(groupEntity);
 	}
@@ -78,6 +80,8 @@ class GroupServiceTest {
 		when(mockGroupRepository.findByName(GROUP_NAME)).thenReturn(oldEntity);
 		when(mockStudentRepository.findByFirstNameAndLastName(student.getFirstName(), student.getLastName()))
 				.thenReturn(student);
+		when(mockGroupRepository.save(newEntity)).thenReturn(newEntity);
+		when(mockModelMapper.map(newEntity, GroupDTO.class)).thenReturn(newDTO);
 		groupService.update(oldDTO, newDTO);
 		verify(mockGroupRepository, times(1)).save(any(Group.class));
 	}

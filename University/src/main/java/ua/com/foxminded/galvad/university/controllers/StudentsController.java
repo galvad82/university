@@ -6,10 +6,13 @@ import java.util.Map;
 
 import javax.validation.Valid;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,12 +20,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
+import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.services.GroupService;
 import ua.com.foxminded.galvad.university.services.StudentService;
 
 @Controller
 @RequestMapping("/students")
 public class StudentsController {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(StudentsController.class);
 
 	private static final String STUDENTS_RESULT = "students/result";
 	private static final String STUDENTS_LIST = "students/list";
@@ -45,7 +52,7 @@ public class StudentsController {
 	}
 
 	@GetMapping()
-	public String findAll(Model model) {
+	public String findAll(Model model) throws DataNotFoundException {
 		Map<StudentDTO, String> studentGroupMap = studentService.buildStudentGroupMap();
 		model.addAttribute("students", studentGroupMap);
 		StudentDTO studentDTO = new StudentDTO();
@@ -54,7 +61,7 @@ public class StudentsController {
 	}
 
 	@GetMapping("/add")
-	public String create(Model model) {
+	public String create(Model model) throws DataAreNotUpdatedException, DataNotFoundException {
 		model.addAttribute(STUDENTDTO, new StudentDTO());
 		model.addAttribute(LIST_OF_GROUP_NAMES, getListOfGroupNames());
 		model.addAttribute("group", NONE);
@@ -63,7 +70,8 @@ public class StudentsController {
 
 	@PostMapping("/add")
 	public String createDTO(@Valid StudentDTO studentDTO, BindingResult result,
-			@ModelAttribute("group") String groupDTOName, Model model) {
+			@ModelAttribute("group") String groupDTOName, Model model)
+			throws DataAreNotUpdatedException, DataNotFoundException {
 
 		if (studentService.checkIfExists(studentDTO)) {
 			result.rejectValue("firstName", "", "The student with the same name is already added to the database!");
@@ -85,7 +93,8 @@ public class StudentsController {
 
 	@PostMapping("/edit")
 	public String editDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
-			@ModelAttribute("groupName") String groupName, Model model) {
+			@ModelAttribute("groupName") String groupName, Model model)
+			throws DataAreNotUpdatedException, DataNotFoundException {
 		model.addAttribute(STUDENTDTO, studentService.retrieve(firstName, lastName));
 		model.addAttribute(LIST_OF_GROUP_NAMES, getListOfGroupNames());
 		model.addAttribute("initialFirstName", firstName);
@@ -97,7 +106,8 @@ public class StudentsController {
 	@PostMapping("/edit/result")
 	public String updateDTO(@Valid StudentDTO studentDTO, BindingResult result,
 			@ModelAttribute("groupName") String groupName, @ModelAttribute("initialFirstName") String initialFirstName,
-			@ModelAttribute("initialLastName") String initialLastName, Model model) {
+			@ModelAttribute("initialLastName") String initialLastName, Model model)
+			throws DataAreNotUpdatedException, DataNotFoundException {
 		if ((!studentDTO.getFirstName().equals(initialFirstName) || !studentDTO.getLastName().equals(initialLastName))
 				&& (studentService.checkIfExists(studentDTO))) {
 			result.rejectValue("firstName", "", "The student with the same name is already added to the database!");
@@ -124,7 +134,7 @@ public class StudentsController {
 
 	@PostMapping("/delete")
 	public String deleteDTO(@ModelAttribute("firstName") String firstName, @ModelAttribute("lastName") String lastName,
-			@ModelAttribute("groupName") String groupName, Model model) {
+			@ModelAttribute("groupName") String groupName, Model model) throws DataNotFoundException {
 		model.addAttribute(STUDENTDTO, studentService.retrieve(firstName, lastName));
 		model.addAttribute(GROUP_NAME, groupName);
 		return STUDENTS_DELETE;
@@ -132,7 +142,8 @@ public class StudentsController {
 
 	@PostMapping("/delete/result")
 	public String deleteDTOResult(@Valid StudentDTO studentDTO, BindingResult result,
-			@ModelAttribute("groupName") String groupName, Model model) {
+			@ModelAttribute("groupName") String groupName, Model model)
+			throws DataAreNotUpdatedException, DataNotFoundException {
 		if (result.hasErrors()) {
 			return STUDENTS_LIST;
 		}
@@ -142,11 +153,27 @@ public class StudentsController {
 		return STUDENTS_RESULT;
 	}
 
-	private List<String> getListOfGroupNames() {
+	private List<String> getListOfGroupNames() throws DataAreNotUpdatedException, DataNotFoundException {
 		List<String> list = new ArrayList<>();
 		list.add(NONE);
 		groupService.findAll().stream().forEach(s -> list.add(s.getName()));
 		return list;
 	}
 
+	@ExceptionHandler({ DataAreNotUpdatedException.class })
+	public String databaseError(Model model, DataAreNotUpdatedException exception) {
+		LOGGER.error(exception.getMessage());
+		LOGGER.error(exception.getCauseDescription());
+		model.addAttribute("error", exception.getErrorMessage());
+		return "/exception";
+	}
+
+	@ExceptionHandler({ DataNotFoundException.class })
+	public String databaseError(Model model, DataNotFoundException exception) {
+		LOGGER.error(exception.getErrorMessage());
+		LOGGER.error(exception.getCauseDescription());
+		model.addAttribute("error", exception.getErrorMessage());
+		model.addAttribute("cause", exception.getCauseDescription());
+		return "/exception";
+	}
 }

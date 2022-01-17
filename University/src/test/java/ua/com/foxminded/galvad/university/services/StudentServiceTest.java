@@ -61,6 +61,8 @@ class StudentServiceTest {
 		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
 		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
 		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
+		when(mockStudentRepository.save(studentEntity)).thenReturn(studentEntity);
+		when(mockModelMapper.map(studentEntity, StudentDTO.class)).thenReturn(studentDTO);
 		studentService.create(studentDTO);
 		verify(mockStudentRepository, times(1)).save(any(Student.class));
 	}
@@ -84,6 +86,8 @@ class StudentServiceTest {
 		when(mockModelMapper.map(newDTO, Student.class)).thenReturn(newEntity);
 		when(mockModelMapper.map(oldDTO, Student.class)).thenReturn(oldEntity);
 		when(mockStudentRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(oldEntity);
+		when(mockStudentRepository.save(newEntity)).thenReturn(newEntity);
+		when(mockModelMapper.map(newEntity, StudentDTO.class)).thenReturn(newDTO);
 		studentService.update(oldDTO, newDTO);
 		verify(mockStudentRepository, times(1)).save(any(Student.class));
 	}

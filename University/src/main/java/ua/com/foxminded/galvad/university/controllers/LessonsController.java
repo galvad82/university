@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +19,8 @@ import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
+import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.services.ClassroomService;
 import ua.com.foxminded.galvad.university.services.CourseService;
 import ua.com.foxminded.galvad.university.services.GroupService;
@@ -24,6 +29,8 @@ import ua.com.foxminded.galvad.university.services.LessonService;
 @Controller
 @RequestMapping("/lessons")
 public class LessonsController {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(LessonsController.class);
 
 	private static final String LESSON_RESULT = "lessons/result";
 	private static final String LESSONS_LIST = "lessons/list";
@@ -54,13 +61,13 @@ public class LessonsController {
 	}
 
 	@GetMapping()
-	public String findAll(Model model) {
+	public String findAll(Model model) throws DataAreNotUpdatedException, DataNotFoundException {
 		model.addAttribute("lessons", lessonService.findAll());
 		return LESSONS_LIST;
 	}
 
 	@GetMapping("/add")
-	public String create(Model model) {
+	public String create(Model model) throws DataAreNotUpdatedException, DataNotFoundException {
 		model.addAttribute(GROUPS, groupService.findAll().stream().map(GroupDTO::getName).collect(Collectors.toList()));
 		model.addAttribute(COURSES,
 				courseService.findAll().stream().map(CourseDTO::getName).collect(Collectors.toList()));
@@ -74,7 +81,8 @@ public class LessonsController {
 	@PostMapping("/add")
 	public String createDTO(@ModelAttribute("group") String group, @ModelAttribute("course") String course,
 			@ModelAttribute("classroom") String classroom, @ModelAttribute("startTime") String startTime,
-			@ModelAttribute("duration") String duration, Model model) {
+			@ModelAttribute("duration") String duration, Model model)
+			throws DataAreNotUpdatedException, DataNotFoundException {
 		LessonDTO lessonDTO = new LessonDTO();
 		lessonDTO.setGroup(groupService.retrieve(group));
 		lessonDTO.setCourse(courseService.retrieve(course));
@@ -110,7 +118,7 @@ public class LessonsController {
 	public String editDTO(@ModelAttribute("groupName") String groupName,
 			@ModelAttribute("courseName") String courseName, @ModelAttribute("classroomName") String classroomName,
 			@ModelAttribute("startTime") String startTimeString, @ModelAttribute("duration") String durationString,
-			Model model) {
+			Model model) throws DataAreNotUpdatedException, DataNotFoundException {
 
 		model.addAttribute(GROUPS, groupService.findAll().stream().map(GroupDTO::getName).collect(Collectors.toList()));
 		model.addAttribute(COURSES,
@@ -136,7 +144,8 @@ public class LessonsController {
 			@ModelAttribute("group") String updatedGroupName, @ModelAttribute("course") String updatedCourseName,
 			@ModelAttribute("classroom") String updatedClassroomName,
 			@ModelAttribute("startTime") String updatedStartTimeString,
-			@ModelAttribute("duration") String updatedDurationString, Model model) {
+			@ModelAttribute("duration") String updatedDurationString, Model model)
+			throws DataAreNotUpdatedException, DataNotFoundException {
 
 		LessonDTO initialLessonDTO = new LessonDTO();
 		initialLessonDTO.setGroup(groupService.retrieve(initialGroupName));
@@ -188,7 +197,7 @@ public class LessonsController {
 	public String deleteDTO(@ModelAttribute("groupName") String groupName,
 			@ModelAttribute("courseName") String courseName, @ModelAttribute("classroomName") String classroomName,
 			@ModelAttribute("startTime") String startTimeString, @ModelAttribute("duration") String durationString,
-			Model model) {
+			Model model) throws DataAreNotUpdatedException, DataNotFoundException {
 
 		LessonDTO lessonDTO = new LessonDTO();
 		lessonDTO.setGroup(groupService.retrieve(groupName));
@@ -201,7 +210,8 @@ public class LessonsController {
 	}
 
 	@PostMapping("/delete/result")
-	public String deleteCourseFromDB(@ModelAttribute("lesson") LessonDTO lessonDTO, Model model) {
+	public String deleteCourseFromDB(@ModelAttribute("lesson") LessonDTO lessonDTO, Model model)
+			throws DataAreNotUpdatedException, DataNotFoundException {
 		lessonDTO.setCourse(courseService.retrieve(lessonDTO.getCourse().getName()));
 		if (!validate(lessonDTO).isEmpty()) {
 			return LESSONS_LIST;
@@ -231,5 +241,22 @@ public class LessonsController {
 			listOfErrors.add("The duration field cannot be blank or less than 30 minutes!");
 		}
 		return listOfErrors.stream().collect(Collectors.joining("<br>", "", ""));
+	}
+
+	@ExceptionHandler({ DataAreNotUpdatedException.class })
+	public String databaseError(Model model, DataAreNotUpdatedException exception) {
+		LOGGER.error(exception.getMessage());
+		LOGGER.error(exception.getCauseDescription());
+		model.addAttribute(ERROR, exception.getErrorMessage());
+		return "/exception";
+	}
+
+	@ExceptionHandler({ DataNotFoundException.class })
+	public String databaseError(Model model, DataNotFoundException exception) {
+		LOGGER.error(exception.getErrorMessage());
+		LOGGER.error(exception.getCauseDescription());
+		model.addAttribute(ERROR, exception.getErrorMessage());
+		model.addAttribute("cause", exception.getCauseDescription());
+		return "/exception";
 	}
 }

@@ -50,9 +50,6 @@ class LessonsControllerTest {
 	@InjectMocks
 	LessonsController lessonsControllerUnderTest;
 
-	@Mock
-	CustomExceptionHandler customExceptionHandlerMock;
-
 	MockMvc mockMvc;
 
 	private static final String GROUP_NAME = "group";
@@ -72,8 +69,7 @@ class LessonsControllerTest {
 	@BeforeEach
 	void setup() {
 		this.mockMvc = null;
-		this.mockMvc = MockMvcBuilders.standaloneSetup(lessonsControllerUnderTest)
-				.setControllerAdvice(customExceptionHandlerMock).build();
+		this.mockMvc = MockMvcBuilders.standaloneSetup(lessonsControllerUnderTest).build();
 	}
 
 	@Test

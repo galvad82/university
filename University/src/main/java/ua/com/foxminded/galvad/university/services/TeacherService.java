@@ -3,6 +3,7 @@ package ua.com.foxminded.galvad.university.services;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
@@ -33,11 +34,12 @@ public class TeacherService {
 	@Autowired
 	private LessonService lessonService;
 
-	public void create(TeacherDTO teacherDTO) throws DataAreNotUpdatedException {
+	public TeacherDTO create(TeacherDTO teacherDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to create a teacher with firstName={} and lastName={}", teacherDTO.getFirstName(),
 				teacherDTO.getLastName());
+		Teacher teacher = null;
 		try {
-			teacherRepository.save(convertToEntityWithoutID(teacherDTO));
+			teacher = teacherRepository.save(convertToEntityWithoutID(teacherDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Teacher with firstName={} and lastName={} wasn't added to DB.", teacherDTO.getFirstName(),
 					teacherDTO.getLastName());
@@ -48,6 +50,7 @@ public class TeacherService {
 		}
 		LOGGER.trace("The teacher with firstName={} and lastName={} created", teacherDTO.getFirstName(),
 				teacherDTO.getLastName());
+		return convertToDTO(teacher);
 	}
 
 	public TeacherDTO retrieve(String firstName, String lastName) throws DataNotFoundException {
@@ -74,12 +77,35 @@ public class TeacherService {
 		return resultDTO;
 	}
 
+	public TeacherDTO retrieve(Integer id) throws DataNotFoundException {
+		LOGGER.trace("Going to retrieve TeacherDTO, id{}", id);
+		LOGGER.trace("Going to retrieve Teacher entity, id={}", id);
+		Optional<Teacher> teacherOptional;
+		try {
+			teacherOptional = teacherRepository.findById(id);
+		} catch (DataAccessException e) {
+			LOGGER.info("Can't retrieve TeacherDTO, id={}", id);
+			throw new DataNotFoundException(String.format("Can't retrieve TeacherDTO, id=%s", id));
+		}
+		if (!teacherOptional.isPresent()) {
+			LOGGER.info("A teacher (id={}) is not found.", id);
+			throw new DataNotFoundException(String.format("A teacher (id=%s) is not found.", id));
+		}
+		LOGGER.trace("Teacher entity retrieved, id={}", id);
+		LOGGER.trace("Converting Teacher entity to DTO, id={}", id);
+		TeacherDTO resultDTO = convertToDTO(teacherOptional.get());
+		LOGGER.trace("Teacher entity converted to DTO, firstName={}, lastName={}", resultDTO.getFirstName(),
+				resultDTO.getLastName());
+		return resultDTO;
+	}
+
 	@Transactional
-	public void update(TeacherDTO oldDTO, TeacherDTO newDTO) throws DataAreNotUpdatedException {
+	public TeacherDTO update(TeacherDTO oldDTO, TeacherDTO newDTO) throws DataAreNotUpdatedException {
 		LOGGER.trace("Going to update TeacherDTO, firstName={}, lastName={}", newDTO.getFirstName(),
 				newDTO.getLastName());
+		Teacher result = null;
 		try {
-			teacherRepository.save(convertToEntity(oldDTO, newDTO));
+			result = teacherRepository.save(convertToEntity(oldDTO, newDTO));
 		} catch (DataAccessException e) {
 			LOGGER.info("Can't update a teacher (firstName={}, lastName={})", oldDTO.getFirstName(),
 					oldDTO.getLastName());
@@ -87,6 +113,7 @@ public class TeacherService {
 					oldDTO.getFirstName(), oldDTO.getLastName()));
 		}
 		LOGGER.trace("TeacherDTO was updated successfully.");
+		return convertToDTO(result);
 	}
 
 	public void delete(TeacherDTO teacherDTO) throws DataAreNotUpdatedException {
@@ -130,7 +157,7 @@ public class TeacherService {
 			return false;
 		}
 	}
-	
+
 	public List<LessonDTO> findAllLessonsForTeacher(String firstName, String lastName) throws DataNotFoundException {
 		LOGGER.trace("Going to get list of lessons for Teacher (firstName={}, lastName={})", firstName, lastName);
 		LOGGER.trace("Going to get DTO for Teacher (firstName={}, lastName={})", firstName, lastName);

@@ -54,16 +54,12 @@ class ScheduleControllerTest {
 	@InjectMocks
 	ScheduleController scheduleControllerUnderTest;
 
-	@Mock
-	CustomExceptionHandler customExceptionHandlerMock;
-
 	MockMvc mockMvc;
 
 	@BeforeEach
 	void setup() {
 		this.mockMvc = null;
-		this.mockMvc = MockMvcBuilders.standaloneSetup(scheduleControllerUnderTest)
-				.setControllerAdvice(customExceptionHandlerMock).build();
+		this.mockMvc = MockMvcBuilders.standaloneSetup(scheduleControllerUnderTest).build();
 	}
 
 	@Test
@@ -78,7 +74,9 @@ class ScheduleControllerTest {
 	@Test
 	void testTeacherResultView() throws Exception {
 		List<Event> eventList = createEventList(createListOfLessons());
-		when(lessonServiceMock.eventListForCalendarCreator(teacherServiceMock.findAllLessonsForTeacher(FIRST_NAME, LAST_NAME))).thenReturn(eventList);
+		when(lessonServiceMock
+				.eventListForCalendarCreator(teacherServiceMock.findAllLessonsForTeacher(FIRST_NAME, LAST_NAME)))
+						.thenReturn(eventList);
 		mockMvc.perform(post("/schedule/teacher/result").param("firstName", FIRST_NAME).param("lastName", LAST_NAME))
 				.andExpect(status().isOk()).andExpect(view().name(SCHEDULE_RESULT))
 				.andExpect(model().attribute("lessons", eventList));
@@ -95,10 +93,11 @@ class ScheduleControllerTest {
 	@Test
 	void testGroupResultView() throws Exception {
 		List<Event> eventList = createEventList(createListOfLessons());
-		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForGroup(FIRST))).thenReturn(eventList);
+		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForGroup(FIRST)))
+				.thenReturn(eventList);
 		mockMvc.perform(post("/schedule/group/result").param("group", FIRST)).andExpect(status().isOk())
 				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", eventList));
-		
+
 	}
 
 	@Test
@@ -113,7 +112,8 @@ class ScheduleControllerTest {
 	@Test
 	void testClassroomResultView() throws Exception {
 		List<Event> eventList = createEventList(createListOfLessons());
-		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForClassroom(FIRST))).thenReturn(eventList);
+		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForClassroom(FIRST)))
+				.thenReturn(eventList);
 		mockMvc.perform(post("/schedule/classroom/result").param("classroom", FIRST)).andExpect(status().isOk())
 				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", eventList));
 	}
@@ -129,7 +129,8 @@ class ScheduleControllerTest {
 	@Test
 	void testCourseResultView() throws Exception {
 		List<Event> eventList = createEventList(createListOfLessons());
-		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForCourse(FIRST))).thenReturn(eventList);
+		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForCourse(FIRST)))
+				.thenReturn(eventList);
 		mockMvc.perform(post("/schedule/course/result").param("course", FIRST)).andExpect(status().isOk())
 				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", eventList));
 	}
@@ -139,17 +140,17 @@ class ScheduleControllerTest {
 		mockMvc.perform(get("/schedule/wrong")).andExpect(status().is4xxClientError());
 	}
 
-	private List<Event> createEventList (List<LessonDTO> listOfLessons){
+	private List<Event> createEventList(List<LessonDTO> listOfLessons) {
 		List<Event> eventList = new ArrayList<>();
 		listOfLessons.stream().forEach(lesson -> {
 			String title = String.format("Group: %s, Course: %s, Classroom: %s, Teacher: %s %s",
 					lesson.getGroup().getName(), lesson.getCourse().getName(), lesson.getClassroom().getName(),
 					lesson.getCourse().getTeacher().getFirstName(), lesson.getCourse().getTeacher().getLastName());
-				eventList.add(new Event(title, lesson.getStartTime(), lesson.getStartTime() + lesson.getDuration()));
+			eventList.add(new Event(title, lesson.getStartTime(), lesson.getStartTime() + lesson.getDuration()));
 		});
 		return eventList;
 	}
-	
+
 	private List<LessonDTO> createListOfLessons() {
 		List<LessonDTO> listOfLessons = new ArrayList<>();
 		LessonDTO firstLessonDTO = new LessonDTO();
