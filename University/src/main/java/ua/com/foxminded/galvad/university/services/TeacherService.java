@@ -116,7 +116,7 @@ public class TeacherService {
 		return convertToDTO(result);
 	}
 
-	public void delete(TeacherDTO teacherDTO) throws DataAreNotUpdatedException {
+	public void delete(TeacherDTO teacherDTO) throws DataAreNotUpdatedException, DataNotFoundException {
 		LOGGER.trace("Going to delete TeacherDTO by entity, firstName={}, lastName={}", teacherDTO.getFirstName(),
 				teacherDTO.getLastName());
 		Teacher teacher = convertToEntity(teacherDTO);
