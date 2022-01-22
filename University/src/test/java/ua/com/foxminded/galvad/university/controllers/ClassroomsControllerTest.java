@@ -24,6 +24,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.servlet.ModelAndView;
 
 import ua.com.foxminded.galvad.university.dto.ClassroomDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.services.ClassroomService;
 
@@ -114,15 +115,23 @@ class ClassroomsControllerTest {
 		BindingResult bindingResult = (BindingResult) mockResult.getModel()
 				.get("org.springframework.validation.BindingResult.classroomDTO");
 		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
-		assertEquals("Classroom name cannot be empty",
-				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("Classroom name cannot be empty", bindingResult.getFieldErrors().get(0).getDefaultMessage());
 		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
 		assertEquals(classroomDTO, mockResult.getModel().get("classroomDTO"));
 		assertEquals("classrooms/add", mockResult.getViewName());
 	}
-	
-	
-	
+
+	@Test
+	void testAddViewPostWithDataAreNotUpdatedException() throws Exception {
+		DataAreNotUpdatedException expectedException = new DataAreNotUpdatedException("Error Message");
+		ClassroomDTO expectedClassroomDTO = new ClassroomDTO();
+		expectedClassroomDTO.setName("TEST");
+		when(classroomServiceMock.checkIfExists(expectedClassroomDTO)).thenReturn(false);
+		when(classroomServiceMock.create(expectedClassroomDTO)).thenThrow(expectedException);
+		RequestBuilder request = post("/classrooms/add").flashAttr("classroomDTO", expectedClassroomDTO);
+		mockMvc.perform(request).andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
+	}
+
 	@Test
 	void testEditViewPost() throws Exception {
 		ClassroomDTO classroomDTO = new ClassroomDTO();
@@ -165,7 +174,7 @@ class ClassroomsControllerTest {
 		assertEquals(classroomDTO, mockResult.getModel().get("classroomDTO"));
 		assertEquals("classrooms/edit", mockResult.getViewName());
 	}
-	
+
 	@Test
 	void testEditResultViewPostWithWithBlankClassroomName_ShouldReturnEditView() throws Exception {
 		ClassroomDTO classroomDTO = new ClassroomDTO();
@@ -176,8 +185,7 @@ class ClassroomsControllerTest {
 		BindingResult bindingResult = (BindingResult) mockResult.getModel()
 				.get("org.springframework.validation.BindingResult.classroomDTO");
 		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
-		assertEquals("Classroom name cannot be empty",
-				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("Classroom name cannot be empty", bindingResult.getFieldErrors().get(0).getDefaultMessage());
 		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
 		assertEquals(classroomDTO, mockResult.getModel().get("classroomDTO"));
 		assertEquals("classrooms/edit", mockResult.getViewName());
@@ -203,7 +211,7 @@ class ClassroomsControllerTest {
 						model().attribute("result", "A classroom was successfully deleted."))
 				.andExpect(result -> assertEquals("classrooms/result", result.getModelAndView().getViewName()));
 	}
-	
+
 	@Test
 	void testDeleteResultViewPostWithBlankClassroomName_ShouldReturnClassroomListView() throws Exception {
 		ClassroomDTO classroomDTO = new ClassroomDTO();
@@ -213,8 +221,7 @@ class ClassroomsControllerTest {
 		BindingResult bindingResult = (BindingResult) mockResult.getModel()
 				.get("org.springframework.validation.BindingResult.classroomDTO");
 		assertEquals("name", bindingResult.getFieldErrors().get(0).getField());
-		assertEquals("Classroom name cannot be empty",
-				bindingResult.getFieldErrors().get(0).getDefaultMessage());
+		assertEquals("Classroom name cannot be empty", bindingResult.getFieldErrors().get(0).getDefaultMessage());
 		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
 		assertEquals(classroomDTO, mockResult.getModel().get("classroomDTO"));
 		assertEquals("classrooms/list", mockResult.getViewName());

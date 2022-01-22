@@ -85,7 +85,16 @@ class GroupsRestControllerTest {
 		assertEquals(HTTP_STATUS_CODE_NOT_FOUND, response.getStatus());
 		assertEquals(0, response.getContentLength());
 	}
-
+	
+	@Test
+	void testRetrieveWithDataAreNotUpdatedException() throws Exception {
+		when(groupServiceMock.retrieve(999)).thenThrow(DataAreNotUpdatedException.class);
+		MockHttpServletResponse response = mockMvc.perform(get("/api/groups/999")).andReturn().getResponse();
+		assertEquals(NOT_FOUND_ERROR, response.getErrorMessage());
+		assertEquals(HTTP_STATUS_INTERNAL_SERVER_ERROR, response.getStatus());
+		assertEquals(0, response.getContentLength());
+	}
+	
 	@Test
 	void testFindAllLessonsForGroup_shouldReturnJSONAnd200Code() throws Exception {
 		GroupDTO groupDTO = createGroupDTO(1, "Math");
@@ -190,6 +199,15 @@ class GroupsRestControllerTest {
 		MockHttpServletResponse response = mockMvc.perform(get("/api/groups")).andReturn().getResponse();
 		assertEquals("None of Groups is found", response.getErrorMessage());
 		assertEquals(HTTP_STATUS_CODE_NOT_FOUND, response.getStatus());
+		assertEquals(0, response.getContentLength());
+	}
+	
+	@Test
+	void testFindAllWithDataAreNotUpdatedException() throws Exception {
+		when(groupServiceMock.findAll()).thenThrow(DataAreNotUpdatedException.class);
+		MockHttpServletResponse response = mockMvc.perform(get("/api/groups")).andReturn().getResponse();
+		assertEquals("A list of groups wasn't prepared", response.getErrorMessage());
+		assertEquals(HTTP_STATUS_INTERNAL_SERVER_ERROR, response.getStatus());
 		assertEquals(0, response.getContentLength());
 	}
 

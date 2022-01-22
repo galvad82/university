@@ -26,6 +26,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.services.CourseService;
 import ua.com.foxminded.galvad.university.services.TeacherService;
@@ -133,6 +134,17 @@ class CoursesControllerTest {
 		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
 		assertEquals(expectedCourseDTO, mockResult.getModel().get("courseDTO"));
 		assertEquals("courses/add", mockResult.getViewName());
+	}
+	
+	@Test
+	void testAddViewPostWithDataAreNotUpdatedException() throws Exception {
+		DataAreNotUpdatedException expectedException = new DataAreNotUpdatedException("Error Message");
+		CourseDTO expectedCourseDTO = new CourseDTO();
+		expectedCourseDTO.setName("TEST");
+		when(courseServiceMock.checkIfExists(expectedCourseDTO)).thenReturn(false);
+		when(courseServiceMock.create(expectedCourseDTO)).thenThrow(expectedException);
+		RequestBuilder request = post("/courses/add").flashAttr("courseDTO", expectedCourseDTO);
+		mockMvc.perform(request).andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
 	}
 
 	@Test

@@ -1,5 +1,6 @@
 package ua.com.foxminded.galvad.university.controllers;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -23,6 +24,8 @@ import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
+import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.model.Event;
 import ua.com.foxminded.galvad.university.services.ClassroomService;
 import ua.com.foxminded.galvad.university.services.CourseService;
@@ -97,7 +100,24 @@ class ScheduleControllerTest {
 				.thenReturn(eventList);
 		mockMvc.perform(post("/schedule/group/result").param("group", FIRST)).andExpect(status().isOk())
 				.andExpect(view().name(SCHEDULE_RESULT)).andExpect(model().attribute("lessons", eventList));
+	}
 
+	@Test
+	void testGroupResultViewWithDataAreNotUpdatedException() throws Exception {
+		DataAreNotUpdatedException expectedException = new DataAreNotUpdatedException("Error Message");
+		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForGroup(FIRST)))
+				.thenThrow(expectedException);
+		mockMvc.perform(post("/schedule/group/result").param("group", FIRST))
+				.andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
+	}
+
+	@Test
+	void testGroupResultViewWithDataNotFoundException() throws Exception {
+		DataNotFoundException expectedException = new DataNotFoundException("Error Message");
+		when(lessonServiceMock.eventListForCalendarCreator(lessonServiceMock.findAllLessonsForGroup(FIRST)))
+				.thenThrow(expectedException);
+		mockMvc.perform(post("/schedule/group/result").param("group", FIRST))
+				.andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
 	}
 
 	@Test

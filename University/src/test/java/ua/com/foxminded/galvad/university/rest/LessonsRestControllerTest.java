@@ -81,6 +81,15 @@ class LessonsRestControllerTest {
 		assertEquals(HTTP_STATUS_CODE_NOT_FOUND, response.getStatus());
 		assertEquals(0, response.getContentLength());
 	}
+	
+	@Test
+	void testRetrieveWithDataAreNotUpdatedException() throws Exception {
+		when(lessonServiceMock.retrieve(999)).thenThrow(DataAreNotUpdatedException.class);
+		MockHttpServletResponse response = mockMvc.perform(get("/api/lessons/999")).andReturn().getResponse();
+		assertEquals(NOT_FOUND_ERROR, response.getErrorMessage());
+		assertEquals(HTTP_STATUS_INTERNAL_SERVER_ERROR, response.getStatus());
+		assertEquals(0, response.getContentLength());
+	}
 
 	@Test
 	void testUpdate_shouldReturnJSONAnd200Code() throws Exception {
@@ -146,6 +155,15 @@ class LessonsRestControllerTest {
 		MockHttpServletResponse response = mockMvc.perform(get("/api/lessons")).andReturn().getResponse();
 		assertEquals("None of Lessons is found", response.getErrorMessage());
 		assertEquals(HTTP_STATUS_CODE_NOT_FOUND, response.getStatus());
+		assertEquals(0, response.getContentLength());
+	}
+	
+	@Test
+	void testFindAllWithDataAreNotUpdatedException() throws Exception {
+		when(lessonServiceMock.findAll()).thenThrow(DataAreNotUpdatedException.class);
+		MockHttpServletResponse response = mockMvc.perform(get("/api/lessons")).andReturn().getResponse();
+		assertEquals("A list of lessons wasn't prepared", response.getErrorMessage());
+		assertEquals(HTTP_STATUS_INTERNAL_SERVER_ERROR, response.getStatus());
 		assertEquals(0, response.getContentLength());
 	}
 
