@@ -29,6 +29,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.services.GroupService;
 import ua.com.foxminded.galvad.university.services.StudentService;
@@ -184,6 +185,18 @@ class StudentsControllerTest {
 	}
 
 	@Test
+	void testAddViewPostWithDataAreNotUpdatedException() throws Exception {
+		DataAreNotUpdatedException expectedException = new DataAreNotUpdatedException("Error Message");
+		StudentDTO expectedStudentDTO = new StudentDTO();
+		expectedStudentDTO.setFirstName("TestName");
+		expectedStudentDTO.setLastName("TestLastName");
+		when(studentServiceMock.checkIfExists(expectedStudentDTO)).thenReturn(false);
+		when(studentServiceMock.create(expectedStudentDTO)).thenThrow(expectedException);
+		RequestBuilder request = post("/students/add").flashAttr("studentDTO", expectedStudentDTO);
+		mockMvc.perform(request).andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
+	}
+
+	@Test
 	void testEditViewPost() throws Exception {
 		StudentDTO studentDTO = new StudentDTO();
 		studentDTO.setFirstName("TestName");
@@ -257,6 +270,41 @@ class StudentsControllerTest {
 	}
 
 	@Test
+	void testEditResultViewPostWithAlreadyAddedDTO_shouldReturnEditView() throws Exception {
+		StudentDTO updatedStudentDTO = new StudentDTO();
+		updatedStudentDTO.setFirstName("NewFirstName");
+		updatedStudentDTO.setLastName("NewLastName");
+
+		StudentDTO initialStudentDTO = new StudentDTO();
+		initialStudentDTO.setFirstName("FirstName");
+		initialStudentDTO.setLastName("LastName");
+
+		List<GroupDTO> listOfGroups = new ArrayList<>();
+		GroupDTO groupDTO = new GroupDTO();
+		groupDTO.setName("TEST");
+		listOfGroups.add(groupDTO);
+		List<String> expectedListOfGroupName = Arrays.asList("NONE", "TEST");
+
+		when(studentServiceMock.checkIfExists(updatedStudentDTO)).thenReturn(true);
+		when(studentServiceMock.retrieve("FirstName", "LastName")).thenReturn(initialStudentDTO);
+		when(groupServiceMock.findAll()).thenReturn(listOfGroups);
+		RequestBuilder request = post("/students/edit/result").flashAttr("studentDTO", updatedStudentDTO)
+				.flashAttr("groupName", "TEST").flashAttr("initialFirstName", "FirstName")
+				.flashAttr("initialLastName", "LastName");
+		ModelAndView mockResult = mockMvc.perform(request).andReturn().getModelAndView();
+		BindingResult bindingResult = (BindingResult) mockResult.getModel()
+				.get("org.springframework.validation.BindingResult.studentDTO");
+		assertTrue(bindingResult.getFieldErrors().stream().map(s -> s.getField()).collect(Collectors.toList())
+				.contains("firstName"));
+		assertTrue(bindingResult.getFieldErrors().stream().map(s -> s.getDefaultMessage()).collect(Collectors.toList())
+				.contains("The student with the same name is already added to the database!"));
+		assertEquals(updatedStudentDTO, mockResult.getModel().get("studentDTO"));
+		assertEquals("TEST", mockResult.getModel().get("groupName"));
+		assertEquals(expectedListOfGroupName, mockResult.getModel().get("listGroupNames"));
+		assertEquals("students/edit", mockResult.getViewName());
+	}
+
+	@Test
 	void testDeleteViewPost() throws Exception {
 		StudentDTO studentDTO = new StudentDTO();
 		studentDTO.setFirstName("firstName");
@@ -310,8 +358,8 @@ class StudentsControllerTest {
 		updatedStudentDTO.setLastName("NewLastName");
 
 		StudentDTO initialStudentDTO = new StudentDTO();
-		updatedStudentDTO.setFirstName("OldFirstName");
-		updatedStudentDTO.setLastName("OldLastName");
+		initialStudentDTO.setFirstName("OldFirstName");
+		initialStudentDTO.setLastName("OldLastName");
 
 		if (!groupName.equals("NONE")) {
 			GroupDTO groupDTO = new GroupDTO();

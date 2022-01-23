@@ -25,6 +25,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
 import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.services.GroupService;
 import ua.com.foxminded.galvad.university.services.StudentService;
@@ -158,6 +159,17 @@ class GroupsControllerTest {
 		assertEquals("NotBlank", bindingResult.getFieldErrors().get(0).getCode());
 		assertEquals(groupDTO, mockResult.getModel().get("groupDTO"));
 		assertEquals("groups/add", mockResult.getViewName());
+	}
+
+	@Test
+	void testAddViewPostWithDataAreNotUpdatedException() throws Exception {
+		DataAreNotUpdatedException expectedException = new DataAreNotUpdatedException("Error Message");
+		GroupDTO groupDTO = new GroupDTO();
+		groupDTO.setName("TEST");
+		when(groupServiceMock.checkIfExists(groupDTO)).thenReturn(false);
+		when(groupServiceMock.create(groupDTO)).thenThrow(expectedException);
+		RequestBuilder request = post("/groups/add").flashAttr("groupDTO", groupDTO);
+		mockMvc.perform(request).andExpect(result -> assertEquals(expectedException, result.getResolvedException()));
 	}
 
 	@Test

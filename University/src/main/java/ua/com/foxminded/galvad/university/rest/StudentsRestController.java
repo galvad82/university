@@ -2,6 +2,9 @@ package ua.com.foxminded.galvad.university.rest;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,78 +29,97 @@ import ua.com.foxminded.galvad.university.services.StudentService;
 @RequestMapping("/api/students")
 public class StudentsRestController {
 
-	public final StudentService studentService;
+	private static final Logger LOGGER = LoggerFactory.getLogger(StudentsRestController.class);
+
+	private static final String PATH_ID = "/{id}";
 	private static final String NOT_FOUND_ERROR = "Student is not found";
+	public final StudentService studentService;
 
 	@Autowired
 	public StudentsRestController(StudentService studentService) {
 		this.studentService = studentService;
 	}
 
-	@GetMapping("/{id}")
+	@GetMapping(PATH_ID)
 	public ResponseEntity<StudentDTO> retrieve(@PathVariable Integer id) {
 		StudentDTO studentDTO;
 		try {
 			studentDTO = studentService.retrieve(id);
 		} catch (DataNotFoundException e) {
+			LOGGER.trace("DataNotFoundException while retrieving DTO with id={}, HttpStatus={}, ErrorMessage={}", id,
+					HttpStatus.NOT_FOUND, NOT_FOUND_ERROR);
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, NOT_FOUND_ERROR, e);
 		}
 		return new ResponseEntity<>(addLinks(studentDTO), HttpStatus.OK);
 	}
 
-	@PutMapping("/{id}")
+	@PutMapping(PATH_ID)
 	public ResponseEntity<StudentDTO> update(@PathVariable Integer id, @RequestBody StudentDTO updatedDTO) {
 		StudentDTO studentDTO;
 		try {
 			studentDTO = studentService.update(studentService.retrieve(id), updatedDTO);
 		} catch (DataNotFoundException e) {
+			LOGGER.trace("DataNotFoundException while updating DTO with id={}, HttpStatus={}, ErrorMessage={}", id,
+					HttpStatus.NOT_FOUND, NOT_FOUND_ERROR);
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, NOT_FOUND_ERROR, e);
 		} catch (DataAreNotUpdatedException ex) {
+			LOGGER.trace("DataAreNotUpdatedException while updating DTO with id={}, HttpStatus={}, ErrorMessage={}", id,
+					HttpStatus.INTERNAL_SERVER_ERROR, "Student wasn't updated");
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Student wasn't updated", ex);
 		}
 		return new ResponseEntity<>(studentDTO, HttpStatus.OK);
 	}
 
-	@GetMapping("/")
+	@GetMapping()
 	public ResponseEntity<List<StudentDTO>> findAll() {
 		List<StudentDTO> result = new ArrayList<>();
 		try {
 			studentService.findAll().stream().forEach(s -> result.add(addLinks(s)));
 		} catch (DataNotFoundException e) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "None of Students is not found", e);
+			LOGGER.trace("DataNotFoundException while retrieving a list of StudentDTOs, HttpStatus={}, ErrorMessage={}",
+					HttpStatus.NOT_FOUND, "None of Students is found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "None of Students is found", e);
 		}
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
-	@PostMapping("/")
+	@PostMapping()
 	public ResponseEntity<StudentDTO> create(@RequestBody StudentDTO newDTO) {
 		StudentDTO studentDTO;
 		try {
 			studentDTO = studentService.create(newDTO);
 		} catch (DataAreNotUpdatedException ex) {
+			LOGGER.trace("DataAreNotUpdatedException while adding a StudentDTO to DB, HttpStatus={}, ErrorMessage={}",
+					HttpStatus.INTERNAL_SERVER_ERROR, "Student wasn't added");
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Student wasn't added", ex);
 		}
 		return new ResponseEntity<>(studentDTO, HttpStatus.CREATED);
 	}
 
-	@DeleteMapping("/{id}")
+	@DeleteMapping(PATH_ID)
 	public ResponseEntity<Void> delete(@PathVariable Integer id) {
 		try {
 			studentService.delete(studentService.retrieve(id));
 		} catch (DataNotFoundException e) {
+			LOGGER.trace("DataNotFoundException while deleting DTO with id={}, HttpStatus={}, ErrorMessage={}", id,
+					HttpStatus.NOT_FOUND, NOT_FOUND_ERROR);
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, NOT_FOUND_ERROR, e);
 		} catch (DataAreNotUpdatedException ex) {
+			LOGGER.trace("DataAreNotUpdatedException while deleting DTO with id={}, HttpStatus={}, ErrorMessage={}", id,
+					HttpStatus.INTERNAL_SERVER_ERROR, "Student wasn't deleted");
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Student wasn't deleted", ex);
 		}
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
 	public StudentDTO addLinks(StudentDTO studentDTO) {
+		LOGGER.trace("Going to add links for StudentDTO with id={}", studentDTO.getId());
 		studentDTO.add(linkTo(methodOn(StudentsRestController.class).retrieve(studentDTO.getId())).withSelfRel());
 		studentDTO.add(linkTo(methodOn(StudentsRestController.class).update(studentDTO.getId(), studentDTO))
 				.withRel("update"));
 		studentDTO.add(linkTo(methodOn(StudentsRestController.class).delete(studentDTO.getId())).withRel("delete"));
 		studentDTO.add(linkTo(methodOn(StudentsRestController.class).findAll()).withRel("students"));
+		LOGGER.trace("The links for StudentDTO with id={} were added successfully", studentDTO.getId());
 		return studentDTO;
 	}
 
