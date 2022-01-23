@@ -5,15 +5,26 @@ import java.time.format.DateTimeFormatter;
 
 import org.springframework.hateoas.RepresentationModel;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Lesson DTO")
 public class LessonDTO extends RepresentationModel<LessonDTO> {
 
+	@Schema(description = "Unique identifier", example = "1", required = true)
 	private Integer id;
+	@Schema(description = "Group DTO", required = true)
 	private GroupDTO group;
+	@Schema(description = "Course DTO", required = true)
 	private CourseDTO course;
+	@Schema(description = "Classroom DTO", required = true)
 	private ClassroomDTO classroom;
+	@Schema(description = "Start time in Millis cannot be earlier than UTC Jan-01-2021 00:00:01!", example = "1609459201000", required = true)
 	private Long startTime;
+	@Schema(description = "Duration cannot be less than 30 minutes!", example = "1800000", required = true)
 	private Long duration;
+	@Schema(description = "Start time in regular format (Jan-01-2021 00:00:01)", accessMode = Schema.AccessMode.READ_ONLY)
 	private String startTimeString;
+	@Schema(description = "Duration in regular format (00:30)", accessMode = Schema.AccessMode.READ_ONLY)
 	private String durationString;
 
 	public GroupDTO getGroup() {

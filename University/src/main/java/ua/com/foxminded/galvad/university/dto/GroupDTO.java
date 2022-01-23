@@ -9,13 +9,20 @@ import org.springframework.hateoas.RepresentationModel;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Group DTO")
 public class GroupDTO extends RepresentationModel<GroupDTO> {
 
+	@Schema(description = "Unique identifier", example = "1", required = true)
 	private Integer id;
 
 	@NotBlank(message = "Group name cannot be empty")
+	@Schema(description = "Name", example = "Group1", required = true)
 	private String name;
+
+	@Schema(description = "List of Students assigned to the group", required = false)
 	private List<StudentDTO> listOfStudent = new ArrayList<>();
 
 	public String getName() {

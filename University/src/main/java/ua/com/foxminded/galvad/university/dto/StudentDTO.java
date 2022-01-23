@@ -7,19 +7,26 @@ import org.springframework.hateoas.RepresentationModel;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Schema(description = "Student DTO")
 public class StudentDTO extends RepresentationModel<StudentDTO> {
 
+	@Schema(description = "Unique identifier", example = "1", required = true)
 	private Integer id;
 
 	@NotBlank(message = "First name cannot be empty")
 	@Pattern(regexp = "^[a-zA-Z ]+$", message = "Only letters and spaces are accepted")
+	@Schema(description = "First Name, Only letters and spaces are accepted", example = "John Fitzgerald", required = true)
 	private String firstName;
 
 	@NotBlank(message = "Last name cannot be empty")
 	@Pattern(regexp = "^[a-zA-Z ]+$", message = "Only letters and spaces are accepted")
+	@Schema(description = "Last Name, Only letters and spaces are accepted", example = "Kennedy", required = true)
 	private String lastName;
 
+	@Schema(description = "Group DTO", example = "Group1", required = false)
 	private GroupDTO groupDTO;
 
 	public String getFirstName() {

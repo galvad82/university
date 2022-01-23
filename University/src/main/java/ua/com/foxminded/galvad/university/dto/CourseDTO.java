@@ -4,12 +4,19 @@ import javax.validation.constraints.NotBlank;
 
 import org.springframework.hateoas.RepresentationModel;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Course DTO")
 public class CourseDTO extends RepresentationModel<CourseDTO> {
 
+	@Schema(description = "Unique identifier", example = "1", required = true)
 	private Integer id;
 
 	@NotBlank(message = "Course name cannot be empty")
+	@Schema(description = "Name", example = "Math", required = true)
 	private String name;
+
+	@Schema(description = "Teacher DTO", required = true)
 	private TeacherDTO teacher;
 
 	public String getName() {

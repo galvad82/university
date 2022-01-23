@@ -18,6 +18,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import ua.com.foxminded.galvad.university.dto.TeacherDTO;
@@ -27,6 +33,7 @@ import ua.com.foxminded.galvad.university.services.TeacherService;
 
 @RestController
 @RequestMapping("/api/teachers")
+@Tag(name = "Teachers REST Controller", description = "It is used for making restful web services for Teachers")
 public class TeachersRestController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TeachersRestController.class);
@@ -40,8 +47,12 @@ public class TeachersRestController {
 		this.teacherService = teacherService;
 	}
 
+	@Operation(summary = "Retrieve a Teacher by ID", description = "It's used for retrieving a Teacher by ID")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "Teacher is not found") })
 	@GetMapping(PATH_ID)
-	public ResponseEntity<TeacherDTO> retrieve(@PathVariable Integer id) {
+	public ResponseEntity<TeacherDTO> retrieve(
+			@PathVariable @Parameter(description = "ID of the required Teacher") Integer id) {
 		TeacherDTO teacherDTO;
 		try {
 			teacherDTO = teacherService.retrieve(id);
@@ -53,8 +64,14 @@ public class TeachersRestController {
 		return new ResponseEntity<>(addLinks(teacherDTO), HttpStatus.OK);
 	}
 
+	@Operation(summary = "Update a Teacher", description = "It's used for updating existing Teacher with specific ID by new data")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "Teacher is not found"),
+			@ApiResponse(responseCode = "500", description = "Teacher wasn't updated") })
 	@PutMapping(PATH_ID)
-	public ResponseEntity<TeacherDTO> update(@PathVariable Integer id, @RequestBody TeacherDTO updatedDTO) {
+	public ResponseEntity<TeacherDTO> update(
+			@PathVariable @Parameter(description = "ID of the initial Teacher") Integer id,
+			@RequestBody @Parameter(description = "An updated version of Teacher with the initial ID") TeacherDTO updatedDTO) {
 		TeacherDTO teacherDTO;
 		try {
 			teacherDTO = teacherService.update(teacherService.retrieve(id), updatedDTO);
@@ -70,6 +87,9 @@ public class TeachersRestController {
 		return new ResponseEntity<>(teacherDTO, HttpStatus.OK);
 	}
 
+	@Operation(summary = "Get list of Teachers", description = "It's used for retrieving a list of all the added Teachers")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "None of Teachers is found") })
 	@GetMapping()
 	public ResponseEntity<List<TeacherDTO>> findAll() {
 		List<TeacherDTO> result = new ArrayList<>();
@@ -83,8 +103,12 @@ public class TeachersRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Operation(summary = "Create a Teacher", description = "It's used for creating a new Teacher")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "500", description = "Teacher wasn't added") })
 	@PostMapping()
-	public ResponseEntity<TeacherDTO> create(@RequestBody TeacherDTO newDTO) {
+	public ResponseEntity<TeacherDTO> create(
+			@RequestBody @Parameter(description = "A new Teacher to create") TeacherDTO newDTO) {
 		TeacherDTO teacherDTO;
 		try {
 			teacherDTO = teacherService.create(newDTO);
@@ -96,8 +120,13 @@ public class TeachersRestController {
 		return new ResponseEntity<>(teacherDTO, HttpStatus.CREATED);
 	}
 
+	@Operation(summary = "Delete a Teacher by ID", description = "It's used for deleting a Teacher with a specific ID")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "Teacher is not found"),
+			@ApiResponse(responseCode = "500", description = "Teacher wasn't deleted") })
 	@DeleteMapping(PATH_ID)
-	public ResponseEntity<Void> delete(@PathVariable Integer id) {
+	public ResponseEntity<Void> delete(
+			@PathVariable @Parameter(description = "ID of the required Teacher to delete") Integer id) {
 		try {
 			teacherService.delete(teacherService.retrieve(id));
 		} catch (DataNotFoundException e) {
@@ -112,7 +141,7 @@ public class TeachersRestController {
 		return new ResponseEntity<>(HttpStatus.NO_CONTENT);
 	}
 
-	public TeacherDTO addLinks(TeacherDTO teacherDTO) {
+	private TeacherDTO addLinks(TeacherDTO teacherDTO) {
 		LOGGER.trace("Going to add links for TeacherDTO with id={}", teacherDTO.getId());
 		teacherDTO.add(linkTo(methodOn(TeachersRestController.class).retrieve(teacherDTO.getId())).withSelfRel());
 		teacherDTO.add(linkTo(methodOn(TeachersRestController.class).update(teacherDTO.getId(), teacherDTO))
