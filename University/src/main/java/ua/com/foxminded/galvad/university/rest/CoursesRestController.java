@@ -18,6 +18,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
@@ -30,6 +36,7 @@ import ua.com.foxminded.galvad.university.services.LessonService;
 
 @RestController
 @RequestMapping("/api/courses")
+@Tag(name = "Courses REST Controller", description = "It is used for making restful web services for Courses")
 public class CoursesRestController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CoursesRestController.class);
@@ -48,8 +55,12 @@ public class CoursesRestController {
 		this.lessonService = lessonService;
 	}
 
+	@Operation(summary = "Retrieve a Course by ID", description = "It's used for retrieving a Course by ID")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "Course is not found") })
 	@GetMapping(PATH_ID)
-	public ResponseEntity<CourseDTO> retrieve(@PathVariable Integer id) {
+	public ResponseEntity<CourseDTO> retrieve(
+			@PathVariable @Parameter(description = "ID of the required Course") Integer id) {
 		CourseDTO courseDTO;
 		try {
 			courseDTO = courseService.retrieve(id);
@@ -61,8 +72,13 @@ public class CoursesRestController {
 		return new ResponseEntity<>(addLinks(courseDTO), HttpStatus.OK);
 	}
 
+	@Operation(summary = "Retrieve a list of Lessons for a Course by ID", description = "It's used for retrieving a list of Lessons for a Course by ID")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "No lessons were found for the course"),
+			@ApiResponse(responseCode = "500", description = "A list of lessons wasn't prepared") })
 	@GetMapping(PATH_ID_LESSONS)
-	public ResponseEntity<List<LessonDTO>> findAllLessonsForCourse(@PathVariable Integer id) {
+	public ResponseEntity<List<LessonDTO>> findAllLessonsForCourse(
+			@PathVariable @Parameter(description = "ID of the Course") Integer id) {
 		List<LessonDTO> result = new ArrayList<>();
 		try {
 			lessonService.findAllLessonsForCourse(courseService.retrieve(id).getName()).stream()
@@ -82,8 +98,14 @@ public class CoursesRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Operation(summary = "Update a Course", description = "It's used for updating existing Course with specific ID by new data")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "Course is not found"),
+			@ApiResponse(responseCode = "500", description = "Course wasn't updated") })
 	@PutMapping(PATH_ID)
-	public ResponseEntity<CourseDTO> update(@PathVariable Integer id, @RequestBody CourseDTO updatedDTO) {
+	public ResponseEntity<CourseDTO> update(
+			@PathVariable @Parameter(description = "ID of the initial Course") Integer id,
+			@RequestBody @Parameter(description = "An updated version of Course with the initial ID") CourseDTO updatedDTO) {
 		CourseDTO courseDTO;
 		try {
 			courseDTO = courseService.update(courseService.retrieve(id), updatedDTO);
@@ -99,6 +121,9 @@ public class CoursesRestController {
 		return new ResponseEntity<>(courseDTO, HttpStatus.OK);
 	}
 
+	@Operation(summary = "Get list of Courses", description = "It's used for retrieving a list of all the added Courses")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "No courses were found") })
 	@GetMapping()
 	public ResponseEntity<List<CourseDTO>> findAll() {
 		List<CourseDTO> result = new ArrayList<>();
@@ -112,8 +137,12 @@ public class CoursesRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Operation(summary = "Create a Course", description = "It's used for creating a new Course")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "500", description = "Course wasn't added") })
 	@PostMapping()
-	public ResponseEntity<CourseDTO> create(@RequestBody CourseDTO newDTO) {
+	public ResponseEntity<CourseDTO> create(
+			@RequestBody @Parameter(description = "A new Course to create") CourseDTO newDTO) {
 		CourseDTO courseDTO;
 		try {
 			courseDTO = courseService.create(newDTO);
@@ -125,8 +154,13 @@ public class CoursesRestController {
 		return new ResponseEntity<>(courseDTO, HttpStatus.CREATED);
 	}
 
+	@Operation(summary = "Delete a Course by ID", description = "It's used for deleting a Course with a specific ID")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "Course is not found"),
+			@ApiResponse(responseCode = "500", description = "Course wasn't deleted") })
 	@DeleteMapping(PATH_ID)
-	public ResponseEntity<Void> delete(@PathVariable Integer id) {
+	public ResponseEntity<Void> delete(
+			@PathVariable @Parameter(description = "ID of the required Course to delete") Integer id) {
 		try {
 			courseService.delete(courseService.retrieve(id));
 		} catch (DataNotFoundException e) {

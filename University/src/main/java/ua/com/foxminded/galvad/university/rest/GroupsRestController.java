@@ -18,6 +18,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
@@ -30,6 +36,7 @@ import ua.com.foxminded.galvad.university.services.LessonService;
 
 @RestController
 @RequestMapping("/api/groups")
+@Tag(name = "Groups REST Controller", description = "It is used for making restful web services for Groups")
 public class GroupsRestController {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GroupsRestController.class);
@@ -46,8 +53,13 @@ public class GroupsRestController {
 		this.lessonService = lessonService;
 	}
 
+	@Operation(summary = "Retrieve a Group by ID", description = "It's used for retrieving a Group by ID")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "Group is not found"),
+			@ApiResponse(responseCode = "500", description = "Group is not found") })
 	@GetMapping(PATH_ID)
-	public ResponseEntity<GroupDTO> retrieve(@PathVariable Integer id) {
+	public ResponseEntity<GroupDTO> retrieve(
+			@PathVariable @Parameter(description = "ID of the required Group") Integer id) {
 		GroupDTO groupDTO;
 		try {
 			groupDTO = groupService.retrieve(id);
@@ -63,8 +75,13 @@ public class GroupsRestController {
 		return new ResponseEntity<>(addLinks(groupDTO), HttpStatus.OK);
 	}
 
+	@Operation(summary = "Retrieve a list of Lessons for a Group by ID", description = "It's used for retrieving a list of Lessons for a Group by ID")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "No lessons were found for the group"),
+			@ApiResponse(responseCode = "500", description = "A list of lessons wasn't prepared") })
 	@GetMapping(PATH_ID_LESSONS)
-	public ResponseEntity<List<LessonDTO>> findAllLessonsForGroup(@PathVariable Integer id) {
+	public ResponseEntity<List<LessonDTO>> findAllLessonsForGroup(
+			@PathVariable @Parameter(description = "ID of the Group") Integer id) {
 		List<LessonDTO> result = new ArrayList<>();
 		try {
 			lessonService.findAllLessonsForGroup(groupService.retrieve(id).getName()).stream()
@@ -84,8 +101,13 @@ public class GroupsRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Operation(summary = "Update a Group", description = "It's used for updating existing Group with specific ID by new data")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "Group is not found"),
+			@ApiResponse(responseCode = "500", description = "Group wasn't updated") })
 	@PutMapping(PATH_ID)
-	public ResponseEntity<GroupDTO> update(@PathVariable Integer id, @RequestBody GroupDTO updatedDTO) {
+	public ResponseEntity<GroupDTO> update(@PathVariable @Parameter(description = "ID of the initial Group") Integer id,
+			@RequestBody @Parameter(description = "An updated version of Group with the initial ID") GroupDTO updatedDTO) {
 		GroupDTO groupDTO;
 		try {
 			groupDTO = groupService.update(groupService.retrieve(id), updatedDTO);
@@ -101,6 +123,10 @@ public class GroupsRestController {
 		return new ResponseEntity<>(groupDTO, HttpStatus.OK);
 	}
 
+	@Operation(summary = "Get list of Groups", description = "It's used for retrieving a list of all the added Groups")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "None of Groups is found"),
+			@ApiResponse(responseCode = "500", description = "A list of groups wasn't prepared") })
 	@GetMapping()
 	public ResponseEntity<List<GroupDTO>> findAll() {
 		List<GroupDTO> result = new ArrayList<>();
@@ -119,8 +145,12 @@ public class GroupsRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Operation(summary = "Create a Group", description = "It's used for creating a new Group")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "500", description = "Group wasn't added") })
 	@PostMapping()
-	public ResponseEntity<GroupDTO> create(@RequestBody GroupDTO newDTO) {
+	public ResponseEntity<GroupDTO> create(
+			@RequestBody @Parameter(description = "A new Group to create") GroupDTO newDTO) {
 		GroupDTO groupDTO;
 		try {
 			groupDTO = groupService.create(newDTO);
@@ -132,8 +162,13 @@ public class GroupsRestController {
 		return new ResponseEntity<>(groupDTO, HttpStatus.CREATED);
 	}
 
+	@Operation(summary = "Delete a Group by ID", description = "It's used for deleting a Group with a specific ID")
+	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
+			@ApiResponse(responseCode = "404", description = "Group is not found"),
+			@ApiResponse(responseCode = "500", description = "Group wasn't deleted") })
 	@DeleteMapping(PATH_ID)
-	public ResponseEntity<Void> delete(@PathVariable Integer id) {
+	public ResponseEntity<Void> delete(
+			@PathVariable @Parameter(description = "ID of the required Group to delete") Integer id) {
 		try {
 			groupService.delete(groupService.retrieve(id));
 		} catch (DataNotFoundException e) {

@@ -5,16 +5,22 @@ import javax.validation.constraints.Pattern;
 
 import org.springframework.hateoas.RepresentationModel;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Teacher DTO")
 public class TeacherDTO extends RepresentationModel<TeacherDTO> {
 
+	@Schema(description = "Unique identifier", example = "1", required = true)
 	private Integer id;
 
 	@NotBlank(message = "First name cannot be empty")
 	@Pattern(regexp = "^[a-zA-Z ]+$", message = "Only letters and spaces are accepted")
+	@Schema(description = "First Name, Only letters and spaces are accepted", example = "John Fitzgerald", required = true)
 	private String firstName;
 
 	@NotBlank(message = "Last name cannot be empty")
 	@Pattern(regexp = "^[a-zA-Z ]+$", message = "Only letters and spaces are accepted")
+	@Schema(description = "Last Name, Only letters and spaces are accepted", example = "Kennedy", required = true)
 	private String lastName;
 
 	public String getFirstName() {

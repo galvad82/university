@@ -6,11 +6,16 @@ import org.springframework.hateoas.RepresentationModel;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Classroom DTO")
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ClassroomDTO extends RepresentationModel<ClassroomDTO> {
 
+	@Schema(description = "Unique identifier", example = "1", required = true)
 	private Integer id;
 
+	@Schema(description = "Name", example = "Room1", required = true)
 	@NotBlank(message = "Classroom name cannot be empty")
 	private String name;
 
