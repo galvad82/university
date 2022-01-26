@@ -26,6 +26,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+import static ua.com.foxminded.galvad.university.rest.RestConstants.ROLE_ADMIN;
+import static ua.com.foxminded.galvad.university.rest.RestConstants.ROLE_USER;
 
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
@@ -45,9 +47,7 @@ public class GroupsRestController {
 	private static final String PATH_ID = "/{id}";
 	private static final String PATH_ID_LESSONS = "/{id}/lessons";
 	private static final String NOT_FOUND_ERROR = "Group is not found";
-	private static final String ROLE_ADMIN = "ROLE_ADMIN";
-	private static final String ROLE_USER = "ROLE_USER";
-	
+
 	public final GroupService groupService;
 	public final LessonService lessonService;
 

@@ -26,6 +26,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+import static ua.com.foxminded.galvad.university.rest.RestConstants.ROLE_ADMIN;
+import static ua.com.foxminded.galvad.university.rest.RestConstants.ROLE_USER;
 
 import ua.com.foxminded.galvad.university.dto.CourseDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
@@ -47,8 +49,6 @@ public class CoursesRestController {
 	private static final String NOT_FOUND_ERROR = "Course is not found";
 	private static final String UPDATE = "update";
 	private static final String DELETE = "delete";
-	private static final String ROLE_ADMIN = "ROLE_ADMIN";
-	private static final String ROLE_USER = "ROLE_USER";
 
 	public final CourseService courseService;
 	public final LessonService lessonService;

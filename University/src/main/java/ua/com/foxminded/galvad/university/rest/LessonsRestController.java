@@ -26,6 +26,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+import static ua.com.foxminded.galvad.university.rest.RestConstants.ROLE_ADMIN;
+import static ua.com.foxminded.galvad.university.rest.RestConstants.ROLE_USER;
 
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
 import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
@@ -41,8 +43,6 @@ public class LessonsRestController {
 
 	private static final String PATH_ID = "/{id}";
 	private static final String NOT_FOUND_ERROR = "Lesson is not found";
-	private static final String ROLE_ADMIN = "ROLE_ADMIN";
-	private static final String ROLE_USER = "ROLE_USER";
 
 	public final LessonService lessonService;
 
