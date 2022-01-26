@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,6 +54,7 @@ public class ClassroomsRestController {
 		this.lessonService = lessonService;
 	}
 
+	@Secured({ "ROLE_USER", "ROLE_ADMIN" })
 	@Operation(summary = "Retrieve a Classroom by ID", description = "It's used for retrieving a Classroom by ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Classroom is not found") })
@@ -70,6 +72,7 @@ public class ClassroomsRestController {
 		return new ResponseEntity<>(addLinks(classroomDTO), HttpStatus.OK);
 	}
 
+	@Secured({ "ROLE_USER", "ROLE_ADMIN" })
 	@Operation(summary = "Retrieve a list of Lessons for a Classroom by ID", description = "It's used for retrieving a list of Lessons for a Classroom by ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "No lessons were found for the classroom"),
@@ -96,6 +99,7 @@ public class ClassroomsRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Secured("ROLE_ADMIN")
 	@Operation(summary = "Update a Classroom", description = "It's used for updating existing Classroom with specific ID by new data")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Classroom is not found"),
@@ -119,6 +123,7 @@ public class ClassroomsRestController {
 		return new ResponseEntity<>(classroomDTO, HttpStatus.OK);
 	}
 
+	@Secured({ "ROLE_USER", "ROLE_ADMIN" })
 	@Operation(summary = "Get list of Classrooms", description = "It's used for retrieving a list of all the added Classrooms")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "None of Classrooms is found") })
@@ -136,6 +141,7 @@ public class ClassroomsRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Secured("ROLE_ADMIN")
 	@Operation(summary = "Create a Classroom", description = "It's used for creating a new Classroom")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "500", description = "Classroom wasn't added") })
@@ -153,9 +159,10 @@ public class ClassroomsRestController {
 		return new ResponseEntity<>(classroomDTO, HttpStatus.CREATED);
 	}
 
+	@Secured("ROLE_ADMIN")
 	@Operation(summary = "Delete a Classroom by ID", description = "It's used for deleting a Classroom with a specific ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
-			@ApiResponse(responseCode = "404", description = "Classroom is not found"),
+			@ApiResponse(responseCode = "401", description = "Classroom is not found"),
 			@ApiResponse(responseCode = "500", description = "Classroom wasn't deleted") })
 	@DeleteMapping(PATH_ID)
 	public ResponseEntity<Void> delete(

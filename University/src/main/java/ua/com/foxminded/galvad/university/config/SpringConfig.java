@@ -1,5 +1,6 @@
 package ua.com.foxminded.galvad.university.config;
 
+import org.keycloak.adapters.springboot.KeycloakSpringBootConfigResolver;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,5 +23,10 @@ public class SpringConfig {
 				new Info().title("University API").version("1.0.0").contact(new Contact().email("v.halyanov@gmail.com")
 						.url("https://www.linkedin.com/in/vadym-halyanov-1377144b/").name("Vadym Halyanov")));
 	}
+	
+    @Bean
+    public KeycloakSpringBootConfigResolver keycloakConfigResolver() {
+        return new KeycloakSpringBootConfigResolver();
+    }
 
 }

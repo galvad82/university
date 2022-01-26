@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,6 +48,7 @@ public class TeachersRestController {
 		this.teacherService = teacherService;
 	}
 
+	@Secured({"ROLE_USER", "ROLE_ADMIN"})
 	@Operation(summary = "Retrieve a Teacher by ID", description = "It's used for retrieving a Teacher by ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Teacher is not found") })
@@ -64,6 +66,7 @@ public class TeachersRestController {
 		return new ResponseEntity<>(addLinks(teacherDTO), HttpStatus.OK);
 	}
 
+	@Secured("ROLE_ADMIN")
 	@Operation(summary = "Update a Teacher", description = "It's used for updating existing Teacher with specific ID by new data")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Teacher is not found"),
@@ -87,6 +90,7 @@ public class TeachersRestController {
 		return new ResponseEntity<>(teacherDTO, HttpStatus.OK);
 	}
 
+	@Secured({"ROLE_USER", "ROLE_ADMIN"})
 	@Operation(summary = "Get list of Teachers", description = "It's used for retrieving a list of all the added Teachers")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "None of Teachers is found") })
@@ -103,6 +107,7 @@ public class TeachersRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Secured("ROLE_ADMIN")
 	@Operation(summary = "Create a Teacher", description = "It's used for creating a new Teacher")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "500", description = "Teacher wasn't added") })
@@ -120,6 +125,7 @@ public class TeachersRestController {
 		return new ResponseEntity<>(teacherDTO, HttpStatus.CREATED);
 	}
 
+	@Secured("ROLE_ADMIN")
 	@Operation(summary = "Delete a Teacher by ID", description = "It's used for deleting a Teacher with a specific ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Teacher is not found"),
