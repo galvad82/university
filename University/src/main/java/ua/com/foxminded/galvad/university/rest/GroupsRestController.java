@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +26,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+import static ua.com.foxminded.galvad.university.rest.RestConstants.ROLE_ADMIN;
+import static ua.com.foxminded.galvad.university.rest.RestConstants.ROLE_USER;
 
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.LessonDTO;
@@ -44,6 +47,7 @@ public class GroupsRestController {
 	private static final String PATH_ID = "/{id}";
 	private static final String PATH_ID_LESSONS = "/{id}/lessons";
 	private static final String NOT_FOUND_ERROR = "Group is not found";
+
 	public final GroupService groupService;
 	public final LessonService lessonService;
 
@@ -53,6 +57,7 @@ public class GroupsRestController {
 		this.lessonService = lessonService;
 	}
 
+	@Secured({ ROLE_USER, ROLE_ADMIN })
 	@Operation(summary = "Retrieve a Group by ID", description = "It's used for retrieving a Group by ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Group is not found"),
@@ -75,6 +80,7 @@ public class GroupsRestController {
 		return new ResponseEntity<>(addLinks(groupDTO), HttpStatus.OK);
 	}
 
+	@Secured({ ROLE_USER, ROLE_ADMIN })
 	@Operation(summary = "Retrieve a list of Lessons for a Group by ID", description = "It's used for retrieving a list of Lessons for a Group by ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "No lessons were found for the group"),
@@ -101,6 +107,7 @@ public class GroupsRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Update a Group", description = "It's used for updating existing Group with specific ID by new data")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Group is not found"),
@@ -123,6 +130,7 @@ public class GroupsRestController {
 		return new ResponseEntity<>(groupDTO, HttpStatus.OK);
 	}
 
+	@Secured({ ROLE_USER, ROLE_ADMIN })
 	@Operation(summary = "Get list of Groups", description = "It's used for retrieving a list of all the added Groups")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "None of Groups is found"),
@@ -145,6 +153,7 @@ public class GroupsRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Create a Group", description = "It's used for creating a new Group")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "500", description = "Group wasn't added") })
@@ -162,6 +171,7 @@ public class GroupsRestController {
 		return new ResponseEntity<>(groupDTO, HttpStatus.CREATED);
 	}
 
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Delete a Group by ID", description = "It's used for deleting a Group with a specific ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Group is not found"),

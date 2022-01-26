@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,6 +26,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+import static ua.com.foxminded.galvad.university.rest.RestConstants.ROLE_ADMIN;
+import static ua.com.foxminded.galvad.university.rest.RestConstants.ROLE_USER;
 
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
 import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
@@ -40,6 +43,7 @@ public class StudentsRestController {
 
 	private static final String PATH_ID = "/{id}";
 	private static final String NOT_FOUND_ERROR = "Student is not found";
+
 	public final StudentService studentService;
 
 	@Autowired
@@ -47,6 +51,7 @@ public class StudentsRestController {
 		this.studentService = studentService;
 	}
 
+	@Secured({ ROLE_USER, ROLE_ADMIN })
 	@Operation(summary = "Retrieve a Student by ID", description = "It's used for retrieving a Student by ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Student is not found") })
@@ -64,6 +69,7 @@ public class StudentsRestController {
 		return new ResponseEntity<>(addLinks(studentDTO), HttpStatus.OK);
 	}
 
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Update a Student", description = "It's used for updating existing Student with specific ID by new data")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Student is not found"),
@@ -87,6 +93,7 @@ public class StudentsRestController {
 		return new ResponseEntity<>(studentDTO, HttpStatus.OK);
 	}
 
+	@Secured({ ROLE_USER, ROLE_ADMIN })
 	@Operation(summary = "Get list of Students", description = "It's used for retrieving a list of all the added Students")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "None of Students is found") })
@@ -103,6 +110,7 @@ public class StudentsRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Create a Student", description = "It's used for creating a new Student")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "500", description = "Student wasn't added") })
@@ -120,6 +128,7 @@ public class StudentsRestController {
 		return new ResponseEntity<>(studentDTO, HttpStatus.CREATED);
 	}
 
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Delete a Student by ID", description = "It's used for deleting a Student with a specific ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Student is not found"),
