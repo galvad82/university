@@ -47,6 +47,9 @@ public class CoursesRestController {
 	private static final String NOT_FOUND_ERROR = "Course is not found";
 	private static final String UPDATE = "update";
 	private static final String DELETE = "delete";
+	private static final String ROLE_ADMIN = "ROLE_ADMIN";
+	private static final String ROLE_USER = "ROLE_USER";
+
 	public final CourseService courseService;
 	public final LessonService lessonService;
 
@@ -56,7 +59,7 @@ public class CoursesRestController {
 		this.lessonService = lessonService;
 	}
 
-	@Secured({"ROLE_USER", "ROLE_ADMIN"})
+	@Secured({ ROLE_USER, ROLE_ADMIN })
 	@Operation(summary = "Retrieve a Course by ID", description = "It's used for retrieving a Course by ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Course is not found") })
@@ -74,7 +77,7 @@ public class CoursesRestController {
 		return new ResponseEntity<>(addLinks(courseDTO), HttpStatus.OK);
 	}
 
-	@Secured({"ROLE_USER", "ROLE_ADMIN"})
+	@Secured({ ROLE_USER, ROLE_ADMIN })
 	@Operation(summary = "Retrieve a list of Lessons for a Course by ID", description = "It's used for retrieving a list of Lessons for a Course by ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "No lessons were found for the course"),
@@ -101,7 +104,7 @@ public class CoursesRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
-	@Secured("ROLE_ADMIN")
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Update a Course", description = "It's used for updating existing Course with specific ID by new data")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Course is not found"),
@@ -125,7 +128,7 @@ public class CoursesRestController {
 		return new ResponseEntity<>(courseDTO, HttpStatus.OK);
 	}
 
-	@Secured({"ROLE_USER", "ROLE_ADMIN"})
+	@Secured({ ROLE_USER, ROLE_ADMIN })
 	@Operation(summary = "Get list of Courses", description = "It's used for retrieving a list of all the added Courses")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "No courses were found") })
@@ -142,7 +145,7 @@ public class CoursesRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
-	@Secured("ROLE_ADMIN")
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Create a Course", description = "It's used for creating a new Course")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "500", description = "Course wasn't added") })
@@ -160,7 +163,7 @@ public class CoursesRestController {
 		return new ResponseEntity<>(courseDTO, HttpStatus.CREATED);
 	}
 
-	@Secured("ROLE_ADMIN")
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Delete a Course by ID", description = "It's used for deleting a Course with a specific ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Course is not found"),

@@ -41,6 +41,9 @@ public class LessonsRestController {
 
 	private static final String PATH_ID = "/{id}";
 	private static final String NOT_FOUND_ERROR = "Lesson is not found";
+	private static final String ROLE_ADMIN = "ROLE_ADMIN";
+	private static final String ROLE_USER = "ROLE_USER";
+
 	public final LessonService lessonService;
 
 	@Autowired
@@ -48,7 +51,7 @@ public class LessonsRestController {
 		this.lessonService = lessonService;
 	}
 
-	@Secured({"ROLE_USER", "ROLE_ADMIN"})
+	@Secured({ ROLE_USER, ROLE_ADMIN })
 	@Operation(summary = "Retrieve a Lesson by ID", description = "It's used for retrieving a Lesson by ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Lesson is not found"),
@@ -71,7 +74,7 @@ public class LessonsRestController {
 		return new ResponseEntity<>(addLinks(lessonDTO), HttpStatus.OK);
 	}
 
-	@Secured("ROLE_ADMIN")
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Update a Lesson", description = "It's used for updating existing Lesson with specific ID by new data")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Lesson is not found"),
@@ -95,7 +98,7 @@ public class LessonsRestController {
 		return new ResponseEntity<>(lessonDTO, HttpStatus.OK);
 	}
 
-	@Secured({"ROLE_USER", "ROLE_ADMIN"})
+	@Secured({ ROLE_USER, ROLE_ADMIN })
 	@Operation(summary = "Get list of Lessons", description = "It's used for retrieving a list of all the added Lessons")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "None of Classrooms is found"),
@@ -119,7 +122,7 @@ public class LessonsRestController {
 		return new ResponseEntity<>(result, HttpStatus.OK);
 	}
 
-	@Secured("ROLE_ADMIN")
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Create a Lesson", description = "It's used for creating a new Lesson")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "500", description = "Lesson wasn't added") })
@@ -137,7 +140,7 @@ public class LessonsRestController {
 		return new ResponseEntity<>(lessonDTO, HttpStatus.CREATED);
 	}
 
-	@Secured("ROLE_ADMIN")
+	@Secured(ROLE_ADMIN)
 	@Operation(summary = "Delete a Lesson by ID", description = "It's used for deleting a Lesson with a specific ID")
 	@ApiResponses(value = { @ApiResponse(responseCode = "200", description = "Successful operation"),
 			@ApiResponse(responseCode = "404", description = "Lesson is not found"),

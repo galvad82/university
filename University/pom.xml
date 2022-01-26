@@ -78,8 +78,7 @@
     		<groupId>org.springdoc</groupId>
     		<artifactId>springdoc-openapi-ui</artifactId>
     		<version>1.6.4</version>
-		</dependency>		
-		
+		</dependency>				
 		<dependency>
     		<groupId>org.springframework.boot</groupId>
     		<artifactId>spring-boot-starter-hateoas</artifactId>
@@ -96,7 +95,6 @@
 			<groupId>org.springframework.security</groupId>
 			<artifactId>spring-security-oauth2-resource-server</artifactId>
 		</dependency>
-
 		<dependency>
     		<groupId>org.keycloak</groupId>
     		<artifactId>keycloak-spring-boot-starter</artifactId>
