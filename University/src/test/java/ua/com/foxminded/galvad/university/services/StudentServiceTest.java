@@ -5,9 +5,11 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,11 +19,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
+import org.springframework.dao.DataAccessResourceFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import ua.com.foxminded.galvad.university.dto.GroupDTO;
 import ua.com.foxminded.galvad.university.dto.StudentDTO;
+import ua.com.foxminded.galvad.university.exceptions.DataAreNotUpdatedException;
+import ua.com.foxminded.galvad.university.exceptions.DataNotFoundException;
 import ua.com.foxminded.galvad.university.model.Group;
 import ua.com.foxminded.galvad.university.model.Student;
 import ua.com.foxminded.galvad.university.repository.GroupRepository;
@@ -68,6 +74,19 @@ class StudentServiceTest {
 	}
 
 	@Test
+	void testCreateWithDataAccessException_shouldThrowDataAreNotUpdatedException() {
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
+		when(mockStudentRepository.save(studentEntity)).thenThrow(new DataAccessResourceFailureException("error"));
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentService.create(studentDTO));
+		assertEquals("Student with firstName=FirstName and lastName=LastName wasn't added to DB.",
+				exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).save(any(Student.class));
+	}
+
+	@Test
 	void testRetrieve() {
 		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
 		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
@@ -75,6 +94,54 @@ class StudentServiceTest {
 		when(mockModelMapper.map(studentEntity, StudentDTO.class)).thenReturn(studentDTO);
 		studentService.retrieve("FirstName", "LastName");
 		verify(mockStudentRepository, times(1)).findByFirstNameAndLastName(FIRST_NAME, LAST_NAME);
+	}
+
+	@Test
+	void testRetrieveWithDataAccessException_shouldThrowDataNotFoundException() {
+		when(mockStudentRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME))
+				.thenThrow(new DataAccessResourceFailureException("error"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class,
+				() -> studentService.retrieve("FirstName", "LastName"));
+		verify(mockStudentRepository, times(1)).findByFirstNameAndLastName(FIRST_NAME, LAST_NAME);
+		assertEquals("Can't retrieve StudentDTO, firstName=FirstName, lastName=LastName", exception.getErrorMessage());
+	}
+
+	@Test
+	void testRetrieveWithNullStudent_shouldThrowDataNotFoundException() {
+		when(mockStudentRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(null);
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class,
+				() -> studentService.retrieve("FirstName", "LastName"));
+		assertEquals("A student (firstName=FirstName, lastName=LastName) is not found.", exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).findByFirstNameAndLastName(FIRST_NAME, LAST_NAME);
+	}
+
+	@Test
+	void testRetrieveById() {
+		StudentDTO studentDTO = new StudentDTO();
+		studentDTO.setFirstName(FIRST_NAME);
+		studentDTO.setLastName(LAST_NAME);
+		studentDTO.setId(1);
+		Optional<Student> studentOptional = Optional.of(new Student(1, FIRST_NAME, LAST_NAME));
+		when(mockStudentRepository.findById(1)).thenReturn(studentOptional);
+		when(mockModelMapper.map(studentOptional.get(), StudentDTO.class)).thenReturn(studentDTO);
+		studentService.retrieve(1);
+		verify(mockStudentRepository, times(1)).findById(1);
+	}
+
+	@Test
+	void testRetrieveByIdWithDataAccessException_shouldThrowDataNotFoundException() {
+		when(mockStudentRepository.findById(1)).thenThrow(new DataAccessResourceFailureException("error"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> studentService.retrieve(1));
+		assertEquals("Can't retrieve StudentDTO, id=1", exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).findById(1);
+	}
+
+	@Test
+	void testRetrieveByIdWithNullResult_shouldThrowDataNotFoundException() {
+		when(mockStudentRepository.findById(1)).thenReturn(Optional.empty());
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> studentService.retrieve(1));
+		assertEquals("A student (id=1) is not found.", exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).findById(1);
 	}
 
 	@Test
@@ -93,11 +160,70 @@ class StudentServiceTest {
 	}
 
 	@Test
+	void testUpdateWithDataAccessException_shouldThrowDataAreNotUpdatedException() {
+		StudentDTO oldDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student oldEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		StudentDTO newDTO = createStudentDTO(FIRST_NAME_B, LAST_NAME_B, GROUP_NAME);
+		Student newEntity = createStudentEntity(1, FIRST_NAME_B, LAST_NAME_B, 1, GROUP_NAME);
+		when(mockModelMapper.map(newDTO, Student.class)).thenReturn(newEntity);
+		when(mockModelMapper.map(oldDTO, Student.class)).thenReturn(oldEntity);
+		when(mockStudentRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(oldEntity);
+		when(mockStudentRepository.save(newEntity)).thenThrow(new DataAccessResourceFailureException("error"));
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentService.update(oldDTO, newDTO));
+		assertEquals("Can't update a student (firstName=FirstName, lastName=LastName)", exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).save(any(Student.class));
+	}
+
+	@Test
+	void testUpdateWithDataAccessExceptionForConvertToEntity_shouldThrowDataNotFoundException() {
+		StudentDTO oldDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student oldEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		StudentDTO newDTO = createStudentDTO(FIRST_NAME_B, LAST_NAME_B, GROUP_NAME);
+		Student newEntity = createStudentEntity(1, FIRST_NAME_B, LAST_NAME_B, 1, GROUP_NAME);
+		when(mockModelMapper.map(newDTO, Student.class)).thenReturn(newEntity);
+		when(mockModelMapper.map(oldDTO, Student.class)).thenReturn(oldEntity);
+		when(mockStudentRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME))
+				.thenThrow(new DataAccessResourceFailureException("error"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class,
+				() -> studentService.update(oldDTO, newDTO));
+		assertEquals(
+				"Can't find a student oldEntity (firstName=FirstName, lastName=LastName) while updating StudentDto.",
+				exception.getErrorMessage());
+		verify(mockStudentRepository, times(0)).save(any(Student.class));
+	}
+
+	@Test
 	void testDelete() {
 		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
 		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
 		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
 		studentService.delete(studentDTO);
+		verify(mockStudentRepository, times(1)).delete(studentEntity);
+	}
+
+	@Test
+	void testDeleteWithDataIntegrityViolationException_shouldThrowDataAreNotUpdatedException() {
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
+		doThrow(new DataIntegrityViolationException("error")).when(mockStudentRepository).delete(studentEntity);
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentService.delete(studentDTO));
+		assertEquals("Can't delete the student \"FirstName LastName\" as he or she is assigned to the group \"G1\".",
+				exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).delete(studentEntity);
+	}
+
+	@Test
+	void testDeleteWithDataAccessException_shouldThrowDataAreNotUpdatedException() {
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
+		doThrow(new DataAccessResourceFailureException("error")).when(mockStudentRepository).delete(studentEntity);
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentService.delete(studentDTO));
+		assertEquals("Can't delete the student (firstName=FirstName, lastName=LastName)", exception.getErrorMessage());
 		verify(mockStudentRepository, times(1)).delete(studentEntity);
 	}
 
@@ -123,6 +249,14 @@ class StudentServiceTest {
 		when(mockModelMapper.map(entity3, StudentDTO.class)).thenReturn(DTO3);
 		List<StudentDTO> retrievedList = studentService.findAll();
 		assertEquals(retrievedList, expectedListDTO);
+	}
+
+	@Test
+	void testFindAllWithDataAccessException_shouldThrowDataNotFoundException() {
+		when(mockStudentRepository.findAll()).thenThrow(new DataAccessResourceFailureException("error"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class, () -> studentService.findAll());
+		assertEquals("Can't retrieve a list of students.", exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).findAll();
 	}
 
 	@Test
@@ -159,6 +293,15 @@ class StudentServiceTest {
 	}
 
 	@Test
+	void testFindAllUnassignedStudentsWithDataAccessException_shouldThrowDataNotFoundException() {
+		when(mockStudentRepository.findAll()).thenThrow(new DataAccessResourceFailureException("error"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class,
+				() -> studentService.findAllUnassignedStudents());
+		assertEquals("Can't build a list of unassigned students.", exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).findAll();
+	}
+
+	@Test
 	void testBuildStudentGroupMap() {
 		StudentDTO DTO1 = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
 		StudentDTO DTO2 = createStudentDTO(FIRST_NAME_B, LAST_NAME_B, GROUP_NAME2);
@@ -192,6 +335,15 @@ class StudentServiceTest {
 	}
 
 	@Test
+	void testBuildStudentGroupMapWithDataAccessException_shouldThrowDataNotFoundException() {
+		when(mockStudentRepository.findAll()).thenThrow(new DataAccessResourceFailureException("error"));
+		DataNotFoundException exception = assertThrows(DataNotFoundException.class,
+				() -> studentService.buildStudentGroupMap());
+		assertEquals("Can't build a map (StudentDTO,GroupName).", exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).findAll();
+	}
+
+	@Test
 	void testAddToGroup() {
 		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
 		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
@@ -206,12 +358,61 @@ class StudentServiceTest {
 	}
 
 	@Test
+	void testAddToGroupWithDataAccessException_shouldThrowDataAreNotUpdatedException() {
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		GroupDTO newGroupDTO = new GroupDTO();
+		newGroupDTO.setName(GROUP_NAME2);
+		Group newGroupEntity = new Group(2, GROUP_NAME2);
+
+		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
+		when(mockGroupService.convertToEntity(newGroupDTO)).thenReturn(newGroupEntity);
+		doThrow(new DataAccessResourceFailureException("error")).when(mockStudentRepository)
+				.addStudentToGroup(studentEntity.getId(), newGroupEntity);
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentService.addToGroup(studentDTO, newGroupDTO));
+		assertEquals("Can't assign StudentDTO (firstName=FirstName, lastName=LastName) to a groupDTO with name=G2",
+				exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).addStudentToGroup(studentEntity.getId(), newGroupEntity);
+	}
+
+	@Test
 	void testRemoveStudentFromGroup() {
 		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
 		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
 		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
 		studentService.removeStudentFromGroup(studentDTO);
 		verify(mockStudentRepository, times(1)).removeStudentFromGroups(studentEntity.getId());
+	}
+
+	@Test
+	void testRemoveStudentFromGroupWithDataAccessException_shouldThrowDataAreNotUpdatedException() {
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		when(mockModelMapper.map(studentDTO, Student.class)).thenReturn(studentEntity);
+		doThrow(new DataAccessResourceFailureException("error")).when(mockStudentRepository)
+				.removeStudentFromGroups(studentEntity.getId());
+		DataAreNotUpdatedException exception = assertThrows(DataAreNotUpdatedException.class,
+				() -> studentService.removeStudentFromGroup(studentDTO));
+		assertEquals("Can't remove a studentDTO(firstName=FirstName, lastName=LastName) from group.",
+				exception.getErrorMessage());
+		verify(mockStudentRepository, times(1)).removeStudentFromGroups(studentEntity.getId());
+	}
+
+	@Test
+	void testCheckIfExistWithExistentEntity_shouldReturnTrue() {
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		Student studentEntity = createStudentEntity(1, FIRST_NAME, LAST_NAME, 1, GROUP_NAME);
+		when(mockStudentRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(studentEntity);
+		when(mockModelMapper.map(studentEntity, StudentDTO.class)).thenReturn(studentDTO);
+		assertTrue(studentService.checkIfExists(studentDTO));
+	}
+
+	@Test
+	void testCheckIfExistWithNewEntity_shouldReturnTrue() {
+		StudentDTO studentDTO = createStudentDTO(FIRST_NAME, LAST_NAME, GROUP_NAME);
+		when(mockStudentRepository.findByFirstNameAndLastName(FIRST_NAME, LAST_NAME)).thenReturn(null);
+		assertFalse(studentService.checkIfExists(studentDTO));
 	}
 
 	private Student createStudentEntity(Integer studentID, String firstName, String lastName, Integer groupID,
