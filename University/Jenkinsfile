@@ -1,0 +1,14 @@
+pipeline {
+    agent any
+        tools { 
+            maven 'mvn' 
+            jdk 'jdk8' 
+        }
+    stages {
+        stage('Build') { 
+            steps {
+                sh 'mvn -f ./University/pom.xml clean test package'
+            }
+        }
+    }
+}
