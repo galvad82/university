@@ -16,9 +16,9 @@ pipeline {
 					docker build -t university . -f ./dockerfiles/Dockerfile
 					cd ./dockerfiles
 					docker stop keycloak || true && docker rm keycloak || true
-					docker stop postgres || true && docker rm postgres || true	
-					docker rmi postgres:13.5-alpine
-					docker rmi jboss/keycloak:latest
+					docker stop postgres || true && docker rm postgres || true
+					docker image rm jboss/keycloak:latest || (echo "Image jboss/keycloak:latest didn't exist so not removed."; exit 0)
+					docker image rm postgres:13.5-alpine || (echo "Image postgres:13.5-alpine didn't exist so not removed."; exit 0)
 					/usr/bin/docker-compose up -d
 					docker image prune -f
 					'''
