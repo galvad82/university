@@ -8,7 +8,17 @@ pipeline {
         stage('Scan-package') { 
 			steps {
 				withSonarQubeEnv(credentialsId: 'jenkins-sonar-token', installationName:'sonar'){
-					sh 'cd ./University; mvn clean package sonar:sonar -Dstyle.color=never -Dskip-tests=true; docker build -t university . -f ./dockerfiles/Dockerfile; docker image prune -f; cd ./dockerfiles; /usr/bin/docker-compose up -d'
+					sh '''
+					cd ./University
+					mvn clean package sonar:sonar -Dstyle.color=never -DskipTests=true
+					docker kill university
+					docker build -t university . -f ./dockerfiles/Dockerfile
+					docker image prune -f
+					cd ./dockerfiles					
+					docker kill postgres
+					docker kill keycloak
+					/usr/bin/docker-compose up -d
+					'''
 				}
             }
 		}
