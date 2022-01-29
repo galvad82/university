@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+    tools { 
+		maven 'mvn' 
+		jdk 'jdk11' 
+	}
+    stages {
+        stage('Scan-package') { 
+			steps {
+				withSonarQubeEnv(credentialsId: 'jenkins-sonar-token', installationName:'sonar'){
+					sh '''
+					cd ./University
+					mvn clean package sonar:sonar -Dstyle.color=never -DskipTests=true
+					docker stop university || true && docker rm university || true
+					docker rmi university:latest
+					docker build -t university . -f ./dockerfiles/Dockerfile
+					cd ./dockerfiles
+					docker stop keycloak || true && docker rm keycloak || true
+					docker stop postgres || true && docker rm postgres || true	
+					/usr/bin/docker-compose up -d
+					docker image prune -f
+					'''
+				}
+            }
+		}
+    }
+}
