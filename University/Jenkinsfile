@@ -11,16 +11,13 @@ pipeline {
 					sh '''
 					cd ./University
 					mvn clean package sonar:sonar -Dstyle.color=never -DskipTests=true
-					docker kill university
-					docker rm university
+					docker stop university || true && docker rm university || true
 					docker build -t university . -f ./dockerfiles/Dockerfile
-					docker image prune -f
-					cd ./dockerfiles					
-					docker kill postgres
-					docker kill keycloak
-					docker rm postgres
-					docker rm keycloak					
+					cd ./dockerfiles
+					docker stop keycloak || true && docker rm keycloak || true
+					docker stop postgres || true && docker rm postgres || true					
 					/usr/bin/docker-compose up -d
+					docker image prune -f
 					'''
 				}
             }
