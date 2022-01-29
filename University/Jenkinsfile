@@ -8,7 +8,7 @@ pipeline {
         stage('Scan-package') { 
 			steps {
 				withSonarQubeEnv(credentialsId: 'jenkins-sonar-token', installationName:'sonar'){
-					sh 'cd ./University; mvn clean package sonar:sonar -Dstyle.color=never; docker build -t university . -f ./dockerfiles/Dockerfile; /usr/bin/docker-compose up -d -f ./dockerfiles/docker-compose.yml'
+					sh 'cd ./University; mvn clean package sonar:sonar -Dstyle.color=never -Dskip-tests=true; docker build -t university . -f ./dockerfiles/Dockerfile; docker image prune -f; cd ./dockerfiles; /usr/bin/docker-compose up -d -f ./dockerfiles/docker-compose.yml'
 				}
             }
 		}
