@@ -19,6 +19,7 @@ pipeline {
 					docker stop postgres || true && docker rm postgres || true	
 					/usr/bin/docker-compose up -d
 					docker image prune -f
+					docker volume prune -f
 					'''
 				}
             }
