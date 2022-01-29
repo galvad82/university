@@ -14,7 +14,7 @@ pipeline {
 		}
 		stage('docker-compose') {
            steps {
-              sh "cd ./dockerfiles; /usr/bin/docker-compose up -d -f docker-compose.yml"
+              sh "cd ./University/dockerfiles; /usr/bin/docker-compose up -d -f docker-compose.yml"
            }
        }
     }
