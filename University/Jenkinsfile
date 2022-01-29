@@ -1,14 +1,21 @@
 pipeline {
     agent any
-        tools { 
-            maven 'mvn' 
-            jdk 'jdk8' 
-        }
+    tools { 
+		maven 'mvn' 
+		jdk 'jdk11' 
+	}
     stages {
-        stage('Build') { 
-            steps {
-                sh 'mvn -f ./University/pom.xml clean test package'
+        stage('Scan-package') { 
+			steps {
+				withSonarQubeEnv(credentialsId: 'jenkins-sonar-token', installationName:'sonar'){
+					sh 'cd ./University; mvn clean package sonar:sonar -Dstyle.color=never; docker build -t university . -f ./dockerfiles/Dockerfile'
+				}
             }
-        }
+		}
+		stage('docker-compose') {
+           steps {
+              sh "/usr/bin/docker-compose up -d -f ./dockerfiles/docker-compose.yml"
+           }
+       }
     }
 }
