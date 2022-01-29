@@ -21,6 +21,7 @@ pipeline {
 					docker image rm postgres:13.5-alpine || (echo "Image postgres:13.5-alpine didn't exist so not removed."; exit 0)
 					/usr/bin/docker-compose up -d
 					docker image prune -f
+					docker volume prune -f
 					'''
 				}
             }
