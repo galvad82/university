@@ -25,7 +25,7 @@ services:
         POSTGRES_DB: postgres
     restart: unless-stopped
     volumes: 
-        - ./dockerfiles/postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
+        - ./postgres_init.sql:/docker-entrypoint-initdb.d/docker_postgres_init.sql
   keycloak:
     image: jboss/keycloak
     container_name: keycloak
